@@ -9,17 +9,15 @@ import { applyApiFieldErrors } from '@/core/forms/apply-api-errors';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { space, useStyles, type Theme } from '@/shared/theme';
-import { Banner, Button, FormTextField, Screen, Text } from '@/shared/ui';
+import { Banner, Button, FormTextField, Text } from '@/shared/ui';
 
 import { useRegister } from '../hooks';
 import { registerSchema, type RegisterForm } from '../schemas';
-import { BrandMark } from './BrandMark';
+import { AuthLayout } from './AuthLayout';
 
 const createStyles = (_theme: Theme) =>
   StyleSheet.create({
-    header: { gap: space.sm, marginBottom: space.xl },
     form: { gap: space.lg },
-    footer: { flexDirection: 'row', justifyContent: 'center', gap: space.xs, marginTop: space.xl },
   });
 
 const FIELDS = ['name', 'email', 'password', 'registrationCode'] as const;
@@ -45,15 +43,20 @@ export function RegisterScreen() {
   const hasFieldErrors = isApiError(register.error) && register.error.fieldErrors.length > 0;
 
   return (
-    <Screen contentStyle={{ paddingTop: space.xxl }}>
-      <BrandMark />
-      <View style={styles.header}>
-        <Text variant="largeTitle" heading>
-          {t('auth.register.title')}
-        </Text>
-        <Text tone="secondary">{t('auth.register.subtitle')}</Text>
-      </View>
-
+    <AuthLayout
+      title={t('auth.register.title')}
+      subtitle={t('auth.register.subtitle')}
+      footer={
+        <>
+          <Text tone="secondary">{t('auth.register.haveAccount')}</Text>
+          <Link href="/login" accessibilityRole="link">
+            <Text tone="accent" style={{ fontWeight: '600' }}>
+              {t('auth.register.signIn')}
+            </Text>
+          </Link>
+        </>
+      }
+    >
       <View style={styles.form}>
         {register.error && !hasFieldErrors ? (
           <Banner tone="danger" message={describe(register.error)} />
@@ -111,14 +114,6 @@ export function RegisterScreen() {
         />
       </View>
 
-      <View style={styles.footer}>
-        <Text tone="secondary">{t('auth.register.haveAccount')}</Text>
-        <Link href="/login" accessibilityRole="link">
-          <Text tone="accent" style={{ fontWeight: '600' }}>
-            {t('auth.register.signIn')}
-          </Text>
-        </Link>
-      </View>
-    </Screen>
+    </AuthLayout>
   );
 }

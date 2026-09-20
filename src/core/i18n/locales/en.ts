@@ -51,6 +51,17 @@ export const en: Translation = {
     network: 'No internet connection. Check your network and try again.',
     unknown: 'We could not complete that. Please try again.',
   },
+  nav: {
+    main: 'Main menu',
+    trips: 'Trips',
+    newTrip: 'New trip',
+    account: 'Account',
+    currentTrip: 'Current trip',
+    overview: 'Overview',
+    members: 'Members',
+    signedInAs: 'Signed in as',
+  },
+  splash: { tagline: 'Your trip, from planning to boarding.' },
   offline: {
     banner: 'You are offline. Some actions are unavailable until the connection returns.',
   },
@@ -67,6 +78,12 @@ export const en: Translation = {
     VIEWER: 'View only',
   },
   auth: {
+    panel: {
+      headline: 'Plan. Travel. Relive.',
+      point1: "Organize each trip's destination, dates and currency",
+      point2: 'Invite people and choose what each one can do',
+      point3: 'Use it on any device, on your computer or your phone',
+    },
     showPassword: 'Show password',
     hidePassword: 'Hide password',
     login: {

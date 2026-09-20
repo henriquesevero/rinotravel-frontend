@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { contentMaxWidth, space, useStyles, useTheme, type Theme } from '../theme';
+import { space, useContentMaxWidth, useStyles, useTheme, type Theme } from '../theme';
 import { OfflineBanner } from './OfflineBanner';
 
 interface ScreenProps {
@@ -29,7 +29,7 @@ const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.background },
     flex: { flex: 1 },
-    column: { width: '100%', maxWidth: contentMaxWidth, alignSelf: 'center' },
+    column: { width: '100%', alignSelf: 'center' },
     scrollContent: { flexGrow: 1 },
     footer: {
       borderTopWidth: StyleSheet.hairlineWidth,
@@ -41,9 +41,10 @@ const createStyles = ({ colors }: Theme) =>
 /** Horizontal padding and max width for content that is not inside <Screen scroll>. */
 export function useContentStyle(): ViewStyle {
   const insets = useSafeAreaInsets();
+  const maxWidth = useContentMaxWidth();
   return {
     width: '100%',
-    maxWidth: contentMaxWidth,
+    maxWidth,
     alignSelf: 'center',
     paddingHorizontal: space.lg,
     paddingBottom: insets.bottom + space.xxl,
@@ -62,6 +63,7 @@ export function Screen({
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const padding = useContentStyle();
+  const maxWidth = useContentMaxWidth();
 
   const body = scroll ? (
     <ScrollView
@@ -96,7 +98,7 @@ export function Screen({
       </View>
       {footer ? (
         <View style={[styles.footer, { paddingBottom: insets.bottom }]}>
-          <View style={[styles.column, { padding: space.lg }]}>{footer}</View>
+          <View style={[styles.column, { maxWidth, padding: space.lg }]}>{footer}</View>
         </View>
       ) : null}
     </KeyboardAvoidingView>

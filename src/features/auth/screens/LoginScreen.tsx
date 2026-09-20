@@ -7,17 +7,15 @@ import { StyleSheet, View, type TextInput } from 'react-native';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { space, useStyles, type Theme } from '@/shared/theme';
-import { Banner, Button, FormTextField, Screen, Text } from '@/shared/ui';
+import { Banner, Button, FormTextField, Text } from '@/shared/ui';
 
 import { useLogin } from '../hooks';
 import { loginSchema, type LoginForm } from '../schemas';
-import { BrandMark } from './BrandMark';
+import { AuthLayout } from './AuthLayout';
 
 const createStyles = (_theme: Theme) =>
   StyleSheet.create({
-    header: { gap: space.sm, marginBottom: space.xl },
     form: { gap: space.lg },
-    footer: { flexDirection: 'row', justifyContent: 'center', gap: space.xs, marginTop: space.xl },
   });
 
 export function LoginScreen() {
@@ -34,15 +32,20 @@ export function LoginScreen() {
   const submit = handleSubmit((values) => login.mutate(values));
 
   return (
-    <Screen contentStyle={{ paddingTop: space.xxxl }}>
-      <BrandMark />
-      <View style={styles.header}>
-        <Text variant="largeTitle" heading>
-          {t('auth.login.title')}
-        </Text>
-        <Text tone="secondary">{t('auth.login.subtitle')}</Text>
-      </View>
-
+    <AuthLayout
+      title={t('auth.login.title')}
+      subtitle={t('auth.login.subtitle')}
+      footer={
+        <>
+          <Text tone="secondary">{t('auth.login.noAccount')}</Text>
+          <Link href="/register" accessibilityRole="link">
+            <Text tone="accent" style={{ fontWeight: '600' }}>
+              {t('auth.login.createAccount')}
+            </Text>
+          </Link>
+        </>
+      }
+    >
       <View style={styles.form}>
         {login.error ? <Banner tone="danger" message={describe(login.error)} /> : null}
         <FormTextField
@@ -69,22 +72,8 @@ export function LoginScreen() {
           returnKeyType="go"
           onSubmitEditing={submit}
         />
-        <Button
-          title={t('auth.login.submit')}
-          onPress={submit}
-          loading={login.isPending}
-          fullWidth
-        />
+        <Button title={t('auth.login.submit')} onPress={submit} loading={login.isPending} fullWidth />
       </View>
-
-      <View style={styles.footer}>
-        <Text tone="secondary">{t('auth.login.noAccount')}</Text>
-        <Link href="/register" accessibilityRole="link">
-          <Text tone="accent" style={{ fontWeight: '600' }}>
-            {t('auth.login.createAccount')}
-          </Text>
-        </Link>
-      </View>
-    </Screen>
+    </AuthLayout>
   );
 }

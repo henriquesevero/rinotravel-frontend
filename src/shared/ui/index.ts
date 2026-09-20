@@ -1,6 +1,7 @@
 export { Avatar } from './Avatar';
 export { Badge, type BadgeTone } from './Badge';
 export { Banner } from './Banner';
+export { BrandMark } from './BrandMark';
 export { Button } from './Button';
 export { Card } from './Card';
 export { ConfirmProvider, useConfirm } from './confirm';

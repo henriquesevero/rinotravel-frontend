@@ -138,5 +138,6 @@ export const shadows = {
   },
 } as const;
 
-/** Widest a content column grows on tablets and desktop web. */
+/** Widest a content column grows: comfortable reading on phones, room for grids beside a sidebar. */
 export const contentMaxWidth = 640;
+export const contentMaxWidthExpanded = 960;

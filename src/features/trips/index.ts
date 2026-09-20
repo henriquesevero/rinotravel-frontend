@@ -3,3 +3,4 @@ export { EditTripScreen } from './screens/EditTripScreen';
 export { NewTripScreen } from './screens/NewTripScreen';
 export { TripScreen } from './screens/TripScreen';
 export { TripsScreen } from './screens/TripsScreen';
+export { useTrip } from './hooks';

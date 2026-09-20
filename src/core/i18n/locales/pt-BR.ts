@@ -54,6 +54,17 @@ export const ptBR = {
     network: 'Sem conexão com a internet. Verifique sua rede e tente de novo.',
     unknown: 'Não foi possível concluir. Tente novamente.',
   } satisfies Record<ErrorCode | 'network' | 'unknown', string>,
+  nav: {
+    main: 'Menu principal',
+    trips: 'Viagens',
+    newTrip: 'Nova viagem',
+    account: 'Conta',
+    currentTrip: 'Viagem atual',
+    overview: 'Visão geral',
+    members: 'Membros',
+    signedInAs: 'Conectado como',
+  },
+  splash: { tagline: 'Sua viagem, do planejamento ao embarque.' },
   offline: {
     banner: 'Sem conexão. Algumas ações ficam indisponíveis até a internet voltar.',
   },
@@ -70,6 +81,12 @@ export const ptBR = {
     VIEWER: 'Apenas visualiza',
   } satisfies Record<Role, string>,
   auth: {
+    panel: {
+      headline: 'Planeje. Viaje. Reviva.',
+      point1: 'Organize destino, datas e moeda de cada viagem',
+      point2: 'Convide pessoas e defina o que cada uma pode fazer',
+      point3: 'Acesse de qualquer dispositivo, no computador ou no celular',
+    },
     showPassword: 'Mostrar senha',
     hidePassword: 'Ocultar senha',
     login: {
