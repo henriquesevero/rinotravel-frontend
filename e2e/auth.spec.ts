@@ -67,7 +67,7 @@ test.describe('authentication', () => {
     await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
 
     await page.getByTestId('open-account').click();
-    await expect(page.getByText(account.email)).toBeVisible();
+    await expect(page.getByRole('dialog').getByText(account.email)).toBeVisible();
     await page.getByTestId('logout').click();
     await expect(page.getByRole('heading', { name: 'Bem-vindo de volta' })).toBeVisible();
 

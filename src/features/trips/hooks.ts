@@ -15,6 +15,8 @@ export function useTrips() {
 export function useTrip(tripId: string) {
   const queryClient = useQueryClient();
   return useQuery<Trip>({
+    // An empty id means "no trip open" (the sidebar asks even outside a trip): never request it.
+    enabled: tripId !== '',
     queryKey: queryKeys.trips.detail(tripId),
     queryFn: ({ signal }) => tripsApi.get(tripId, signal),
     // The list already carries the full trip, so the detail can render before its own request returns.
