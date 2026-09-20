@@ -22,6 +22,7 @@ import {
   type BadgeTone,
 } from '@/shared/ui';
 
+import { PlaceDetailSheet, RestaurantDetailSheet } from './PlaceDetailSheet';
 import { PlaceSheet } from './PlaceSheet';
 import { RestaurantSheet } from './RestaurantSheet';
 import { ScheduleSheet } from './ScheduleSheet';
@@ -54,6 +55,10 @@ export function PlacesScreen({ tripId }: { tripId: string }) {
     restaurant?: Restaurant | undefined;
   } | null>(null);
   const [scheduling, setScheduling] = useState<Place | undefined>(undefined);
+  const [viewPlaceId, setViewPlaceId] = useState<string | null>(null);
+  const [viewRestaurantId, setViewRestaurantId] = useState<string | null>(null);
+  const viewPlace = places.data?.find((place) => place.id === viewPlaceId);
+  const viewRestaurant = restaurants.data?.find((r) => r.id === viewRestaurantId);
 
   const add = () => (tab === 'places' ? setPlaceSheet({}) : setRestaurantSheet({}));
   const refresh = () => {
@@ -95,7 +100,7 @@ export function PlacesScreen({ tripId }: { tripId: string }) {
               canWrite={canWrite}
               currency={trip.currency}
               onAdd={() => setPlaceSheet({})}
-              onEdit={(place) => setPlaceSheet({ place })}
+              onOpen={(place) => setViewPlaceId(place.id)}
               onSchedule={setScheduling}
             />
           ) : (
@@ -104,10 +109,40 @@ export function PlacesScreen({ tripId }: { tripId: string }) {
               trip={trip}
               canWrite={canWrite}
               onAdd={() => setRestaurantSheet({})}
-              onEdit={(restaurant) => setRestaurantSheet({ restaurant })}
+              onOpen={(restaurant) => setViewRestaurantId(restaurant.id)}
             />
           )}
 
+          <PlaceDetailSheet
+            tripId={tripId}
+            currency={trip.currency}
+            place={viewPlace}
+            visible={viewPlaceId !== null}
+            onClose={() => setViewPlaceId(null)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewPlaceId(null);
+                    setPlaceSheet({ place: viewPlace });
+                  }
+                : undefined
+            }
+          />
+          <RestaurantDetailSheet
+            tripId={tripId}
+            currency={trip.currency}
+            restaurant={viewRestaurant}
+            visible={viewRestaurantId !== null}
+            onClose={() => setViewRestaurantId(null)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewRestaurantId(null);
+                    setRestaurantSheet({ restaurant: viewRestaurant });
+                  }
+                : undefined
+            }
+          />
           <PlaceSheet
             tripId={tripId}
             visible={placeSheet !== null}
@@ -159,14 +194,14 @@ function PlaceList({
   canWrite,
   currency,
   onAdd,
-  onEdit,
+  onOpen,
   onSchedule,
 }: {
   query: ListQuery<Place>;
   canWrite: boolean;
   currency: string;
   onAdd: () => void;
-  onEdit: (place: Place) => void;
+  onOpen: (place: Place) => void;
   onSchedule: (place: Place) => void;
 }) {
   const { t } = useTranslation();
@@ -233,7 +268,7 @@ function PlaceList({
                 ) : null}
               </View>
             }
-            {...(canWrite ? { onPress: () => onEdit(place) } : {})}
+            onPress={() => onOpen(place)}
           />
         );
       })}
@@ -246,13 +281,13 @@ function RestaurantList({
   trip,
   canWrite,
   onAdd,
-  onEdit,
+  onOpen,
 }: {
   query: ListQuery<Restaurant>;
   trip: Trip;
   canWrite: boolean;
   onAdd: () => void;
-  onEdit: (restaurant: Restaurant) => void;
+  onOpen: (restaurant: Restaurant) => void;
 }) {
   const { t } = useTranslation();
   if (query.error) {
@@ -304,7 +339,7 @@ function RestaurantList({
                 tone={RESTAURANT_TONE[restaurant.status]}
               />
             }
-            {...(canWrite ? { onPress: () => onEdit(restaurant) } : {})}
+            onPress={() => onOpen(restaurant)}
           />
         );
       })}

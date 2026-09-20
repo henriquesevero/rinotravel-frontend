@@ -33,16 +33,203 @@ test.describe('trip content', () => {
     await expect(day).toContainText('Templo Senso-ji');
     await expect(day).toContainText('09:30');
 
+    // Clicking an item shows it first; editing is one tap further.
     await day.getByText('Templo Senso-ji').click();
+    await expect(page.getByTestId('item-detail')).toBeVisible();
+    await page.getByTestId('item-detail-edit').click();
     await page.getByTestId('item-title').fill('Senso-ji e Nakamise');
     await page.getByTestId('item-sheet-submit').click();
     await expect(day).toContainText('Senso-ji e Nakamise');
 
     await day.getByText('Senso-ji e Nakamise').click();
+    await page.getByTestId('item-detail-edit').click();
     await page.getByTestId('item-sheet-delete').click();
     await confirmDelete(page);
     await expect(page.getByText('Seu roteiro está vazio')).toBeVisible();
     expect(errors).toEqual([]);
+  });
+
+  const PIN = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+
+  test('itinerary: an item opens to a view with its map before any editing', async ({
+    page,
+    request,
+  }) => {
+    const pins: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/trips/*/maps/location', async (route) => {
+      pins.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'image/png', body: PIN });
+    });
+    const ana = await registerViaApi(request, 'Ana');
+    const bia = await registerViaApi(request, 'Bia');
+    const trip = await createTripViaApi(request, ana);
+    await addMemberViaApi(request, ana, trip.id, bia, 'VIEWER');
+    const headers = { Authorization: `Bearer ${ana.token}` };
+    const day = await (
+      await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-days`, {
+        headers,
+        data: { date: '2027-04-02' },
+      })
+    ).json();
+    const made = await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-items`, {
+      headers,
+      data: {
+        dayId: day.id,
+        title: 'Torre de Tóquio',
+        category: 'ATTRACTION',
+        location: {
+          name: 'Torre de Tóquio',
+          address: 'Minato, Tóquio',
+          latitude: 35.6586,
+          longitude: 139.7454,
+        },
+        estimatedCost: { amount: 1200, currency: 'JPY' },
+        notes: 'Chegar antes do pôr do sol',
+      },
+    });
+    expect(made.status(), await made.text()).toBe(201);
+
+    // The writer sees the item, its map and an edit shortcut.
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    await page.getByTestId('day-2027-04-02').getByText('Torre de Tóquio').click();
+    const detail = page.getByTestId('item-detail');
+    await expect(detail).toContainText('Minato, Tóquio');
+    await expect(detail).toContainText('Chegar antes do pôr do sol');
+    await expect(detail.getByTestId('location-map')).toBeVisible();
+    expect(pins.at(-1)).toMatchObject({ location: { name: 'Torre de Tóquio', latitude: 35.6586 } });
+    await expect(page.getByTestId('open-google-maps')).toBeVisible();
+    await page.getByTestId('item-detail-edit').click();
+    await expect(page.getByTestId('item-title')).toHaveValue('Torre de Tóquio');
+  });
+
+  test('itinerary: a viewer opens the view but has no way to edit', async ({ page, request }) => {
+    await page.route('**/api/v1/trips/*/maps/location', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: PIN }),
+    );
+    const ana = await registerViaApi(request, 'Ana');
+    const bia = await registerViaApi(request, 'Bia');
+    const trip = await createTripViaApi(request, ana);
+    await addMemberViaApi(request, ana, trip.id, bia, 'VIEWER');
+    await createItemViaApi(request, ana, trip.id, {
+      date: '2027-04-02',
+      title: 'Jantar de boas-vindas',
+      timezone: 'Asia/Tokyo',
+    });
+
+    await signInToDashboard(page, bia);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    await page.getByTestId('day-2027-04-02').getByText('Jantar de boas-vindas').click();
+    await expect(page.getByTestId('item-detail')).toBeVisible();
+    await expect(page.getByTestId('item-detail-edit')).toHaveCount(0);
+  });
+
+  test('places: picking a Google suggestion draws its map in the form and in the view', async ({
+    page,
+    request,
+  }) => {
+    const pins: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/places/search*', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [
+            {
+              providerId: 'p1',
+              name: 'Torre de Tóquio',
+              address: 'Minato, Tóquio, Japão',
+              latitude: 35.6586,
+              longitude: 139.7454,
+              types: [],
+            },
+          ],
+        }),
+      }),
+    );
+    await page.route('**/api/v1/trips/*/maps/location', async (route) => {
+      pins.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'image/png', body: PIN });
+    });
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/places`);
+
+    await page.getByTestId('add-place').click();
+    await page.getByTestId('place-search').fill('Torre');
+    await page
+      .getByRole('button', { name: /Torre de Tóquio/ })
+      .first()
+      .click();
+    // A place chosen from Google is exact, so the map needs no extra tap.
+    await expect(page.getByTestId('location-map')).toBeVisible();
+    expect(pins.at(-1)).toMatchObject({
+      location: { name: 'Torre de Tóquio', address: 'Minato, Tóquio, Japão', latitude: 35.6586 },
+    });
+    await page.getByTestId('place-sheet-submit').click();
+    await expect(page.getByTestId('place-sheet-submit')).toHaveCount(0);
+
+    // Clicking the saved place views it, with the same map, before any editing.
+    await page.getByText('Torre de Tóquio').first().click();
+    await expect(page.getByTestId('place-detail')).toBeVisible();
+    await expect(page.getByTestId('place-detail').getByTestId('location-map')).toBeVisible();
+    await expect(page.getByTestId('place-detail-edit')).toBeVisible();
+  });
+
+  test('bookings: a hotel shows its map, a flight has none, and both open to a view first', async ({
+    page,
+    request,
+  }) => {
+    await page.route('**/api/v1/trips/*/maps/location', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: PIN }),
+    );
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    const headers = { Authorization: `Bearer ${ana.token}` };
+    expect(
+      (
+        await request.post(`${API}/api/v1/trips/${trip.id}/hotels`, {
+          headers,
+          data: {
+            name: 'Hotel Sakura',
+            location: { name: 'Hotel Sakura', address: 'Asakusa, Tóquio' },
+            checkIn: { dateTime: '2027-04-03T15:00:00', timezone: 'Asia/Tokyo' },
+            checkOut: { dateTime: '2027-04-07T11:00:00', timezone: 'Asia/Tokyo' },
+          },
+        })
+      ).status(),
+    ).toBe(201);
+    expect(
+      (
+        await request.post(`${API}/api/v1/trips/${trip.id}/flights`, {
+          headers,
+          data: {
+            flightNumber: 'LA8084',
+            departureAirport: 'GRU',
+            arrivalAirport: 'NRT',
+            departure: { dateTime: '2027-04-01T22:10:00', timezone: 'America/Sao_Paulo' },
+            arrival: { dateTime: '2027-04-03T06:30:00', timezone: 'Asia/Tokyo' },
+          },
+        })
+      ).status(),
+    ).toBe(201);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/bookings`);
+    await page.getByText('GRU → NRT · LA8084').click();
+    await expect(page.getByTestId('flight-detail')).toContainText('20 h 20');
+    await expect(page.getByTestId('open-google-maps')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+
+    await page.getByTestId('bookings-tabs-hotels').click();
+    await page.getByText('Hotel Sakura').first().click();
+    await expect(page.getByTestId('hotel-detail')).toContainText('4 noites');
+    await expect(page.getByTestId('hotel-detail').getByTestId('location-map')).toBeVisible();
+    await expect(page.getByTestId('hotel-detail-edit')).toBeVisible();
   });
 
   test('places: a wishlist place is scheduled into the itinerary', async ({ page, request }) => {
@@ -370,6 +557,13 @@ test.describe('trip content', () => {
 
     await expect(page.getByText('passagem', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Abrir', exact: true })).toBeVisible();
+
+    // The row opens a view with the file's details; editing and opening the file are one tap away.
+    await page.getByText('passagem', { exact: true }).click();
+    await expect(page.getByTestId('document-detail')).toContainText('passagem.pdf');
+    await expect(page.getByTestId('open-document-file')).toBeVisible();
+    await expect(page.getByTestId('document-detail-edit')).toBeVisible();
+    await page.keyboard.press('Escape');
 
     const headers = { Authorization: `Bearer ${ana.token}` };
     const list = await (

@@ -17,7 +17,15 @@ interface SplitFormProps {
 }
 
 export function SplitForm({ wide, side, children }: SplitFormProps) {
-  if (!wide) return <View style={styles.stack}>{children}</View>;
+  // On phones the map comes first, so it is in view right after a place is picked at the top.
+  if (!wide) {
+    return (
+      <View style={styles.stack}>
+        {side}
+        {children}
+      </View>
+    );
+  }
   return (
     <View style={styles.split}>
       <View style={styles.left}>{children}</View>

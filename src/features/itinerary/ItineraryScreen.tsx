@@ -11,6 +11,7 @@ import { TimelineRow } from '@/features/content/TimelineRow';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Text } from '@/shared/ui';
 
+import { ItemDetailSheet } from './ItemDetailSheet';
 import { ItemSheet } from './ItemSheet';
 import { dayHooks, itemHooks, useTimeline } from './hooks';
 
@@ -55,6 +56,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
   const days = dayHooks.useList(tripId);
   const items = itemHooks.useList(tripId);
   const [sheet, setSheet] = useState<SheetState | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
 
   const refresh = () => {
     void timeline.refetch();
@@ -97,7 +99,27 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
               items={items.data}
               canWrite={canWrite}
               onAdd={(date) => setSheet({ date })}
-              onEdit={(item) => setSheet({ item, date: trip.startDate })}
+              onView={(item) => setViewId(item.id)}
+            />
+            <ItemDetailSheet
+              tripId={tripId}
+              item={items.data.find((item) => item.id === viewId)}
+              date={
+                days.data.find((day) => day.id === items.data.find((i) => i.id === viewId)?.dayId)
+                  ?.date
+              }
+              currency={trip.currency}
+              visible={viewId !== null}
+              onClose={() => setViewId(null)}
+              onEdit={
+                canWrite
+                  ? () => {
+                      const item = items.data.find((i) => i.id === viewId);
+                      setViewId(null);
+                      setSheet({ item, date: trip.startDate });
+                    }
+                  : undefined
+              }
             />
             <ItemSheet
               tripId={tripId}
@@ -125,10 +147,10 @@ interface DayListProps {
   items: ItineraryItem[];
   canWrite: boolean;
   onAdd: (date: string) => void;
-  onEdit: (item: ItineraryItem) => void;
+  onView: (item: ItineraryItem) => void;
 }
 
-function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onEdit }: DayListProps) {
+function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onView }: DayListProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const router = useRouter();
@@ -159,7 +181,7 @@ function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onEdit
   const open = (entry: TimelineEntry) => {
     if (entry.kind === 'itinerary_item') {
       const item = itemsById.get(entry.id);
-      if (item && canWrite) onEdit(item);
+      if (item) onView(item);
       return;
     }
     router.push(destinationOf(entry.kind, tripId));

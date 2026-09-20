@@ -1,11 +1,21 @@
-import { useMemo } from 'react';
+import { useWatch } from 'react-hook-form';
+import { useMemo, useState } from 'react';
 
-import type { ItineraryDay, ItineraryItem } from '@/core/api';
+import type { ItineraryDay, ItineraryItem, PlaceCandidate } from '@/core/api';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { formatDayShort, joinOptionalZoned, splitZoned } from '@/core/datetime/zoned';
 import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
-import { fromMoney, mergeLocation, toMoneyInput } from '@/features/content/mappers';
+import { LocationPreview } from '@/features/content/LocationPreview';
+import { PlaceSearch } from '@/features/content/PlaceSearch';
+import { SplitForm, useWideForm } from '@/features/content/SplitForm';
+import { useLocationPreview } from '@/features/content/use-location-preview';
+import {
+  candidateToLocation,
+  fromMoney,
+  mergeLocation,
+  toMoneyInput,
+} from '@/features/content/mappers';
 import { useEntityForm } from '@/features/content/use-entity-form';
 import {
   FormSelectField,
@@ -50,6 +60,7 @@ export function ItemSheet({
   const createItem = itemHooks.useCreate(tripId);
   const updateItem = itemHooks.useUpdate(tripId);
   const removeItem = itemHooks.useRemove(tripId);
+  const [picked, setPicked] = useState<PlaceCandidate | null>(null);
 
   const schema = useMemo(() => itemSchema(currency), [currency]);
   const dayDate = item ? days.find((day) => day.id === item.dayId)?.date : undefined;
@@ -73,8 +84,27 @@ export function ItemSheet({
     defaults,
     fields: ITEM_FIELDS,
     aliases: ITEM_ALIASES,
-    onClose,
+    onClose: () => {
+      setPicked(null);
+      onClose();
+    },
   });
+
+  const watched_locationName = useWatch({ control: form.control, name: 'locationName' }) as string;
+  const watched_address = useWatch({ control: form.control, name: 'address' }) as string;
+
+  const wide = useWideForm();
+  const preview = useLocationPreview({
+    nameNow: watched_locationName,
+    addressNow: watched_address,
+    pick: picked,
+    previous: item?.location,
+  });
+  const pick = (candidate: PlaceCandidate) => {
+    setPicked(candidate);
+    form.setValue('locationName', candidate.name);
+    form.setValue('address', candidate.address ?? '');
+  };
 
   const dateOptions = useMemo(() => {
     const locale = currentLocale();
@@ -106,14 +136,22 @@ export function ItemSheet({
           baseVersion: item.version,
           patch: {
             ...body,
-            location: mergeLocation(values.locationName, values.address, item.location),
+            location: mergeLocation(
+              values.locationName,
+              values.address,
+              picked ? candidateToLocation(picked) : item.location,
+            ),
           },
         });
       } else {
         await createItem.mutateAsync({
           id: newId(),
           ...body,
-          location: mergeLocation(values.locationName, values.address, undefined),
+          location: mergeLocation(
+            values.locationName,
+            values.address,
+            picked ? candidateToLocation(picked) : undefined,
+          ),
         });
       }
       close();
@@ -142,6 +180,7 @@ export function ItemSheet({
   const { control } = form;
   return (
     <EntitySheet
+      size="lg"
       icon="calendar-outline"
       tint="blue"
       testID="item-sheet"
@@ -153,79 +192,92 @@ export function ItemSheet({
       error={error}
       {...(item ? { onDelete: () => void remove() } : {})}
     >
-      <FormSection title={t('content.sec.basic')}>
-        <FormTextField
-          control={control}
-          name="title"
-          label={t('itinerary.fieldTitle')}
-          placeholder={t('itinerary.fieldTitlePlaceholder')}
-          testID="item-title"
-        />
-        <FieldRow>
+      <SplitForm
+        wide={wide}
+        side={
+          <LocationPreview
+            tripId={tripId}
+            location={preview.location}
+            exact={preview.exact}
+            wide={wide}
+          />
+        }
+      >
+        <FormSection title={t('content.sec.basic')}>
+          <FormTextField
+            control={control}
+            name="title"
+            label={t('itinerary.fieldTitle')}
+            placeholder={t('itinerary.fieldTitlePlaceholder')}
+            testID="item-title"
+          />
+          <FieldRow>
+            <FormSelectField
+              control={control}
+              name="category"
+              label={t('content.category')}
+              title={t('content.category')}
+              options={(
+                ['ATTRACTION', 'RESTAURANT', 'SHOPPING', 'FREE_TIME', 'OTHER'] as const
+              ).map((value) => ({ value, label: t(`enums.category.${value}`) }))}
+              testID="item-category"
+            />
+            <FormSelectField
+              control={control}
+              name="status"
+              label={t('content.status')}
+              title={t('content.status')}
+              options={(['PLANNED', 'CONFIRMED', 'COMPLETED', 'SKIPPED'] as const).map((value) => ({
+                value,
+                label: t(`enums.status.${value}`),
+              }))}
+              testID="item-status"
+            />
+          </FieldRow>
+        </FormSection>
+        <FormSection title={t('content.sec.when')}>
           <FormSelectField
             control={control}
-            name="category"
-            label={t('content.category')}
-            title={t('content.category')}
-            options={(['ATTRACTION', 'RESTAURANT', 'SHOPPING', 'FREE_TIME', 'OTHER'] as const).map(
-              (value) => ({ value, label: t(`enums.category.${value}`) }),
-            )}
-            testID="item-category"
+            name="date"
+            label={t('itinerary.fieldDay')}
+            title={t('itinerary.pickDay')}
+            options={dateOptions}
+            testID="item-date"
           />
-          <FormSelectField
+          <FieldRow>
+            <FormTimeField
+              control={control}
+              name="startTime"
+              label={t('content.startTime')}
+              hint={t('content.timeHint')}
+              testID="item-start"
+            />
+            <FormTimeField
+              control={control}
+              name="endTime"
+              label={t('content.endTime')}
+              testID="item-end"
+            />
+          </FieldRow>
+        </FormSection>
+        <FormSection title={t('content.sec.where')}>
+          <PlaceSearch onPick={pick} testID="item-place-search" />
+          <FieldRow>
+            <FormTextField control={control} name="locationName" label={t('content.location')} />
+            <FormTextField control={control} name="address" label={t('content.address')} />
+          </FieldRow>
+        </FormSection>
+        <FormSection title={t('content.sec.money')}>
+          <FormTextField
             control={control}
-            name="status"
-            label={t('content.status')}
-            title={t('content.status')}
-            options={(['PLANNED', 'CONFIRMED', 'COMPLETED', 'SKIPPED'] as const).map((value) => ({
-              value,
-              label: t(`enums.status.${value}`),
-            }))}
-            testID="item-status"
+            name="cost"
+            label={t('content.cost')}
+            hint={t('content.costHint', { currency })}
+            keyboardType="decimal-pad"
           />
-        </FieldRow>
-      </FormSection>
-      <FormSection title={t('content.sec.when')}>
-        <FormSelectField
-          control={control}
-          name="date"
-          label={t('itinerary.fieldDay')}
-          title={t('itinerary.pickDay')}
-          options={dateOptions}
-          testID="item-date"
-        />
-        <FieldRow>
-          <FormTimeField
-            control={control}
-            name="startTime"
-            label={t('content.startTime')}
-            hint={t('content.timeHint')}
-            testID="item-start"
-          />
-          <FormTimeField
-            control={control}
-            name="endTime"
-            label={t('content.endTime')}
-            testID="item-end"
-          />
-        </FieldRow>
-      </FormSection>
-      <FormSection title={t('content.sec.where')}>
-        <FieldRow>
-          <FormTextField control={control} name="locationName" label={t('content.location')} />
-          <FormTextField control={control} name="address" label={t('content.address')} />
-        </FieldRow>
-      </FormSection>
-      <FormSection title={t('content.sec.money')}>
-        <FormTextField
-          control={control}
-          name="cost"
-          label={t('content.cost')}
-          hint={t('content.costHint', { currency })}
-          keyboardType="decimal-pad"
-        />
-        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
-      </FormSection>
+          <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+        </FormSection>
+      </SplitForm>
     </EntitySheet>
   );
 }

@@ -24,6 +24,7 @@ import {
   Skeleton,
 } from '@/shared/ui';
 
+import { FlightDetailSheet, HotelDetailSheet } from './BookingDetailSheets';
 import { FlightSheet } from './FlightSheet';
 import { HotelSheet } from './HotelSheet';
 import { flightHooks, hotelHooks } from './hooks';
@@ -37,6 +38,10 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
   const hotels = hotelHooks.useList(tripId);
   const [flightSheet, setFlightSheet] = useState<{ flight?: Flight | undefined } | null>(null);
   const [hotelSheet, setHotelSheet] = useState<{ hotel?: Hotel | undefined } | null>(null);
+  const [viewFlightId, setViewFlightId] = useState<string | null>(null);
+  const [viewHotelId, setViewHotelId] = useState<string | null>(null);
+  const viewFlight = flights.data?.find((flight) => flight.id === viewFlightId);
+  const viewHotel = hotels.data?.find((hotel) => hotel.id === viewHotelId);
 
   const add = () => (tab === 'flights' ? setFlightSheet({}) : setHotelSheet({}));
 
@@ -76,16 +81,44 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
               query={flights}
               canWrite={canWrite}
               onAdd={() => setFlightSheet({})}
-              onEdit={(flight) => setFlightSheet({ flight })}
+              onOpen={(flight) => setViewFlightId(flight.id)}
             />
           ) : (
             <HotelList
               query={hotels}
               canWrite={canWrite}
               onAdd={() => setHotelSheet({})}
-              onEdit={(hotel) => setHotelSheet({ hotel })}
+              onOpen={(hotel) => setViewHotelId(hotel.id)}
             />
           )}
+          <FlightDetailSheet
+            tripId={tripId}
+            flight={viewFlight}
+            visible={viewFlightId !== null}
+            onClose={() => setViewFlightId(null)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewFlightId(null);
+                    setFlightSheet({ flight: viewFlight });
+                  }
+                : undefined
+            }
+          />
+          <HotelDetailSheet
+            tripId={tripId}
+            hotel={viewHotel}
+            visible={viewHotelId !== null}
+            onClose={() => setViewHotelId(null)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewHotelId(null);
+                    setHotelSheet({ hotel: viewHotel });
+                  }
+                : undefined
+            }
+          />
           <FlightSheet
             tripId={tripId}
             visible={flightSheet !== null}
@@ -126,12 +159,12 @@ function FlightList({
   query,
   canWrite,
   onAdd,
-  onEdit,
+  onOpen,
 }: {
   query: ListQuery<Flight>;
   canWrite: boolean;
   onAdd: () => void;
-  onEdit: (flight: Flight) => void;
+  onOpen: (flight: Flight) => void;
 }) {
   const { t } = useTranslation();
   if (query.error) {
@@ -172,7 +205,7 @@ function FlightList({
           right={
             flight.bookingCode ? <Badge label={flight.bookingCode} tone="accent" /> : undefined
           }
-          {...(canWrite ? { onPress: () => onEdit(flight) } : {})}
+          onPress={() => onOpen(flight)}
         />
       ))}
     </Card>
@@ -183,12 +216,12 @@ function HotelList({
   query,
   canWrite,
   onAdd,
-  onEdit,
+  onOpen,
 }: {
   query: ListQuery<Hotel>;
   canWrite: boolean;
   onAdd: () => void;
-  onEdit: (hotel: Hotel) => void;
+  onOpen: (hotel: Hotel) => void;
 }) {
   const { t } = useTranslation();
   if (query.error) {
@@ -233,7 +266,7 @@ function HotelList({
                 <Badge label={hotel.confirmationCode} tone="accent" />
               ) : undefined
             }
-            {...(canWrite ? { onPress: () => onEdit(hotel) } : {})}
+            onPress={() => onOpen(hotel)}
           />
         );
       })}

@@ -19,6 +19,7 @@ import {
   Skeleton,
 } from '@/shared/ui';
 
+import { DocumentDetailSheet } from './DocumentDetailSheet';
 import { DocumentSheet } from './DocumentSheet';
 import { useDocuments, useOpenDocument } from './hooks';
 import { formatSize } from './schemas';
@@ -29,6 +30,8 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
   const documents = useDocuments(tripId);
   const open = useOpenDocument(tripId);
   const [sheet, setSheet] = useState<{ document?: Document | undefined } | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
+  const viewDocument = documents.data?.find((document) => document.id === viewId);
 
   return (
     <TripPage
@@ -101,12 +104,27 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
                         )}
                       </View>
                     }
-                    {...(canWrite ? { onPress: () => setSheet({ document }) } : {})}
+                    onPress={() => setViewId(document.id)}
                   />
                 );
               })}
             </Card>
           )}
+          <DocumentDetailSheet
+            tripId={tripId}
+            document={viewDocument}
+            visible={viewId !== null}
+            onClose={() => setViewId(null)}
+            onOpen={(document) => open.mutate(document.id)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewId(null);
+                    setSheet({ document: viewDocument });
+                  }
+                : undefined
+            }
+          />
           <DocumentSheet
             tripId={tripId}
             visible={sheet !== null}

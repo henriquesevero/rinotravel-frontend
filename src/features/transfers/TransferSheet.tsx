@@ -1,3 +1,4 @@
+import { useWatch } from 'react-hook-form';
 import { useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
@@ -130,16 +131,20 @@ export function TransferSheet({
     },
   });
 
+  const watched_origin = useWatch({ control: form.control, name: 'origin' }) as string;
+  const watched_destination = useWatch({ control: form.control, name: 'destination' }) as string;
+  const watched_mode = useWatch({ control: form.control, name: 'mode' });
+
   // Free typing waits until it settles; a place picked from the suggestions is used at once, so
   // choosing one never triggers a map for the half-typed text it replaced.
-  const originNow = form.watch('origin');
-  const destinationNow = form.watch('destination');
+  const originNow = watched_origin;
+  const destinationNow = watched_destination;
   const originTyped = useDebouncedValue(originNow, 700);
   const destinationTyped = useDebouncedValue(destinationNow, 700);
   const originText = originPick && originNow === originPick.name ? originNow : originTyped;
   const destinationText =
     destinationPick && destinationNow === destinationPick.name ? destinationNow : destinationTyped;
-  const modeValue = form.watch('mode');
+  const modeValue = watched_mode;
   const previewOrigin =
     originText.trim().length >= 3
       ? locationFromField(originText, originPick, transfer?.origin)
