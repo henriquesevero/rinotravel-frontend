@@ -375,6 +375,7 @@ export const en: Translation = {
     markDone: 'Complete',
   },
   places: {
+    pickedHint: 'Google place: {{address}}',
     title: 'Places',
     tabPlaces: 'Places',
     tabRestaurants: 'Restaurants',
@@ -447,6 +448,8 @@ export const en: Translation = {
     loadError: 'We could not load the bookings.',
   },
   transfers: {
+    mapPlaceholder: 'The route map shows up here once you pick an origin and a destination.',
+    showMap: 'Show on the map',
     title: 'Transfers',
     add: 'New transfer',
     edit: 'Edit transfer',
@@ -472,6 +475,8 @@ export const en: Translation = {
     loadError: 'We could not load the transfers.',
     detail: {
       mapTitle: 'Route map',
+      mapUnavailable:
+        'The map is not available right now. Use the button below to open it in your maps app.',
       duration: 'Duration',
       openGoogle: 'Open in Google Maps',
       openApple: 'Open in Apple Maps',

@@ -3,6 +3,7 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.2",
     "@expo/vector-icons": "^15.0.2",
     "@hookform/resolvers": "^5.9.1",
     "@react-native-community/datetimepicker": "9.1.0",
@@ -66,7 +67,7 @@
     "e2e": "npm run build:web:e2e && playwright test",
     "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
     "preview": "node scripts/preview.mjs dist 3000",
-    "build:web:e2e": "EXPO_PUBLIC_API_URL=http://localhost:18080 EXPO_PUBLIC_GOOGLE_MAPS_EMBED_KEY=e2e-fake-embed-key expo export --clear --platform web --output-dir dist-e2e"
+    "build:web:e2e": "EXPO_PUBLIC_API_URL=http://localhost:18080 expo export --clear --platform web --output-dir dist-e2e"
   },
   "private": true
 }

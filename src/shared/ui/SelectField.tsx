@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTranslation } from '@/core/i18n';
 
-import { radius, space, typography, useStyles, type Theme } from '../theme';
+import { FONT_FAMILY, radius, space, typography, useStyles, type Theme } from '../theme';
 import { FieldMessage } from './FieldMessage';
 import { Icon } from './Icon';
 import { ListRow } from './ListRow';
@@ -46,7 +46,13 @@ const createStyles = ({ colors }: Theme) =>
       paddingHorizontal: space.lg,
     },
     boxError: { borderColor: colors.danger },
-    value: { flex: 1, color: colors.text, ...typography.body },
+    value: {
+      flex: 1,
+      color: colors.text,
+      ...typography.body,
+      fontFamily: FONT_FAMILY.regular,
+      fontWeight: 'normal',
+    },
     list: { marginHorizontal: -space.xl },
   });
 

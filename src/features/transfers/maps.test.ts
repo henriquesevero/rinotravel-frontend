@@ -1,14 +1,6 @@
 import type { Transfer } from '@/core/api';
 
-import {
-  appleMapsUrl,
-  embedUrl,
-  googleMapsUrl,
-  pointOf,
-  routeOf,
-  shareMessage,
-  travelModeOf,
-} from './maps';
+import { appleMapsUrl, googleMapsUrl, pointOf, routeOf, shareMessage, travelModeOf } from './maps';
 
 function transfer(overrides: Partial<Transfer>): Transfer {
   return {
@@ -113,14 +105,6 @@ describe('links', () => {
     const url = googleMapsUrl({ ...route, origin: 'x&travelmode=driving#frag' });
     expect(new URL(url).searchParams.get('origin')).toBe('x&travelmode=driving#frag');
     expect(new URL(url).searchParams.get('travelmode')).toBe('transit');
-  });
-
-  it('builds the embed address with the key, the mode and the language', () => {
-    const url = new URL(embedUrl('KEY 1', route, 'pt-BR'));
-    expect(url.origin + url.pathname).toBe('https://www.google.com/maps/embed/v1/directions');
-    expect(url.searchParams.get('key')).toBe('KEY 1');
-    expect(url.searchParams.get('mode')).toBe('transit');
-    expect(url.searchParams.get('language')).toBe('pt-BR');
   });
 
   it('joins the share message without empty lines', () => {

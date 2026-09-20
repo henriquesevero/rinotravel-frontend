@@ -6,12 +6,7 @@ import { MODE_VISUAL } from '@/features/content/visuals';
 import { radius, space, useTheme } from '@/shared/theme';
 import { IconBadge, Text } from '@/shared/ui';
 
-import type { MapsRoute } from './maps';
-
-export interface RouteMapProps {
-  route: MapsRoute;
-  /** The route in the maps app; the detail sheet offers it as a button next to the map. */
-  googleUrl: string;
+export interface MapLinkCardProps {
   originLabel: string;
   destinationLabel: string;
   /** The kinds of transport along the way, drawn between the two ends. */
@@ -32,7 +27,7 @@ function Pin({ letter }: { letter: string }) {
  * Stands in for the interactive map on phones and wherever no embed key is configured: the two ends
  * joined by a dotted path with the kinds of transport on it, and a button that opens the real thing.
  */
-export function MapLinkCard({ originLabel, destinationLabel, modes }: RouteMapProps) {
+export function MapLinkCard({ originLabel, destinationLabel, modes }: MapLinkCardProps) {
   const { colors } = useTheme();
   const unique = [...new Set(modes)].slice(0, 3);
 

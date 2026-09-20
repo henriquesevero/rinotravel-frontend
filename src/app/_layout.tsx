@@ -1,3 +1,10 @@
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  useFonts,
+} from '@expo-google-fonts/inter';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { DefaultTheme, DarkTheme, Stack, ThemeProvider as NavigationTheme } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -16,6 +23,13 @@ void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [queryClient] = useState(createQueryClient);
+  // A failed font load must not lock the app: the system font is a fine fallback.
+  const [fontsLoaded, fontError] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+  });
 
   return (
     <SafeAreaProvider>
@@ -23,7 +37,7 @@ export default function RootLayout() {
         <ThemeProvider>
           <SessionProvider>
             <ConfirmProvider>
-              <RootNavigator />
+              <RootNavigator fontsReady={fontsLoaded || fontError !== null} />
             </ConfirmProvider>
           </SessionProvider>
         </ThemeProvider>
@@ -32,7 +46,7 @@ export default function RootLayout() {
   );
 }
 
-function RootNavigator() {
+function RootNavigator({ fontsReady }: { fontsReady: boolean }) {
   const { status } = useSession();
   const { scheme, colors } = useTheme();
 
@@ -40,7 +54,7 @@ function RootNavigator() {
   return (
     <NavigationTheme value={{ ...base, colors: { ...base.colors, background: colors.background } }}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      {status === 'loading' ? null : (
+      {status === 'loading' || !fontsReady ? null : (
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Protected guard={status === 'signedIn'}>
             <Stack.Screen name="(app)" />
@@ -50,7 +64,7 @@ function RootNavigator() {
           </Stack.Protected>
         </Stack>
       )}
-      <SplashOverlay ready={status !== 'loading'} />
+      <SplashOverlay ready={status !== 'loading' && fontsReady} />
     </NavigationTheme>
   );
 }

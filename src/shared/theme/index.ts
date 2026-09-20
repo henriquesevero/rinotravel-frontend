@@ -16,3 +16,4 @@ export {
   type Breakpoint,
 } from './use-breakpoint';
 export { tintColors, type Tint, type TintColors } from './tints';
+export { FONT_FAMILY, fontFamilyFor } from './fonts';

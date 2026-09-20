@@ -136,18 +136,25 @@ test.describe('trip content', () => {
     await expect(page.getByTestId('day-2027-04-03')).toContainText('Hotel Sakura');
   });
 
-  test('transfers: a transfer is saved and opens with its embedded route map', async ({
+  // A 1x1 PNG: the e2e API has no Google key, so the map endpoint is answered here instead.
+  const PNG = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64',
+  );
+
+  test('transfers: the form shows the route map and the saved transfer opens with it', async ({
     page,
     request,
-    context,
   }) => {
-    const errors = collectBrowserErrors(page);
-    // The bundle carries a fake embed key: answer Google's embed page ourselves and keep the address.
-    const embedded: string[] = [];
-    await context.route('https://www.google.com/maps/embed/**', async (route) => {
-      embedded.push(route.request().url());
-      await route.fulfill({ status: 200, contentType: 'text/html', body: '<p>map</p>' });
+    const maps: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/places/search*', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"items":[]}' }),
+    );
+    await page.route('**/api/v1/trips/*/transfers/map', async (route) => {
+      maps.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'image/png', body: PNG });
     });
+    const errors = collectBrowserErrors(page);
 
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
@@ -157,8 +164,16 @@ test.describe('trip content', () => {
     await page.getByTestId('add-transfer').click();
     await page.getByTestId('transfer-origin').fill('Aeroporto de Narita');
     await page.getByTestId('transfer-destination').fill('Hotel Sakura');
+    // Typed-in text may still be half-written, so the map waits for a tap.
+    await page.getByTestId('show-map').click();
+    await expect(page.getByTestId('route-map')).toBeVisible();
+    expect(maps.at(-1)).toMatchObject({
+      origin: { name: 'Aeroporto de Narita' },
+      destination: { name: 'Hotel Sakura' },
+      mode: 'SUBWAY',
+    });
 
-    // Saving opens the transfer, so the map is the first thing seen.
+    // Saving opens the transfer, and its map is the first thing seen.
     await page.getByTestId('transfer-sheet-submit').click();
     const detail = page.getByTestId('transfer-detail');
     await expect(detail).toBeVisible();
@@ -166,18 +181,80 @@ test.describe('trip content', () => {
       page.getByRole('dialog').getByRole('heading', { name: 'Aeroporto de Narita → Hotel Sakura' }),
     ).toBeVisible();
     await expect(detail.getByText('Metrô').first()).toBeVisible();
-
-    const map = page.locator('iframe[title="Mapa da rota"]');
-    await expect(map).toBeVisible();
-    await expect.poll(() => embedded.length).toBeGreaterThan(0);
-    const url = new URL(embedded[0] ?? '');
-    expect(url.pathname).toBe('/maps/embed/v1/directions');
-    expect(url.searchParams.get('key')).toBe('e2e-fake-embed-key');
-    expect(url.searchParams.get('origin')).toBe('Aeroporto de Narita');
-    expect(url.searchParams.get('destination')).toBe('Hotel Sakura');
-    expect(url.searchParams.get('mode')).toBe('transit');
-    // A blocked frame (CSP) or any other browser problem would show up here.
+    await expect(detail.getByTestId('route-map')).toBeVisible();
     expect(errors).toEqual([]);
+  });
+
+  test('transfers: origin and destination suggest Google places and keep their coordinates', async ({
+    page,
+    request,
+  }) => {
+    const places: Record<string, object> = {
+      Narita: {
+        providerId: 'p1',
+        name: 'Aeroporto de Narita',
+        address: 'Narita, Chiba, Japão',
+        latitude: 35.7719,
+        longitude: 140.3929,
+        types: [],
+      },
+      Sakura: {
+        providerId: 'p2',
+        name: 'Hotel Sakura',
+        address: 'Asakusa, Tóquio, Japão',
+        latitude: 35.7148,
+        longitude: 139.7967,
+        types: [],
+      },
+    };
+    await page.route('**/api/v1/places/search*', (route) => {
+      const q = new URL(route.request().url()).searchParams.get('q') ?? '';
+      const hit = Object.entries(places).find(([word]) => q.includes(word))?.[1];
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: hit ? [hit] : [] }),
+      });
+    });
+    const maps: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/trips/*/transfers/map', async (route) => {
+      maps.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'image/png', body: PNG });
+    });
+
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/transfers`);
+    await page.getByTestId('add-transfer').click();
+
+    await page.getByTestId('transfer-origin').fill('Narita');
+    const first = page.getByTestId('transfer-origin-suggestion-0');
+    await expect(first).toContainText('Aeroporto de Narita');
+    await expect(first).toContainText('Narita, Chiba, Japão');
+    await first.click();
+    await expect(page.getByTestId('transfer-origin')).toHaveValue('Aeroporto de Narita');
+    await expect(page.getByText('Local do Google: Narita, Chiba, Japão')).toBeVisible();
+
+    await page.getByTestId('transfer-destination').fill('Sakura');
+    await page.getByTestId('transfer-destination-suggestion-0').click();
+
+    // Both ends chosen from Google: the map appears by itself, with exact coordinates.
+    await expect(page.getByTestId('route-map')).toBeVisible();
+    expect(maps.at(-1)).toMatchObject({
+      origin: { name: 'Aeroporto de Narita', latitude: 35.7719, longitude: 140.3929 },
+      destination: { name: 'Hotel Sakura', latitude: 35.7148, longitude: 139.7967 },
+    });
+
+    await page.getByTestId('transfer-sheet-submit').click();
+    await expect(page.getByTestId('transfer-detail')).toBeVisible();
+    const saved = await (
+      await request.get(`${API}/api/v1/trips/${trip.id}/transfers`, {
+        headers: { Authorization: `Bearer ${ana.token}` },
+      })
+    ).json();
+    expect(saved.items[0].origin).toMatchObject({ name: 'Aeroporto de Narita', latitude: 35.7719 });
+    expect(saved.items[0].destination).toMatchObject({ name: 'Hotel Sakura', longitude: 139.7967 });
   });
 
   test('transfers: route suggestions degrade gracefully without a Google key', async ({

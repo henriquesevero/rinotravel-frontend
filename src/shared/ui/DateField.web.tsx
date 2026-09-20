@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import { radius, space, typography, useTheme } from '../theme';
+import { FONT_FAMILY, radius, space, typography, useTheme } from '../theme';
 import type { DateFieldProps } from './DateField.types';
 import { FieldMessage } from './FieldMessage';
 import { Text } from './Text';
@@ -29,7 +29,7 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
           backgroundColor: colors.surface,
           color: colors.text,
           colorScheme: scheme,
-          fontFamily: 'inherit',
+          fontFamily: FONT_FAMILY.regular,
           fontSize: typography.body.fontSize,
         }}
       />

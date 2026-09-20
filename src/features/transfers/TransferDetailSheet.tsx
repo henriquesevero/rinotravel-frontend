@@ -11,10 +11,11 @@ import { space, useTheme } from '@/shared/theme';
 import { Badge, Banner, Button, IconBadge, Sheet, Text } from '@/shared/ui';
 import { DIALOG_BREAKPOINT } from '@/shared/ui/Sheet';
 
-import { appleMapsUrl, googleMapsUrl, routeOf, shareMessage } from './maps';
+import { appleMapsUrl, endsOf, googleMapsUrl, routeOf, shareMessage } from './maps';
 import { RouteMap } from './RouteMap';
 
 interface TransferDetailSheetProps {
+  tripId: string;
   visible: boolean;
   onClose: () => void;
   transfer: Transfer | undefined;
@@ -41,6 +42,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 /** Everything about one transfer: the map with the route, the steps, and ways to take it with you. */
 export function TransferDetailSheet({
+  tripId,
   visible,
   onClose,
   transfer,
@@ -54,6 +56,7 @@ export function TransferDetailSheet({
   const locale = currentLocale();
 
   const route = transfer ? routeOf(transfer) : null;
+  const ends = transfer ? endsOf(transfer) : null;
   const originName = placeName(transfer?.origin);
   const destinationName = placeName(transfer?.destination);
   const title = transfer ? `${originName} → ${destinationName}` : '';
@@ -85,13 +88,17 @@ export function TransferDetailSheet({
 
   const mapColumn = route ? (
     <View style={styles.column}>
-      <RouteMap
-        route={route}
-        googleUrl={googleMapsUrl(route)}
-        originLabel={originName}
-        destinationLabel={destinationName}
-        modes={transfer?.legs.map((leg) => leg.mode) ?? []}
-      />
+      {ends ? (
+        <RouteMap
+          tripId={tripId}
+          origin={ends.origin}
+          destination={ends.destination}
+          mode={ends.mode}
+          originLabel={originName}
+          destinationLabel={destinationName}
+          modes={transfer?.legs.map((leg) => leg.mode) ?? []}
+        />
+      ) : null}
       <View style={[styles.actions, !wide && styles.actionsNarrow]}>
         <Button
           testID="open-google-maps"

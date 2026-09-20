@@ -380,6 +380,7 @@ export const ptBR = {
     markDone: 'Concluir',
   },
   places: {
+    pickedHint: 'Local do Google: {{address}}',
     title: 'Lugares',
     tabPlaces: 'Lugares',
     tabRestaurants: 'Restaurantes',
@@ -452,6 +453,8 @@ export const ptBR = {
     loadError: 'Não foi possível carregar as reservas.',
   },
   transfers: {
+    mapPlaceholder: 'O mapa da rota aparece aqui quando você escolher a origem e o destino.',
+    showMap: 'Ver no mapa',
     title: 'Deslocamentos',
     add: 'Novo deslocamento',
     edit: 'Editar deslocamento',
@@ -477,6 +480,8 @@ export const ptBR = {
     loadError: 'Não foi possível carregar os deslocamentos.',
     detail: {
       mapTitle: 'Mapa da rota',
+      mapUnavailable:
+        'O mapa não está disponível agora. Use o botão abaixo para abrir no app de mapas.',
       duration: 'Duração',
       openGoogle: 'Abrir no Google Maps',
       openApple: 'Abrir no Apple Maps',

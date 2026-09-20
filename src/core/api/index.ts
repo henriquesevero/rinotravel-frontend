@@ -1,4 +1,4 @@
-export { api, configureApi, unwrap } from './client';
+export { api, configureApi, fetchImage, unwrap } from './client';
 export {
   ApiError,
   NetworkError,

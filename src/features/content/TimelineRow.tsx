@@ -29,11 +29,11 @@ export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   return (
     <View style={styles.row} testID={`timeline-${entry.kind}-${entry.id}`}>
       <View style={styles.time}>
-        <Text variant="subhead" style={{ fontWeight: '700' }}>
+        <Text variant="subhead" numeric style={{ fontWeight: '700' }}>
           {time}
         </Text>
         {end && end !== time ? (
-          <Text variant="caption" tone="secondary">
+          <Text variant="caption" tone="secondary" numeric>
             {end}
           </Text>
         ) : null}

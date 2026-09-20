@@ -61,3 +61,5 @@ export type DocumentVisibility = Schemas['DocumentVisibility'];
 export type DocumentPatch = Schemas['DocumentPatch'];
 export type InitDocumentRequest = Schemas['InitDocumentRequest'];
 export type SignedRequest = Schemas['SignedRequest'];
+
+export type MapRequest = Schemas['MapRequest'];

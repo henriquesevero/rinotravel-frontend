@@ -102,6 +102,7 @@ export function TransfersScreen({ tripId }: { tripId: string }) {
               </Card>
             )}
             <TransferDetailSheet
+              tripId={tripId}
               visible={detailId !== null}
               onClose={() => setDetailId(null)}
               transfer={detail}

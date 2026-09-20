@@ -556,6 +556,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/transfers/map": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Desenha o mapa da rota A→B, ainda sem o deslocamento salvo. Só existe quando o servidor tem GOOGLE_MAPS_API_KEY
+         * @description Devolve uma imagem PNG com os dois pontos e, quando o Google acha a rota, o traçado. A imagem é feita na hora e
+         *     nada dela é guardado no servidor. Qualquer membro da viagem (inclusive LEITOR) pode pedir.
+         */
+        post: operations["renderTransferMap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/documents": {
         parameters: {
             query?: never;
@@ -1266,6 +1289,12 @@ export interface components {
             destination: components["schemas"]["Location"];
             mode?: components["schemas"]["TransferMode"];
             departureAt?: components["schemas"]["ZonedTime"];
+            language?: string;
+        };
+        MapRequest: {
+            origin: components["schemas"]["Location"];
+            destination: components["schemas"]["Location"];
+            mode?: components["schemas"]["TransferMode"];
             language?: string;
         };
         RouteOption: {
@@ -3017,6 +3046,38 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["Unprocessable"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    renderTransferMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MapRequest"];
+            };
+        };
+        responses: {
+            /** @description A imagem do mapa (cache privado de 5 minutos). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
             503: components["responses"]["Unavailable"];
         };
     };

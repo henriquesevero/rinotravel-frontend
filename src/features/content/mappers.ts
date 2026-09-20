@@ -1,4 +1,4 @@
-import type { Location, Money } from '@/core/api';
+import type { Location, Money, PlaceCandidate } from '@/core/api';
 import { minorToInput, parseMoneyInput } from '@/core/datetime/money';
 
 /** An empty name and address means "no location", which the API expects as null on updates. */
@@ -53,4 +53,28 @@ export function splitList(text: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter((item) => item !== '');
+}
+
+/** What a person gets by choosing a suggestion: the place with the address and coordinates Google knows. */
+export function candidateToLocation(candidate: PlaceCandidate): Location {
+  return {
+    name: candidate.name,
+    ...(candidate.address ? { address: candidate.address } : {}),
+    ...(candidate.latitude !== undefined ? { latitude: candidate.latitude } : {}),
+    ...(candidate.longitude !== undefined ? { longitude: candidate.longitude } : {}),
+  };
+}
+
+/**
+ * A place field holds text, and optionally a suggestion the person picked for it. The picked place
+ * (with coordinates) is used only while the text still says what was picked.
+ */
+export function locationFromField(
+  text: string,
+  pick: PlaceCandidate | null,
+  previous?: Location | null,
+): Location | null {
+  const clean = text.trim();
+  if (pick && clean === pick.name) return candidateToLocation(pick);
+  return mergeLocation(clean, '', previous);
 }

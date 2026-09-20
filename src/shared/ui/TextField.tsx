@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 
 import { useTranslation } from '@/core/i18n';
 
-import { radius, space, typography, useStyles, useTheme, type Theme } from '../theme';
+import { FONT_FAMILY, radius, space, typography, useStyles, useTheme, type Theme } from '../theme';
 import { FieldMessage } from './FieldMessage';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -42,6 +42,8 @@ const createStyles = ({ colors }: Theme) =>
       paddingRight: space.lg,
       color: colors.text,
       ...typography.body,
+      fontFamily: FONT_FAMILY.regular,
+      fontWeight: 'normal',
     },
     toggle: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   });

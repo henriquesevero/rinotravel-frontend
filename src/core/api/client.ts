@@ -48,3 +48,41 @@ export async function unwrap<T>(result: Promise<Result<T>>): Promise<T> {
   if (!response.ok) throw toApiError(response, error);
   return data as T;
 }
+
+function blobToDataUri(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the image'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+/**
+ * POSTs JSON and returns the image the server drew, as a data URI an <Image> can show on every
+ * platform. Images cannot carry the bearer token themselves, so they are fetched here.
+ */
+export async function fetchImage(
+  path: string,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<string> {
+  const token = hooks.getToken();
+  let response: Response;
+  try {
+    response = await fetch(env.apiUrl + path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body),
+      ...(signal ? { signal } : {}),
+    });
+  } catch (cause) {
+    if (cause instanceof Error && cause.name === 'AbortError') throw cause;
+    throw new NetworkError({ cause });
+  }
+  if (!response.ok) throw toApiError(response, await response.json().catch(() => null));
+  return blobToDataUri(await response.blob());
+}

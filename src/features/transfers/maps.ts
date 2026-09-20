@@ -53,9 +53,19 @@ export function appleMapsUrl(route: MapsRoute): string {
   return `https://maps.apple.com/?saddr=${enc(route.origin)}&daddr=${enc(route.destination)}&dirflg=${APPLE_FLAG[route.mode]}`;
 }
 
-/** The interactive map shown inside the app: Google draws the route, so nothing is stored here. */
-export function embedUrl(key: string, route: MapsRoute, language: string): string {
-  return `https://www.google.com/maps/embed/v1/directions?key=${enc(key)}&origin=${enc(route.origin)}&destination=${enc(route.destination)}&mode=${route.mode}&language=${enc(language)}`;
+/** The two ends as places (with coordinates when known) and the mode that best describes the trip. */
+export function endsOf(transfer: Transfer): {
+  origin: Location;
+  destination: Location;
+  mode: TransferMode | undefined;
+} | null {
+  const first = transfer.legs[0];
+  const last = transfer.legs[transfer.legs.length - 1];
+  const origin = transfer.origin ?? first?.origin;
+  const destination = transfer.destination ?? last?.destination;
+  if (!pointOf(origin) || !pointOf(destination) || !origin || !destination) return null;
+  const modes = transfer.legs.map((leg) => leg.mode);
+  return { origin, destination, mode: modes.find((mode) => mode !== 'WALKING') ?? modes[0] };
 }
 
 export function shareMessage(title: string, detail: string | undefined, url: string): string {

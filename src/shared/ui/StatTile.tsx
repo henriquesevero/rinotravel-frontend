@@ -38,7 +38,7 @@ export function StatTile({ icon, value, label, onPress, testID }: StatTileProps)
       <View style={styles.badge}>
         <Icon name={icon} size={20} tone="accent" />
       </View>
-      <Text variant="title" heading>
+      <Text variant="title" heading numeric>
         {value}
       </Text>
       <Text variant="footnote" tone="secondary">
