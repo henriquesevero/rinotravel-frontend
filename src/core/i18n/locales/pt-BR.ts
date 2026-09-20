@@ -86,6 +86,8 @@ export const ptBR = {
     object_not_found: 'O arquivo não foi encontrado.',
     place_not_found: 'Lugar não encontrado.',
     provider_unavailable: 'O serviço de mapas está indisponível agora. Tente em instantes.',
+    provider_quota_exhausted:
+      'O limite mensal de consultas ao Google foi atingido e volta no próximo mês. Preencha manualmente.',
     size_mismatch: 'O tamanho do arquivo não confere com o informado.',
     too_many_mutations:
       'Há alterações demais para enviar de uma vez. Elas serão enviadas em partes.',

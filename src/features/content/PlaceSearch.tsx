@@ -5,6 +5,7 @@ import type { PlaceCandidate } from '@/core/api';
 import { hasCode } from '@/core/api';
 import { useDebouncedValue } from '@/core/hooks/use-debounced-value';
 import { useTranslation } from '@/core/i18n';
+import { useDescribeError } from '@/core/i18n/describe-error';
 import { usePlaceSearch } from '@/features/places/hooks';
 import { space } from '@/shared/theme';
 import { Card, ListRow, Text, TextField } from '@/shared/ui';
@@ -20,9 +21,14 @@ export function PlaceSearch({ onPick, testID }: PlaceSearchProps) {
   const [text, setText] = useState('');
   const query = useDebouncedValue(text);
   const search = usePlaceSearch(query);
-  const unavailable =
-    search.isError &&
-    (hasCode(search.error, 'route_not_found') || hasCode(search.error, 'provider_unavailable'));
+  const describe = useDescribeError();
+  // No key on the server, an outage and a spent monthly limit all mean "type it in yourself"; only the
+  // last one is worth explaining, because it will not fix itself until next month.
+  const note = !search.isError
+    ? undefined
+    : hasCode(search.error, 'provider_quota_exhausted')
+      ? describe(search.error)
+      : t('places.searchUnavailable');
   const results = search.data ?? [];
 
   return (
@@ -36,9 +42,9 @@ export function PlaceSearch({ onPick, testID }: PlaceSearchProps) {
         onChangeText={setText}
         autoCorrect={false}
       />
-      {unavailable ? (
+      {note ? (
         <Text variant="footnote" tone="secondary">
-          {t('places.searchUnavailable')}
+          {note}
         </Text>
       ) : null}
       {search.isSuccess && results.length === 0 ? (

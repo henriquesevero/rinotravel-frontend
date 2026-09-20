@@ -686,7 +686,7 @@ export interface components {
          * @description Código estável do erro; use-o para traduzir a mensagem.
          * @enum {string}
          */
-        ErrorCode: "route_not_found" | "malformed_json" | "body_too_large" | "invalid_id" | "unauthenticated" | "invalid_token" | "invalid_credentials" | "invalid_registration_code" | "email_taken" | "validation_failed" | "rate_limited" | "internal_error" | "user_not_found" | "trip_not_found" | "trip_id_taken" | "version_conflict" | "empty_patch" | "forbidden" | "member_exists" | "member_not_found" | "owner_locked" | "owner_assignment" | "already_owner" | "base_version_required" | "day_exists" | "day_not_empty" | "document_not_found" | "entity_deleted" | "invalid_cursor" | "invalid_lat" | "invalid_lng" | "invalid_limit" | "invalid_link" | "invalid_mutation" | "invalid_payload" | "item_not_found" | "link_expired" | "mutation_id_reused" | "object_not_found" | "place_not_found" | "provider_unavailable" | "size_mismatch" | "too_many_mutations" | "unknown_entity" | "unsupported_operation" | "upload_mismatch" | "upload_missing";
+        ErrorCode: "route_not_found" | "malformed_json" | "body_too_large" | "invalid_id" | "unauthenticated" | "invalid_token" | "invalid_credentials" | "invalid_registration_code" | "email_taken" | "validation_failed" | "rate_limited" | "internal_error" | "user_not_found" | "trip_not_found" | "trip_id_taken" | "version_conflict" | "empty_patch" | "forbidden" | "member_exists" | "member_not_found" | "owner_locked" | "owner_assignment" | "already_owner" | "base_version_required" | "day_exists" | "day_not_empty" | "document_not_found" | "entity_deleted" | "invalid_cursor" | "invalid_lat" | "invalid_lng" | "invalid_limit" | "invalid_link" | "invalid_mutation" | "invalid_payload" | "item_not_found" | "link_expired" | "mutation_id_reused" | "object_not_found" | "place_not_found" | "provider_unavailable" | "provider_quota_exhausted" | "size_mismatch" | "too_many_mutations" | "unknown_entity" | "unsupported_operation" | "upload_mismatch" | "upload_missing";
         Problem: {
             status: number;
             title: string;
@@ -1473,7 +1473,7 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
-        /** @description O provedor externo (Google) está indisponível ou não respondeu a tempo. */
+        /** @description O provedor externo (Google) está indisponível, não respondeu a tempo, ou o limite mensal de chamadas foi atingido (`provider_quota_exhausted`). */
         Unavailable: {
             headers: {
                 [name: string]: unknown;
@@ -2548,7 +2548,7 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             422: components["responses"]["Unprocessable"];
             429: components["responses"]["TooManyRequests"];
-            502: components["responses"]["Unavailable"];
+            503: components["responses"]["Unavailable"];
         };
     };
     listFlights: {
@@ -3017,7 +3017,7 @@ export interface operations {
             403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
             422: components["responses"]["Unprocessable"];
-            502: components["responses"]["Unavailable"];
+            503: components["responses"]["Unavailable"];
         };
     };
     listDocuments: {

@@ -83,6 +83,8 @@ export const en: Translation = {
     object_not_found: 'The file was not found.',
     place_not_found: 'Place not found.',
     provider_unavailable: 'The maps service is unavailable right now. Try again shortly.',
+    provider_quota_exhausted:
+      'The monthly Google lookup limit was reached and resets next month. Fill it in manually.',
     size_mismatch: 'The file size does not match what was declared.',
     too_many_mutations: 'There are too many changes to send at once. They will be sent in batches.',
     unknown_entity: 'Unknown record type.',
