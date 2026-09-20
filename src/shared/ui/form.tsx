@@ -5,6 +5,7 @@ import { useTranslation } from '@/core/i18n';
 import { DateField } from './DateField';
 import { SelectField, type SelectOption } from './SelectField';
 import { TextField, type TextFieldProps } from './TextField';
+import { TimeField } from './TimeField';
 
 /** Zod schemas emit i18n keys (`validation.*`); server field errors arrive as plain text. */
 export function useFieldMessage() {
@@ -105,6 +106,33 @@ export function FormDateField<T extends FieldValues>({
           value={(field.value as string | undefined) ?? ''}
           onChange={field.onChange}
           error={message(fieldState.error?.message)}
+        />
+      )}
+    />
+  );
+}
+
+export function FormTimeField<T extends FieldValues>({
+  control,
+  name,
+  label,
+  hint,
+  testID,
+}: BaseProps<T> & { hint?: string; testID?: string }) {
+  const message = useFieldMessage();
+  return (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <TimeField
+          testID={testID}
+          label={label}
+          value={(field.value as string | undefined) ?? ''}
+          onChangeText={field.onChange}
+          onBlur={field.onBlur}
+          error={message(fieldState.error?.message)}
+          {...(hint ? { hint } : {})}
         />
       )}
     />

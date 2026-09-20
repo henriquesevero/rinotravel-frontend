@@ -7,7 +7,7 @@ import {
   createTripViaApi,
   openNewTrip,
   registerViaApi,
-  signInViaUi,
+  signInToTrips,
 } from './support';
 
 async function fillTripForm(page: Page) {
@@ -30,7 +30,7 @@ test.describe('trips and members', () => {
     const errors = collectBrowserErrors(page);
     const ana = await registerViaApi(request, 'Ana');
     const bia = await registerViaApi(request, 'Bia');
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
 
     await expect(
       page.getByText('Sua próxima viagem começa aqui').filter({ visible: true }),
@@ -76,7 +76,7 @@ test.describe('trips and members', () => {
   }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
 
     const card = page.getByTestId(`trip-${trip.id}`);
     await expect(card).toContainText('Japão 2027');
@@ -90,7 +90,7 @@ test.describe('trips and members', () => {
   test('a deep link survives a page reload', async ({ page, request }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
     await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
 
     await page.goto(`/trips/${trip.id}/members`);
@@ -106,7 +106,7 @@ test.describe('trips and members', () => {
     const trip = await createTripViaApi(request, ana);
     await addMemberViaApi(request, ana, trip.id, bia, 'VIEWER');
 
-    await signInViaUi(page, bia);
+    await signInToTrips(page, bia);
     await page.getByTestId(`trip-${trip.id}`).click();
 
     await expect(page.getByRole('heading', { name: 'Japão 2027' })).toBeVisible();
@@ -126,7 +126,7 @@ test.describe('trips and members', () => {
     const trip = await createTripViaApi(request, ana);
     await addMemberViaApi(request, ana, trip.id, bia, 'MEMBER');
 
-    await signInViaUi(page, bia);
+    await signInToTrips(page, bia);
     await page.getByTestId(`trip-${trip.id}`).click();
     await page.getByTestId('leave-trip').click();
     await page.getByRole('button', { name: 'Sair', exact: true }).click();
@@ -146,7 +146,7 @@ test.describe('trips and members', () => {
     const trip = await createTripViaApi(request, ana);
     await addMemberViaApi(request, ana, trip.id, bia, 'MEMBER');
 
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
     await page.getByTestId(`trip-${trip.id}`).click();
     await page.getByTestId('transfer-ownership').click();
     await page.getByRole('button', { name: new RegExp(bia.email) }).click();
@@ -161,7 +161,7 @@ test.describe('trips and members', () => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
 
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
     await page.getByTestId(`trip-${trip.id}`).click();
     await page.getByTestId('delete-trip').click();
     await page.getByRole('button', { name: 'Excluir', exact: true }).click();
@@ -181,7 +181,7 @@ test.describe('trips and members', () => {
   }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
     await page.getByTestId(`trip-${trip.id}`).click();
     await page.getByTestId('edit-trip').click();
 
@@ -213,7 +213,7 @@ test.describe('trips and members', () => {
     await page.emulateMedia({ colorScheme: 'dark' });
     const ana = await registerViaApi(request, 'Ana');
     await createTripViaApi(request, ana);
-    await signInViaUi(page, ana);
+    await signInToTrips(page, ana);
 
     await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
     await page.screenshot({ path: 'test-results/trips-dark.png' });

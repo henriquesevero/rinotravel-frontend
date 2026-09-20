@@ -4,9 +4,21 @@ import type { IconName } from '@/shared/ui';
 
 const TRIP_PATH = /^\/trips\/([0-9a-f-]{36})(\/.*)?$/;
 
+type NavLabel =
+  | 'nav.dashboard'
+  | 'nav.trips'
+  | 'nav.newTrip'
+  | 'nav.overview'
+  | 'nav.itinerary'
+  | 'nav.places'
+  | 'nav.bookings'
+  | 'nav.transfers'
+  | 'nav.documents'
+  | 'nav.members';
+
 export interface NavItem {
   key: string;
-  labelKey: 'nav.trips' | 'nav.newTrip' | 'nav.overview' | 'nav.members';
+  labelKey: NavLabel;
   icon: IconName;
   activeIcon: IconName;
   href: Href;
@@ -23,22 +35,33 @@ export interface NavState {
   go: (href: Href) => void;
 }
 
+/** How many trip sections fit in the phone tab bar; the rest live under "More". */
+export const PHONE_TRIP_TABS = 4;
+
 export function useNavState(): NavState {
   const pathname = usePathname();
   const router = useRouter();
 
   const match = TRIP_PATH.exec(pathname);
   const tripId = match?.[1] ?? null;
-  const tripSubpath = match?.[2] ?? '';
+  const subpath = match?.[2] ?? '';
 
   const main: NavItem[] = [
+    {
+      key: 'dashboard',
+      labelKey: 'nav.dashboard',
+      icon: 'grid-outline',
+      activeIcon: 'grid',
+      href: '/',
+      active: pathname === '/',
+    },
     {
       key: 'trips',
       labelKey: 'nav.trips',
       icon: 'airplane-outline',
       activeIcon: 'airplane',
-      href: '/',
-      active: pathname === '/' || (pathname.startsWith('/trips/') && pathname !== '/trips/new'),
+      href: '/trips',
+      active: pathname === '/trips' || (tripId !== null && pathname.startsWith('/trips/')),
     },
     {
       key: 'new',
@@ -50,24 +73,82 @@ export function useNavState(): NavState {
     },
   ];
 
+  const section = (
+    key: string,
+    labelKey: NavLabel,
+    icon: IconName,
+    activeIcon: IconName,
+    path: '' | '/itinerary' | '/places' | '/bookings' | '/transfers' | '/documents' | '/members',
+    isActive: boolean,
+  ): NavItem => ({
+    key,
+    labelKey,
+    icon,
+    activeIcon,
+    href: tripId
+      ? ({ pathname: `/trips/[id]${path}`, params: { id: tripId } } as Href)
+      : ('/' as Href),
+    active: isActive,
+  });
+
   const trip: NavItem[] = tripId
     ? [
-        {
-          key: 'overview',
-          labelKey: 'nav.overview',
-          icon: 'home-outline',
-          activeIcon: 'home',
-          href: { pathname: '/trips/[id]', params: { id: tripId } },
-          active: tripSubpath === '' || tripSubpath === '/edit',
-        },
-        {
-          key: 'members',
-          labelKey: 'nav.members',
-          icon: 'people-outline',
-          activeIcon: 'people',
-          href: { pathname: '/trips/[id]/members', params: { id: tripId } },
-          active: tripSubpath === '/members',
-        },
+        section(
+          'overview',
+          'nav.overview',
+          'home-outline',
+          'home',
+          '',
+          subpath === '' || subpath === '/edit',
+        ),
+        section(
+          'itinerary',
+          'nav.itinerary',
+          'calendar-outline',
+          'calendar',
+          '/itinerary',
+          subpath === '/itinerary',
+        ),
+        section(
+          'places',
+          'nav.places',
+          'location-outline',
+          'location',
+          '/places',
+          subpath === '/places',
+        ),
+        section(
+          'bookings',
+          'nav.bookings',
+          'ticket-outline',
+          'ticket',
+          '/bookings',
+          subpath === '/bookings',
+        ),
+        section(
+          'transfers',
+          'nav.transfers',
+          'swap-horizontal-outline',
+          'swap-horizontal',
+          '/transfers',
+          subpath === '/transfers',
+        ),
+        section(
+          'documents',
+          'nav.documents',
+          'folder-open-outline',
+          'folder-open',
+          '/documents',
+          subpath === '/documents',
+        ),
+        section(
+          'members',
+          'nav.members',
+          'people-outline',
+          'people',
+          '/members',
+          subpath === '/members',
+        ),
       ]
     : [];
 

@@ -188,6 +188,496 @@ export interface paths {
         patch: operations["changeMemberRole"];
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/itinerary-days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os dias do roteiro */
+        get: operations["listItineraryDays"];
+        put?: never;
+        /** Cria os dias do roteiro (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createItineraryDay"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/itinerary-days/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getItineraryDay"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteItineraryDay"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateItineraryDay"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/itinerary-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os itens do roteiro */
+        get: operations["listItineraryItems"];
+        put?: never;
+        /** Cria os itens do roteiro (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createItineraryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/itinerary-items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getItineraryItem"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteItineraryItem"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateItineraryItem"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/itinerary-items/from-place": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agenda um lugar da lista de desejos como item do roteiro */
+        post: operations["scheduleItemFromPlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/itinerary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Linha do tempo unificada por dia (itens, voos, hotéis, transfers e reservas), com horários locais */
+        get: operations["getItinerary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/places": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os lugares (lista de desejos) */
+        get: operations["listPlaces"];
+        put?: never;
+        /** Cria os lugares (lista de desejos) (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createPlace"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/places/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getPlace"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deletePlace"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updatePlace"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/restaurants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os restaurantes */
+        get: operations["listRestaurants"];
+        put?: never;
+        /** Cria os restaurante (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createRestaurant"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/restaurants/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getRestaurant"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteRestaurant"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateRestaurant"];
+        trace?: never;
+    };
+    "/api/v1/places/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Busca lugares no Google Places. Só existe quando o servidor tem GOOGLE_MAPS_API_KEY */
+        get: operations["searchPlaces"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/flights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os voos */
+        get: operations["listFlights"];
+        put?: never;
+        /** Cria os voo (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createFlight"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/flights/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getFlight"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteFlight"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateFlight"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/hotels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista as hospedagens */
+        get: operations["listHotels"];
+        put?: never;
+        /** Cria as hospedagen (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createHotel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/hotels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getHotel"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteHotel"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateHotel"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/transfers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os deslocamentos */
+        get: operations["listTransfers"];
+        put?: never;
+        /** Cria os deslocamento (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/transfers/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getTransfer"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteTransfer"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateTransfer"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/transfers/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Pede rotas ao Google Routes. Cada opção tem o formato de um create, para o cliente escolher e enviar sem alterar */
+        post: operations["planTransfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os documentos visíveis ao usuário (privados só aparecem ao dono) */
+        get: operations["listDocuments"];
+        put?: never;
+        /** Registra um documento PENDING e devolve o link assinado para enviar o arquivo */
+        post: operations["initDocumentUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/documents/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Metadados do documento */
+        get: operations["getDocument"];
+        put?: never;
+        post?: never;
+        /** Remove o documento e apaga o arquivo */
+        delete: operations["deleteDocument"];
+        options?: never;
+        head?: never;
+        /** Renomeia, muda tipo, visibilidade ou vínculo. Exige `baseVersion` */
+        patch: operations["updateDocument"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/documents/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirma o upload. O servidor confere tamanho e SHA-256 antes de marcar como READY */
+        post: operations["completeDocumentUpload"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/documents/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Devolve um link assinado e de curta duração para baixar o arquivo */
+        get: operations["downloadDocument"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/storage/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        /** Entrega o arquivo. A autorização é o próprio token assinado, sem bearer */
+        get: operations["downloadDocumentContent"];
+        /** Recebe o arquivo (corpo binário). A autorização é o próprio token assinado, sem bearer */
+        put: operations["uploadDocumentContent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Mudanças da viagem desde o cursor (ausente = carga inicial), incluindo tombstones */
+        get: operations["pullChanges"];
+        put?: never;
+        /** Aplica mutações feitas offline. Cada uma tem resultado próprio e reenviar o mesmo mutationId é seguro */
+        post: operations["pushMutations"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -196,7 +686,7 @@ export interface components {
          * @description Código estável do erro; use-o para traduzir a mensagem.
          * @enum {string}
          */
-        ErrorCode: "route_not_found" | "malformed_json" | "body_too_large" | "invalid_id" | "unauthenticated" | "invalid_token" | "invalid_credentials" | "invalid_registration_code" | "email_taken" | "validation_failed" | "rate_limited" | "internal_error" | "user_not_found" | "trip_not_found" | "trip_id_taken" | "version_conflict" | "empty_patch" | "forbidden" | "member_exists" | "member_not_found" | "owner_locked" | "owner_assignment" | "already_owner";
+        ErrorCode: "route_not_found" | "malformed_json" | "body_too_large" | "invalid_id" | "unauthenticated" | "invalid_token" | "invalid_credentials" | "invalid_registration_code" | "email_taken" | "validation_failed" | "rate_limited" | "internal_error" | "user_not_found" | "trip_not_found" | "trip_id_taken" | "version_conflict" | "empty_patch" | "forbidden" | "member_exists" | "member_not_found" | "owner_locked" | "owner_assignment" | "already_owner" | "base_version_required" | "day_exists" | "day_not_empty" | "document_not_found" | "entity_deleted" | "invalid_cursor" | "invalid_lat" | "invalid_lng" | "invalid_limit" | "invalid_link" | "invalid_mutation" | "invalid_payload" | "item_not_found" | "link_expired" | "mutation_id_reused" | "object_not_found" | "place_not_found" | "provider_unavailable" | "size_mismatch" | "too_many_mutations" | "unknown_entity" | "unsupported_operation" | "upload_mismatch" | "upload_missing";
         Problem: {
             status: number;
             title: string;
@@ -342,6 +832,569 @@ export interface components {
         ChangeRoleRequest: {
             role: components["schemas"]["AssignableRole"];
         };
+        /** @description Data e hora locais no fuso informado. O instante absoluto é derivado dos dois campos. */
+        ZonedTime: {
+            /** @example 2027-04-10T09:30:00 */
+            dateTime: string;
+            /**
+             * @description Nome IANA do fuso.
+             * @example Asia/Tokyo
+             */
+            timezone: string;
+        };
+        Location: {
+            name?: string;
+            address?: string;
+            latitude?: number;
+            longitude?: number;
+        };
+        /** @description Valor em unidades menores da moeda (centavos) e código ISO 4217. */
+        Money: {
+            /** Format: int64 */
+            amount: number;
+            /** @example JPY */
+            currency: string;
+        };
+        ResourceMeta: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            tripId: string;
+            /**
+             * Format: int64
+             * @description Enviada de volta como `baseVersion` para edições.
+             */
+            version: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        BaseVersion: {
+            /** Format: int64 */
+            baseVersion: number;
+        };
+        /**
+         * @description Estado de um item planejado.
+         * @enum {string}
+         */
+        PlanStatus: "PLANNED" | "CONFIRMED" | "COMPLETED" | "SKIPPED";
+        /**
+         * @description Categoria de um item do roteiro.
+         * @enum {string}
+         */
+        ItineraryCategory: "RESTAURANT" | "ATTRACTION" | "SHOPPING" | "FREE_TIME" | "OTHER";
+        /**
+         * @description Categoria de um lugar.
+         * @enum {string}
+         */
+        PlaceCategory: "ATTRACTION" | "RESTAURANT" | "SHOPPING" | "OTHER";
+        /**
+         * @description Prioridade na lista de desejos.
+         * @enum {string}
+         */
+        Priority: "HIGH" | "MEDIUM" | "LOW";
+        /**
+         * @description Estado de um restaurante.
+         * @enum {string}
+         */
+        RestaurantStatus: "WISHLIST" | "PLANNED" | "RESERVED" | "VISITED";
+        /**
+         * @description Meio de transporte.
+         * @enum {string}
+         */
+        TransferMode: "WALKING" | "SUBWAY" | "TRAIN" | "BUS" | "TAXI" | "RIDESHARE" | "CAR" | "OTHER";
+        /**
+         * @description Tipo de documento.
+         * @enum {string}
+         */
+        DocumentType: "TICKET" | "RESERVATION" | "BOARDING_PASS" | "HOTEL" | "INSURANCE" | "RECEIPT" | "PASSPORT" | "OTHER";
+        /**
+         * @description PENDING até o upload ser confirmado; depois READY.
+         * @enum {string}
+         */
+        DocumentStatus: "PENDING" | "READY";
+        /**
+         * @description TRIP é visível a todos os membros; PRIVATE só ao dono.
+         * @enum {string}
+         */
+        DocumentVisibility: "TRIP" | "PRIVATE";
+        ItineraryDay: components["schemas"]["ResourceMeta"] & {
+            /** Format: date */
+            date: string;
+            title?: string;
+            notes?: string;
+        };
+        ItineraryDayCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            /** Format: date */
+            date: string;
+            title?: string;
+            notes?: string;
+        };
+        ItineraryDayPatch: components["schemas"]["BaseVersion"] & {
+            title?: string;
+            notes?: string;
+        };
+        ItineraryItem: components["schemas"]["ResourceMeta"] & {
+            /** Format: uuid */
+            dayId: string;
+            title: string;
+            description?: string;
+            category: components["schemas"]["ItineraryCategory"];
+            status: components["schemas"]["PlanStatus"];
+            start?: components["schemas"]["ZonedTime"];
+            end?: components["schemas"]["ZonedTime"];
+            location?: components["schemas"]["Location"];
+            estimatedDurationMinutes?: number;
+            /** @description Derivado. O intervalo entre início e fim; sem fim, a estimativa. */
+            durationMinutes?: number;
+            estimatedCost?: components["schemas"]["Money"];
+            notes?: string;
+            position: number;
+            placeId?: string;
+        };
+        ItineraryItemCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            /** Format: uuid */
+            dayId: string;
+            title: string;
+            description?: string;
+            category?: components["schemas"]["ItineraryCategory"];
+            status?: components["schemas"]["PlanStatus"];
+            notes?: string;
+            placeId?: string;
+            position?: number;
+            start?: components["schemas"]["ZonedTime"] | null;
+            end?: components["schemas"]["ZonedTime"] | null;
+            location?: components["schemas"]["Location"] | null;
+            estimatedDurationMinutes?: number | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+        };
+        ItineraryItemPatch: components["schemas"]["BaseVersion"] & {
+            /** Format: uuid */
+            dayId?: string;
+            title?: string;
+            description?: string;
+            category?: components["schemas"]["ItineraryCategory"];
+            status?: components["schemas"]["PlanStatus"];
+            notes?: string;
+            placeId?: string;
+            position?: number;
+            start?: components["schemas"]["ZonedTime"] | null;
+            end?: components["schemas"]["ZonedTime"] | null;
+            location?: components["schemas"]["Location"] | null;
+            estimatedDurationMinutes?: number | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+        };
+        ScheduleFromPlaceRequest: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            /** Format: uuid */
+            placeId: string;
+            /** Format: uuid */
+            dayId: string;
+            start?: components["schemas"]["ZonedTime"] | null;
+            end?: components["schemas"]["ZonedTime"] | null;
+            position?: number;
+        };
+        TimelineEntry: {
+            /**
+             * @description Origem da entrada.
+             * @enum {string}
+             */
+            kind: "itinerary_item" | "flight_departure" | "flight_arrival" | "hotel_check_in" | "hotel_check_out" | "transfer" | "restaurant_reservation";
+            /** @description Id do registro de origem. */
+            id: string;
+            title: string;
+            subtitle?: string;
+            status?: string;
+            start?: components["schemas"]["ZonedTime"];
+            end?: components["schemas"]["ZonedTime"];
+        };
+        Itinerary: {
+            days: {
+                /** Format: date */
+                date: string;
+                /** @description Nulo quando a data só tem entradas de voos, hotéis ou transfers. */
+                day: components["schemas"]["ItineraryDay"] | null;
+                entries: components["schemas"]["TimelineEntry"][];
+            }[];
+        };
+        Place: components["schemas"]["ResourceMeta"] & {
+            name: string;
+            description?: string;
+            category: components["schemas"]["PlaceCategory"];
+            priority: components["schemas"]["Priority"];
+            location?: components["schemas"]["Location"];
+            estimatedDurationMinutes?: number;
+            estimatedCost?: components["schemas"]["Money"];
+            notes?: string;
+            /** @description Id do lugar no provedor (Google Places), quando veio de uma busca. */
+            externalId?: string;
+        };
+        PlaceCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            name: string;
+            description?: string;
+            category?: components["schemas"]["PlaceCategory"];
+            priority?: components["schemas"]["Priority"];
+            notes?: string;
+            externalId?: string;
+            location?: components["schemas"]["Location"] | null;
+            estimatedDurationMinutes?: number | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+        };
+        PlacePatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            description?: string;
+            category?: components["schemas"]["PlaceCategory"];
+            priority?: components["schemas"]["Priority"];
+            notes?: string;
+            externalId?: string;
+            location?: components["schemas"]["Location"] | null;
+            estimatedDurationMinutes?: number | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+        };
+        Restaurant: components["schemas"]["ResourceMeta"] & {
+            name: string;
+            cuisine?: string;
+            status: components["schemas"]["RestaurantStatus"];
+            location?: components["schemas"]["Location"];
+            estimatedCost?: components["schemas"]["Money"];
+            reservationAt?: components["schemas"]["ZonedTime"];
+            /** @description Omitido para VIEWER. */
+            reservationCode?: string;
+            desiredDishes: string[];
+            notes?: string;
+            externalId?: string;
+        };
+        RestaurantCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            name: string;
+            cuisine?: string;
+            notes?: string;
+            status?: components["schemas"]["RestaurantStatus"];
+            externalId?: string;
+            reservationCode?: string;
+            desiredDishes?: string[];
+            location?: components["schemas"]["Location"] | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+            reservationAt?: components["schemas"]["ZonedTime"] | null;
+        };
+        RestaurantPatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            cuisine?: string;
+            notes?: string;
+            status?: components["schemas"]["RestaurantStatus"];
+            externalId?: string;
+            reservationCode?: string;
+            desiredDishes?: string[];
+            location?: components["schemas"]["Location"] | null;
+            estimatedCost?: components["schemas"]["Money"] | null;
+            reservationAt?: components["schemas"]["ZonedTime"] | null;
+        };
+        PlaceCandidate: {
+            providerId: string;
+            name: string;
+            address?: string;
+            latitude?: number;
+            longitude?: number;
+            types: string[];
+        };
+        Flight: components["schemas"]["ResourceMeta"] & {
+            airline?: string;
+            flightNumber: string;
+            /** @description Código IATA. */
+            departureAirport: string;
+            arrivalAirport: string;
+            departure: components["schemas"]["ZonedTime"];
+            arrival: components["schemas"]["ZonedTime"];
+            /** @description Derivado dos dois horários, respeitando os fusos. */
+            durationMinutes: number;
+            terminal?: string;
+            gate?: string;
+            seat?: string;
+            baggage?: string;
+            /** @description Omitido para VIEWER. */
+            bookingCode?: string;
+            notes?: string;
+        };
+        FlightCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            airline?: string;
+            flightNumber: string;
+            departureAirport: string;
+            arrivalAirport: string;
+            departure: components["schemas"]["ZonedTime"];
+            arrival: components["schemas"]["ZonedTime"];
+            terminal?: string;
+            gate?: string;
+            seat?: string;
+            baggage?: string;
+            bookingCode?: string;
+            notes?: string;
+        };
+        FlightPatch: components["schemas"]["BaseVersion"] & {
+            airline?: string;
+            flightNumber?: string;
+            departureAirport?: string;
+            arrivalAirport?: string;
+            departure?: components["schemas"]["ZonedTime"];
+            arrival?: components["schemas"]["ZonedTime"];
+            terminal?: string;
+            gate?: string;
+            seat?: string;
+            baggage?: string;
+            bookingCode?: string;
+            notes?: string;
+        };
+        Hotel: components["schemas"]["ResourceMeta"] & {
+            name: string;
+            location?: components["schemas"]["Location"];
+            checkIn: components["schemas"]["ZonedTime"];
+            checkOut: components["schemas"]["ZonedTime"];
+            /** @description Omitido para VIEWER. */
+            confirmationCode?: string;
+            contactPhone?: string;
+            bookingUrl?: string;
+            notes?: string;
+        };
+        HotelCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            name: string;
+            location?: components["schemas"]["Location"] | null;
+            checkIn: components["schemas"]["ZonedTime"];
+            checkOut: components["schemas"]["ZonedTime"];
+            confirmationCode?: string;
+            contactPhone?: string;
+            bookingUrl?: string;
+            notes?: string;
+        };
+        HotelPatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            location?: components["schemas"]["Location"] | null;
+            checkIn?: components["schemas"]["ZonedTime"];
+            checkOut?: components["schemas"]["ZonedTime"];
+            confirmationCode?: string;
+            contactPhone?: string;
+            bookingUrl?: string;
+            notes?: string;
+        };
+        TransferLegInput: {
+            mode: components["schemas"]["TransferMode"];
+            origin?: components["schemas"]["Location"];
+            destination?: components["schemas"]["Location"];
+            departure?: components["schemas"]["ZonedTime"];
+            arrival?: components["schemas"]["ZonedTime"];
+            estimatedDurationMinutes?: number;
+            line?: string;
+            direction?: string;
+            stops?: number;
+            instructions?: string;
+            cost?: components["schemas"]["Money"];
+        };
+        TransferLeg: components["schemas"]["TransferLegInput"] & {
+            /** @description Derivado dos horários quando ambos existem; senão, a estimativa. */
+            durationMinutes?: number;
+        };
+        Transfer: components["schemas"]["ResourceMeta"] & {
+            origin?: components["schemas"]["Location"];
+            destination?: components["schemas"]["Location"];
+            status: components["schemas"]["PlanStatus"];
+            routeProvider?: string;
+            externalRouteId?: string;
+            notes?: string;
+            legs: components["schemas"]["TransferLeg"][];
+            departure?: components["schemas"]["ZonedTime"];
+            arrival?: components["schemas"]["ZonedTime"];
+            durationMinutes?: number;
+            totalCost?: components["schemas"]["Money"];
+        };
+        TransferCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            origin: components["schemas"]["Location"] | null;
+            destination: components["schemas"]["Location"] | null;
+            status?: components["schemas"]["PlanStatus"];
+            routeProvider?: string;
+            externalRouteId?: string;
+            notes?: string;
+            legs: components["schemas"]["TransferLegInput"][];
+        };
+        TransferPatch: components["schemas"]["BaseVersion"] & {
+            origin?: components["schemas"]["Location"] | null;
+            destination?: components["schemas"]["Location"] | null;
+            status?: components["schemas"]["PlanStatus"];
+            routeProvider?: string;
+            externalRouteId?: string;
+            notes?: string;
+            legs?: components["schemas"]["TransferLegInput"][];
+        };
+        PlanTransferRequest: {
+            origin: components["schemas"]["Location"];
+            destination: components["schemas"]["Location"];
+            mode?: components["schemas"]["TransferMode"];
+            departureAt?: components["schemas"]["ZonedTime"];
+            language?: string;
+        };
+        RouteOption: {
+            durationMinutes: number;
+            distanceMeters: number;
+            /** @description Corpo pronto para `POST /transfers` (sem `id`). */
+            transfer: {
+                origin?: components["schemas"]["Location"];
+                destination?: components["schemas"]["Location"];
+                routeProvider: string;
+                externalRouteId?: string;
+                legs: components["schemas"]["TransferLegInput"][];
+            };
+        };
+        DocumentLink: {
+            /** @description Tipo do registro vinculado (por exemplo flight, hotel, restaurant, itinerary_item). */
+            type: string;
+            /** Format: uuid */
+            id: string;
+        };
+        Document: components["schemas"]["ResourceMeta"] & {
+            /** Format: uuid */
+            ownerId: string;
+            name: string;
+            type: components["schemas"]["DocumentType"];
+            fileName: string;
+            mimeType: string;
+            /** Format: int64 */
+            size: number;
+            /** @description SHA-256 em hexadecimal. Serve para o cliente saber se sua cópia offline está atual. */
+            checksum: string;
+            status: components["schemas"]["DocumentStatus"];
+            visibility: components["schemas"]["DocumentVisibility"];
+            link?: components["schemas"]["DocumentLink"];
+        };
+        InitDocumentRequest: {
+            /** Format: uuid */
+            id?: string;
+            name: string;
+            type: components["schemas"]["DocumentType"];
+            fileName: string;
+            mimeType: string;
+            /** Format: int64 */
+            size: number;
+            /** @description SHA-256 do arquivo em hexadecimal. */
+            checksum: string;
+            visibility?: components["schemas"]["DocumentVisibility"];
+            link?: components["schemas"]["DocumentLink"];
+        };
+        DocumentPatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            type?: components["schemas"]["DocumentType"];
+            visibility?: components["schemas"]["DocumentVisibility"];
+            link?: components["schemas"]["DocumentLink"] | null;
+        };
+        /** @description Requisição que o cliente executa como está. A URL já carrega a autorização. */
+        SignedRequest: {
+            url: string;
+            /** @enum {string} */
+            method: "GET" | "PUT";
+            headers?: {
+                [key: string]: string;
+            };
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        /** @enum {string} */
+        SyncEntity: "trip" | "itinerary_day" | "itinerary_item" | "place" | "restaurant" | "flight" | "hotel" | "transfer" | "document";
+        SyncChange: {
+            entity: components["schemas"]["SyncEntity"];
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            op: "upsert" | "delete";
+            /** Format: int64 */
+            version: number;
+            /** @description Registro completo no mesmo formato da API REST. Ausente em `delete`. */
+            record?: {
+                [key: string]: unknown;
+            };
+        };
+        PullResult: {
+            changes: components["schemas"]["SyncChange"][];
+            /** @description Guarde e envie na próxima chamada. */
+            cursor: string;
+            /** @description Verdadeiro quando há mais páginas; chame de novo com o novo cursor. */
+            hasMore: boolean;
+            /** @description O cursor é antigo demais (tombstones já removidos). Descarte o cache da viagem e recarregue sem cursor. */
+            resetRequired: boolean;
+            /** Format: date-time */
+            serverTime: string;
+        };
+        Mutation: {
+            /**
+             * Format: uuid
+             * @description Chave de idempotência. Reusar o id com outro conteúdo é rejeitado.
+             */
+            mutationId: string;
+            entity: components["schemas"]["SyncEntity"];
+            /** Format: uuid */
+            entityId: string;
+            /** @enum {string} */
+            operation: "CREATE" | "UPDATE" | "DELETE";
+            /**
+             * Format: int64
+             * @description Obrigatório em UPDATE e DELETE.
+             */
+            baseVersion?: number;
+            /** Format: date-time */
+            clientTimestamp?: string;
+            /** @description Mesmo corpo do create ou patch REST da entidade. */
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
+        MutationResult: {
+            /** Format: uuid */
+            mutationId: string;
+            /** @enum {string} */
+            status: "applied" | "duplicate" | "conflict" | "rejected";
+            code?: components["schemas"]["ErrorCode"];
+            message?: string;
+            /** Format: int64 */
+            version?: number;
+            /** @description Em `conflict`, a versão atual do servidor para o cliente resolver. */
+            record?: {
+                [key: string]: unknown;
+            };
+        };
     };
     responses: {
         /** @description Sessão criada. */
@@ -420,9 +1473,19 @@ export interface components {
                 "application/problem+json": components["schemas"]["Problem"];
             };
         };
+        /** @description O provedor externo (Google) está indisponível ou não respondeu a tempo. */
+        Unavailable: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
     };
     parameters: {
         TripId: string;
+        ResourceId: string;
         UserId: string;
     };
     requestBodies: never;
@@ -817,6 +1880,1463 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
+        };
+    };
+    listItineraryDays: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os dias do roteiro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ItineraryDay"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createItineraryDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItineraryDayCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryDay"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getItineraryDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryDay"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteItineraryDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateItineraryDay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItineraryDayPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryDay"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listItineraryItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os itens do roteiro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ItineraryItem"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createItineraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItineraryItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getItineraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteItineraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateItineraryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ItineraryItemPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    scheduleItemFromPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleFromPlaceRequest"];
+            };
+        };
+        responses: {
+            /** @description Item criado a partir do lugar. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ItineraryItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getItinerary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dias em ordem cronológica. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Itinerary"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    listPlaces: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os lugares (lista de desejos). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Place"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getPlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deletePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updatePlace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlacePatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Place"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listRestaurants: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os restaurantes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Restaurant"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createRestaurant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestaurantCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Restaurant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getRestaurant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Restaurant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteRestaurant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateRestaurant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RestaurantPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Restaurant"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    searchPlaces: {
+        parameters: {
+            query: {
+                q: string;
+                lat?: number;
+                lng?: number;
+                language?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Candidatos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["PlaceCandidate"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+            502: components["responses"]["Unavailable"];
+        };
+    };
+    listFlights: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os voos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Flight"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createFlight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flight"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getFlight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flight"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteFlight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateFlight: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FlightPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Flight"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listHotels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de as hospedagens. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Hotel"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createHotel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotelCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hotel"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getHotel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hotel"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteHotel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateHotel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HotelPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Hotel"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listTransfers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os deslocamentos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Transfer"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Transfer"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    planTransfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description Opções de rota. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        routes: components["schemas"]["RouteOption"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+            502: components["responses"]["Unavailable"];
+        };
+    };
+    listDocuments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Metadados; o conteúdo se baixa por link assinado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Document"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    initDocumentUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InitDocumentRequest"];
+            };
+        };
+        responses: {
+            /** @description Documento pendente e requisição de upload. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        document: components["schemas"]["Document"];
+                        upload: components["schemas"]["SignedRequest"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O documento. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Document"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    updateDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DocumentPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Document"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    completeDocumentUpload: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Documento READY. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Document"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    downloadDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Link de download. */
+            200: {
+                headers: {
+                    "Cache-Control"?: "no-store";
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        document: components["schemas"]["Document"];
+                        download: components["schemas"]["SignedRequest"];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    downloadDocumentContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Conteúdo do arquivo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    uploadDocumentContent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description Arquivo armazenado. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            403: components["responses"]["Forbidden"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    pullChanges: {
+        parameters: {
+            query?: {
+                /** @description Cursor opaco devolvido pela chamada anterior. */
+                cursor?: string;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Página de mudanças. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PullResult"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    pushMutations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    mutations: components["schemas"]["Mutation"][];
+                };
+            };
+        };
+        responses: {
+            /** @description Um resultado por mutação, na mesma ordem. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        results: components["schemas"]["MutationResult"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
 }

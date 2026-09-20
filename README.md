@@ -1,56 +1,79 @@
-# Welcome to your Expo app 👋
+# rinotravel-frontend
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App do Rhino Travel, uma plataforma pessoal e colaborativa de gerenciamento de viagens. Um único código em React Native com Expo, publicado como web (SPA/PWA) e preparado para iOS e Android. Consome a API em [rinotravel-api](../rinotravel-api).
 
-## Get started
+## O que já existe
 
-1. Install dependencies
+| Área | Telas |
+| --- | --- |
+| Acesso | login, cadastro com código de convite, sessão persistida (SecureStore no celular, localStorage na web), splash |
+| Painel | saudação, viagem em andamento ou próxima com contagem regressiva, agenda de hoje ou dos próximos dias, indicadores, suas viagens |
+| Viagens | lista, criação, edição, exclusão, saída, transferência de posse, visão geral com indicadores e "a seguir" |
+| Membros | adicionar, mudar papel, remover; a interface só oferece o que o servidor diz que cada papel pode |
+| Roteiro | dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, editar e excluir itens |
+| Lugares | lista de desejos com prioridade, restaurantes com reserva e pratos, busca no Google (quando o servidor tem a chave), agendar um lugar no roteiro |
+| Reservas | voos (fusos de cada aeroporto, duração calculada) e hospedagens (noites, código de confirmação) |
+| Deslocamentos | deslocamentos em etapas e sugestão de rotas do Google (quando disponível) |
+| Documentos | envio com SHA-256, armazenamento no MongoDB via link assinado, abrir, renomear, visibilidade, excluir |
 
-   ```bash
-   npm install
-   ```
+Computadores têm menu lateral (que vira uma barra de ícones em janelas estreitas); celulares têm barra inferior própria, que dentro de uma viagem mostra as seções dela e um menu "Mais".
 
-2. Start the app
+**Ainda não existe:** trabalho offline. Os dados vêm da API por TanStack Query; o protocolo de sincronização do backend (pull por cursor e push de mutations) está pronto e documentado, mas o app ainda não mantém cópia local nem fila de alterações. iOS e Android ainda não foram testados em dispositivo.
 
-   ```bash
-   npx expo start
-   ```
+## Stack
 
-In the output, you'll find options to open the app in a
+- Expo SDK 57, React 19, React Native 0.86, React Native Web, TypeScript 6 em modo estrito
+- Expo Router (rotas em `src/app`, tipadas), React Compiler
+- TanStack Query 5, `openapi-fetch` com tipos gerados de `../rinotravel-api/docs/openapi.yaml`
+- react-hook-form e zod 4 nos formulários
+- i18next com pt-BR e en; a paridade das chaves é checada em compilação e em teste
+- Jest e Testing Library (unitários), Playwright (e2e, desktop e celular)
+- ESLint 9 e Prettier
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Estrutura
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+src/
+  app/          rotas (Expo Router): (auth), (app), trips/[id]/...
+  core/         api, i18n, query, storage, datetime, forms, resource (hooks de CRUD)
+  shared/       theme (tokens, breakpoints) e ui (design system)
+  features/     auth, shell, dashboard, trips, itinerary, places, bookings,
+                transfers, documents, content (peças comuns das seções da viagem)
+e2e/            testes de ponta a ponta
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Cada feature tem `api.ts` (chamadas tipadas), `hooks.ts` (TanStack Query), `schemas.ts` (zod), as folhas de formulário (`*Sheet.tsx`) e a tela. Toda escrita em uma viagem invalida `['content', tripId]`, então lista, linha do tempo e painel se atualizam juntos.
 
-### Other setup steps
+## Rodar
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+Pré-requisitos: Node (LTS) e a API rodando (`make db-up && make run` em rinotravel-api).
 
-## Learn more
+```sh
+npm install
+cp .env.example .env     # EXPO_PUBLIC_API_URL
+npm run web              # ou: npm run ios / npm run android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+No emulador Android, `localhost` é o próprio emulador: use `EXPO_PUBLIC_API_URL=http://10.0.2.2:8080`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Scripts
 
-## Join the community
+| Comando | O que faz |
+| --- | --- |
+| `npm run check` | formatação, lint, tipos e testes unitários (o gate) |
+| `npm run api:types` | regenera `src/core/api/schema.d.ts` a partir do OpenAPI da API |
+| `npm run build:web` | exporta o site estático em `dist/` |
+| `npm run e2e` | build web e Playwright (precisa da API com Mongo rodando) |
 
-Join our community of developers creating universal apps.
+Depois de mudar o OpenAPI da API, rode `npm run api:types`: se um contrato mudou, o `tsc` aponta o que quebrou. Uma mensagem de erro nova do servidor sem tradução também falha na compilação.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Testes end-to-end
+
+O Playwright usa o Chrome instalado e sobe (ou reaproveita) o site estático em `:3000` e a API em `:8080`, num banco separado (`rinotravel_e2e`). Cada teste cria os próprios usuários pela API. Os projetos `desktop` e `mobile` rodam a mesma suíte.
+
+## Deploy (Vercel)
+
+1. Importe o repositório na Vercel. O `vercel.json` já define instalação, build (`npm run build:web`), saída (`dist`), o rewrite de SPA e os cabeçalhos de segurança.
+2. Em *Environment Variables*, defina `EXPO_PUBLIC_API_URL` com a URL pública da API no Railway. Ela é embutida no build: mudar o valor exige novo deploy.
+3. No Railway, inclua a URL da Vercel em `CORS_ALLOWED_ORIGINS`.
+4. O CSP em `vercel.json` libera `https://*.up.railway.app` em `connect-src`. Se a API tiver domínio próprio, acrescente-o ali.

@@ -6,6 +6,7 @@ import { hasCode } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { useMe } from '@/features/auth';
+import { TripOverview } from '@/features/dashboard/TripOverview';
 import { space, useStyles, type Theme } from '@/shared/theme';
 import {
   Banner,
@@ -114,6 +115,7 @@ export function TripScreen({ tripId }: { tripId: string }) {
       <View style={styles.stack}>
         {error ? <Banner tone="danger" message={describe(error)} /> : null}
         <TripHero trip={data} />
+        <TripOverview trip={data} />
 
         <Card padded={false}>
           <ListRow

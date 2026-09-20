@@ -1,0 +1,328 @@
+import { useMemo, useState } from 'react';
+import { View } from 'react-native';
+
+import {
+  hasCode,
+  type Location,
+  type RouteOption,
+  type Transfer,
+  type TransferLegInput,
+} from '@/core/api';
+import { formatDuration, joinOptionalZoned, splitZoned } from '@/core/datetime/zoned';
+import { currentLocale, useTranslation } from '@/core/i18n';
+import { useDescribeError } from '@/core/i18n/describe-error';
+import { newId } from '@/core/ids';
+import { EntitySheet } from '@/features/content/EntitySheet';
+import {
+  fromMoney,
+  fromOptionalInt,
+  mergeLocation,
+  toMoneyInput,
+  toOptionalInt,
+} from '@/features/content/mappers';
+import { useEntityForm } from '@/features/content/use-entity-form';
+import { space } from '@/shared/theme';
+import {
+  Banner,
+  Button,
+  Card,
+  FormDateField,
+  FormSelectField,
+  FormTextField,
+  FormTimeField,
+  ListRow,
+  Text,
+  useConfirm,
+} from '@/shared/ui';
+
+import { transferHooks, usePlanTransfer } from './hooks';
+import {
+  MODES,
+  STATUSES,
+  TRANSFER_ALIASES,
+  TRANSFER_FIELDS,
+  transferSchema,
+  type TransferFormValues,
+} from './schemas';
+
+interface TransferSheetProps {
+  tripId: string;
+  visible: boolean;
+  onClose: () => void;
+  currency: string;
+  timezone: string;
+  defaultDate: string;
+  transfer?: Transfer | undefined;
+}
+
+export function TransferSheet({
+  tripId,
+  visible,
+  onClose,
+  currency,
+  timezone,
+  defaultDate,
+  transfer,
+}: TransferSheetProps) {
+  const { t } = useTranslation();
+  const describe = useDescribeError();
+  const confirm = useConfirm();
+  const create = transferHooks.useCreate(tripId);
+  const update = transferHooks.useUpdate(tripId);
+  const remove = transferHooks.useRemove(tripId);
+  const plan = usePlanTransfer(tripId);
+  const [routes, setRoutes] = useState<RouteOption[] | null>(null);
+  const [chosen, setChosen] = useState<RouteOption | null>(null);
+
+  const singleLeg = transfer?.legs.length === 1 ? transfer.legs[0] : undefined;
+  const editsLegs = transfer === undefined || singleLeg !== undefined;
+  const schema = useMemo(() => transferSchema(currency), [currency]);
+  const defaults = useMemo<TransferFormValues>(() => {
+    const leg = singleLeg ?? transfer?.legs[0];
+    const departure = splitZoned(leg?.departure);
+    return {
+      origin: transfer?.origin?.name ?? transfer?.origin?.address ?? '',
+      destination: transfer?.destination?.name ?? transfer?.destination?.address ?? '',
+      mode: leg?.mode ?? 'SUBWAY',
+      status: transfer?.status ?? 'PLANNED',
+      date: departure.date || defaultDate,
+      departTime: departure.time,
+      arriveTime: splitZoned(leg?.arrival).time,
+      duration: fromOptionalInt(leg?.estimatedDurationMinutes),
+      line: leg?.line ?? '',
+      instructions: leg?.instructions ?? '',
+      cost: fromMoney(leg?.cost),
+      notes: transfer?.notes ?? '',
+    };
+  }, [transfer, singleLeg, defaultDate]);
+  const { form, error, fail, close, clearError } = useEntityForm<TransferFormValues>({
+    schema,
+    defaults,
+    fields: TRANSFER_FIELDS,
+    aliases: TRANSFER_ALIASES,
+    onClose: () => {
+      setRoutes(null);
+      setChosen(null);
+      plan.reset();
+      onClose();
+    },
+  });
+
+  const searchRoutes = () => {
+    const { origin, destination, mode, date, departTime } = form.getValues();
+    if (origin.trim() === '' || destination.trim() === '') return;
+    setChosen(null);
+    plan.mutate(
+      {
+        origin: { name: origin.trim(), address: origin.trim() },
+        destination: { name: destination.trim(), address: destination.trim() },
+        mode,
+        ...(joinOptionalZoned(date, departTime, timezone)
+          ? { departureAt: joinOptionalZoned(date, departTime, timezone)! }
+          : {}),
+        language: currentLocale(),
+      },
+      { onSuccess: setRoutes },
+    );
+  };
+
+  const chooseRoute = (route: RouteOption) => {
+    setChosen(route);
+    form.setValue('duration', String(route.durationMinutes));
+  };
+
+  const legFromForm = (values: TransferFormValues): TransferLegInput => ({
+    mode: values.mode,
+    origin: { name: values.origin, address: values.origin },
+    destination: { name: values.destination, address: values.destination },
+    ...(joinOptionalZoned(values.date, values.departTime, timezone)
+      ? { departure: joinOptionalZoned(values.date, values.departTime, timezone)! }
+      : {}),
+    ...(joinOptionalZoned(values.date, values.arriveTime, timezone)
+      ? { arrival: joinOptionalZoned(values.date, values.arriveTime, timezone)! }
+      : {}),
+    ...(toOptionalInt(values.duration) !== null
+      ? { estimatedDurationMinutes: toOptionalInt(values.duration)! }
+      : {}),
+    ...(values.line ? { line: values.line } : {}),
+    ...(values.instructions ? { instructions: values.instructions } : {}),
+    ...(toMoneyInput(values.cost, currency) ? { cost: toMoneyInput(values.cost, currency)! } : {}),
+  });
+
+  const submit = form.handleSubmit(async (values) => {
+    clearError();
+    const routeOrigin: Location | undefined = chosen?.transfer.origin;
+    const routeDestination: Location | undefined = chosen?.transfer.destination;
+    const base = {
+      origin: mergeLocation(values.origin, '', routeOrigin ?? transfer?.origin),
+      destination: mergeLocation(values.destination, '', routeDestination ?? transfer?.destination),
+      status: values.status,
+      notes: values.notes,
+      ...(chosen
+        ? {
+            routeProvider: chosen.transfer.routeProvider,
+            ...(chosen.transfer.externalRouteId
+              ? { externalRouteId: chosen.transfer.externalRouteId }
+              : {}),
+          }
+        : {}),
+    };
+    const legs = chosen ? chosen.transfer.legs : editsLegs ? [legFromForm(values)] : undefined;
+    try {
+      if (transfer) {
+        await update.mutateAsync({
+          id: transfer.id,
+          baseVersion: transfer.version,
+          patch: { ...base, ...(legs ? { legs } : {}) },
+        });
+      } else {
+        await create.mutateAsync({ id: newId(), ...base, legs: legs ?? [] });
+      }
+      close();
+    } catch (cause) {
+      fail(cause);
+    }
+  });
+
+  const askDelete = async () => {
+    if (!transfer) return;
+    const confirmed = await confirm({
+      title: t('content.deleteTitle'),
+      message: t('content.deleteMessage', {
+        name: `${transfer.origin?.name ?? ''} → ${transfer.destination?.name ?? ''}`,
+      }),
+      confirmLabel: t('content.deleteConfirm'),
+      destructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      await remove.mutateAsync(transfer.id);
+      close();
+    } catch (cause) {
+      fail(cause);
+    }
+  };
+
+  const { control } = form;
+  const planUnavailable = plan.isError && hasCode(plan.error, 'route_not_found');
+  const km = (meters: number) => (meters / 1000).toFixed(1);
+
+  return (
+    <EntitySheet
+      testID="transfer-sheet"
+      visible={visible}
+      title={transfer ? t('transfers.edit') : t('transfers.add')}
+      onClose={close}
+      onSubmit={() => void submit()}
+      isSubmitting={create.isPending || update.isPending}
+      error={error}
+      {...(transfer ? { onDelete: () => void askDelete() } : {})}
+    >
+      <FormTextField
+        control={control}
+        name="origin"
+        label={t('transfers.origin')}
+        testID="transfer-origin"
+      />
+      <FormTextField
+        control={control}
+        name="destination"
+        label={t('transfers.destination')}
+        testID="transfer-destination"
+      />
+      <FormSelectField
+        control={control}
+        name="mode"
+        label={t('transfers.mode')}
+        title={t('transfers.mode')}
+        options={MODES.map((value) => ({ value, label: t(`enums.mode.${value}`) }))}
+        testID="transfer-mode"
+      />
+
+      {transfer ? null : (
+        <View style={{ gap: space.sm }}>
+          <Button
+            testID="suggest-routes"
+            title={t('transfers.suggest')}
+            variant="secondary"
+            icon="navigate-outline"
+            loading={plan.isPending}
+            onPress={searchRoutes}
+            fullWidth
+          />
+          {plan.isError ? (
+            <Banner
+              tone="warning"
+              message={planUnavailable ? t('transfers.suggestUnavailable') : describe(plan.error)}
+            />
+          ) : null}
+          {routes && routes.length > 0 ? (
+            <View style={{ gap: space.sm }}>
+              <Text variant="subhead" tone="secondary">
+                {t('transfers.suggestions')}
+              </Text>
+              <Card padded={false}>
+                {routes.map((route, index) => (
+                  <ListRow
+                    key={`${route.transfer.externalRouteId ?? index}`}
+                    testID={`route-${index}`}
+                    divider={index > 0}
+                    icon={chosen === route ? 'checkmark-circle' : 'navigate-outline'}
+                    title={`${formatDuration(route.durationMinutes)} · ${t('transfers.km', { value: km(route.distanceMeters) })}`}
+                    subtitle={t(
+                      route.transfer.legs.length === 1
+                        ? 'transfers.steps.one'
+                        : 'transfers.steps.other',
+                      {
+                        count: route.transfer.legs.length,
+                      },
+                    )}
+                    onPress={() => chooseRoute(route)}
+                  />
+                ))}
+              </Card>
+            </View>
+          ) : null}
+          {chosen ? <Banner tone="info" message={t('transfers.routeUsed')} /> : null}
+        </View>
+      )}
+
+      <FormDateField control={control} name="date" label={t('transfers.date')} />
+      <FormTimeField
+        control={control}
+        name="departTime"
+        label={t('transfers.departTime')}
+        hint={t('content.timeHint')}
+      />
+      <FormTimeField control={control} name="arriveTime" label={t('transfers.arriveTime')} />
+      <FormTextField
+        control={control}
+        name="duration"
+        label={t('transfers.duration')}
+        keyboardType="number-pad"
+      />
+      <FormTextField control={control} name="line" label={t('transfers.line')} />
+      <FormTextField
+        control={control}
+        name="instructions"
+        label={t('transfers.instructions')}
+        multiline
+      />
+      <FormTextField
+        control={control}
+        name="cost"
+        label={t('content.cost')}
+        hint={t('content.costHint', { currency })}
+        keyboardType="decimal-pad"
+      />
+      <FormSelectField
+        control={control}
+        name="status"
+        label={t('content.status')}
+        title={t('content.status')}
+        options={STATUSES.map((value) => ({ value, label: t(`enums.status.${value}`) }))}
+      />
+      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+    </EntitySheet>
+  );
+}

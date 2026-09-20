@@ -10,12 +10,18 @@ export function applyApiFieldErrors<T extends FieldValues>(
   error: unknown,
   setError: UseFormSetError<T>,
   fields: readonly FieldPath<T>[],
+  /** Server paths such as `start.dateTime` mapped to the form field that shows them. */
+  aliases: Readonly<Record<string, FieldPath<T>>> = {},
 ): boolean {
   if (!isApiError(error)) return false;
 
   let applied = false;
   for (const item of error.fieldErrors) {
-    const field = fields.find((name) => name === item.field);
+    const root = item.field.split(/[.[]/)[0] ?? item.field;
+    const field =
+      aliases[item.field] ??
+      aliases[root] ??
+      fields.find((name) => name === item.field || name === root);
     if (field) {
       setError(field, { message: item.message });
       applied = true;

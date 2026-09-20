@@ -70,6 +70,19 @@ export async function signInViaUi(page: Page, account: Account, password = PASSW
   await page.getByRole('button', { name: 'Entrar', exact: true }).click();
 }
 
+/** Signs in and waits for the dashboard, so the next navigation cannot cut the login short. */
+export async function signInToDashboard(page: Page, account: Account) {
+  await signInViaUi(page, account);
+  await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
+}
+
+/** Signs in and opens the trips list; the landing page is now the dashboard. */
+export async function signInToTrips(page: Page, account: Account) {
+  await signInViaUi(page, account);
+  await page.getByTestId('nav-trips').click();
+  await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+}
+
 /** Collects browser errors (CORS, CSP, uncaught exceptions) so a test can assert there were none. */
 export function collectBrowserErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -80,8 +93,42 @@ export function collectBrowserErrors(page: Page): string[] {
   return errors;
 }
 
-/** Opens the new-trip form: phones use the raised tab bar action, larger screens the header button. */
+/** Opens the new-trip form from the sidebar (computers) or the raised tab-bar action (phones). */
 export async function openNewTrip(page: Page) {
-  const phone = (page.viewportSize()?.width ?? 1280) < 768;
-  await page.getByTestId(phone ? 'nav-new' : 'new-trip').click();
+  await page.getByTestId('nav-new').click();
 }
+
+/** Today in the timezone the browser runs in (see playwright.config.ts). */
+export function todayInSaoPaulo(offsetDays = 0): string {
+  const date = new Date(Date.now() + offsetDays * 86_400_000);
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(date);
+}
+
+export async function createItemViaApi(
+  request: APIRequestContext,
+  owner: Account,
+  tripId: string,
+  item: { date: string; title: string; time?: string; timezone: string },
+) {
+  const headers = { Authorization: `Bearer ${owner.token}` };
+  const day = await request.post(`${API}/api/v1/trips/${tripId}/itinerary-days`, {
+    headers,
+    data: { date: item.date },
+  });
+  expect(day.status(), await day.text()).toBe(201);
+  const dayId = (await day.json()).id as string;
+  const created = await request.post(`${API}/api/v1/trips/${tripId}/itinerary-items`, {
+    headers,
+    data: {
+      dayId,
+      title: item.title,
+      category: 'ATTRACTION',
+      start: item.time
+        ? { dateTime: `${item.date}T${item.time}:00`, timezone: item.timezone }
+        : null,
+    },
+  });
+  expect(created.status(), await created.text()).toBe(201);
+}
+
+export const isPhone = (page: Page) => (page.viewportSize()?.width ?? 1280) < 768;

@@ -36,7 +36,7 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL(/\/register$/);
   });
 
-  test('registers, lands on the trips list and survives a reload', async ({ page }) => {
+  test('registers, lands on the dashboard and survives a reload', async ({ page }) => {
     const errors = collectBrowserErrors(page);
     await page.goto('/register');
     await page.getByLabel('Nome', { exact: true }).fill('Ana Silva');
@@ -45,11 +45,11 @@ test.describe('authentication', () => {
     await page.getByLabel('Código de convite').fill(REGISTRATION_CODE);
     await page.getByRole('button', { name: 'Criar conta', exact: true }).click();
 
-    await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
     await expect(page.getByText('Sua próxima viagem começa aqui')).toBeVisible();
 
     await page.reload();
-    await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -64,7 +64,7 @@ test.describe('authentication', () => {
 
     await page.getByLabel('Senha', { exact: true }).fill(PASSWORD);
     await page.getByRole('button', { name: 'Entrar', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
 
     await page.getByTestId('open-account').click();
     await expect(page.getByRole('dialog').getByText(account.email)).toBeVisible();
@@ -78,7 +78,7 @@ test.describe('authentication', () => {
   test('a revoked session sends the user back to login', async ({ page, request }) => {
     const account = await registerViaApi(request, 'Caio');
     await signInViaUi(page, account);
-    await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
 
     const revoke = await request.post('http://localhost:8080/api/v1/auth/logout', {
       headers: {

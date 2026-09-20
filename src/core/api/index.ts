@@ -5,6 +5,7 @@ export {
   hasCode,
   isApiError,
   isNetworkError,
+  toApiError,
   type ErrorCode,
   type FieldError,
 } from './errors';
