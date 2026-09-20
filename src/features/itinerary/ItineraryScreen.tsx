@@ -1,15 +1,19 @@
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import type { ItineraryItem, TimelineEntry, Trip } from '@/core/api';
 import { todayIn } from '@/core/datetime/civil-date';
-import { dayParts, eachDay } from '@/core/datetime/zoned';
+import { dayParts, eachDay, formatDayHeading } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
+import { hotelHooks } from '@/features/bookings/hooks';
 import { TripPage } from '@/features/content/TripPage';
+import { DayMapPanel } from '@/features/daymap/DayMapPanel';
+import { buildStops, type Stop } from '@/features/daymap/stops';
+import { restaurantHooks } from '@/features/places/hooks';
 import { TimelineRow } from '@/features/content/TimelineRow';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
-import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Text } from '@/shared/ui';
+import { Badge, Button, Card, EmptyState, ErrorState, Sheet, Skeleton, Text } from '@/shared/ui';
 
 import { ItemDetailSheet } from './ItemDetailSheet';
 import { ItemSheet } from './ItemSheet';
@@ -30,6 +34,11 @@ const createStyles = ({ colors }: Theme) =>
       justifyContent: 'center',
     },
     tileToday: { backgroundColor: colors.accent, borderColor: colors.accent },
+    tileSelected: { borderColor: colors.accent, borderWidth: 2 },
+    split: { flexDirection: 'row', gap: space.xl, alignItems: 'flex-start' },
+    listSide: { flex: 1, minWidth: 0 },
+    mapSide: { width: 460, ...({ position: 'sticky', top: 16 } as object) },
+    mapTitle: { gap: 2, paddingBottom: space.md },
     line: {
       flex: 1,
       width: 2,
@@ -51,12 +60,21 @@ interface SheetState {
 }
 
 export function ItineraryScreen({ tripId }: { tripId: string }) {
+  const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const timeline = useTimeline(tripId);
   const days = dayHooks.useList(tripId);
   const items = itemHooks.useList(tripId);
   const [sheet, setSheet] = useState<SheetState | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
+  const restaurants = restaurantHooks.useList(tripId);
+  const hotels = hotelHooks.useList(tripId);
+  const router = useRouter();
+  const { width } = useWindowDimensions();
+  // Beside the list there is room for the map from about a 13-inch laptop up; below that it opens on top.
+  const wide = width >= 1200;
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [mapSheetDate, setMapSheetDate] = useState<string | null>(null);
 
   const refresh = () => {
     void timeline.refetch();
@@ -89,18 +107,91 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
         if (!timeline.data || !days.data || !items.data) return <DaysSkeleton />;
 
         const dates = eachDay(trip.startDate, trip.endDate);
+        const sources = {
+          days: days.data,
+          items: items.data,
+          restaurants: restaurants.data ?? [],
+          hotels: hotels.data ?? [],
+        };
+        const stopsFor = (date: string): Stop[] => buildStops({ date, ...sources });
+        // Days outside the trip's dates still appear when something is scheduled on them.
+        const allDates = [
+          ...new Set([...dates, ...timeline.data.days.map((day) => day.date)]),
+        ].sort();
+        const stopCounts = new Map(allDates.map((date) => [date, stopsFor(date).length]));
+        const today = todayIn(trip.timezone);
+        // Open on today if the trip is under way, else on the first day that has somewhere to go.
+        const effectiveDate =
+          selectedDate ??
+          (allDates.includes(today) && (stopCounts.get(today) ?? 0) > 0 ? today : null) ??
+          allDates.find((date) => (stopCounts.get(date) ?? 0) > 0) ??
+          allDates[0] ??
+          trip.startDate;
+
+        const openStop = (stop: Stop) => {
+          setMapSheetDate(null);
+          if (stop.kind === 'item') setViewId(stop.refId);
+          else if (stop.kind === 'restaurant') {
+            router.push({ pathname: '/trips/[id]/places', params: { id: tripId } });
+          } else router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
+        };
+        const mapPanel = (date: string) => (
+          <View>
+            {wide ? (
+              <View style={styles.mapTitle}>
+                <Text variant="caption" tone="secondary" style={{ letterSpacing: 0.8 }}>
+                  {t('dayMap.title').toUpperCase()}
+                </Text>
+                <Text variant="headline" heading>
+                  {formatDayHeading(date, currentLocale())}
+                </Text>
+              </View>
+            ) : null}
+            <DayMapPanel
+              key={date}
+              tripId={tripId}
+              stops={stopsFor(date)}
+              onOpenStop={openStop}
+              {...(wide ? { listMaxHeight: 340 } : {})}
+            />
+          </View>
+        );
+        const dayList = (
+          <DayList
+            trip={trip}
+            tripId={tripId}
+            dates={dates}
+            timeline={timeline.data.days}
+            items={items.data}
+            canWrite={canWrite}
+            selectedDate={wide ? effectiveDate : null}
+            stopCounts={stopCounts}
+            onSelectDate={(date) => (wide ? setSelectedDate(date) : setMapSheetDate(date))}
+            onAdd={(date) => setSheet({ date })}
+            onView={(item) => setViewId(item.id)}
+          />
+        );
         return (
           <>
-            <DayList
-              trip={trip}
-              tripId={tripId}
-              dates={dates}
-              timeline={timeline.data.days}
-              items={items.data}
-              canWrite={canWrite}
-              onAdd={(date) => setSheet({ date })}
-              onView={(item) => setViewId(item.id)}
-            />
+            {wide ? (
+              <View style={styles.split}>
+                <View style={styles.listSide}>{dayList}</View>
+                <View style={styles.mapSide}>{mapPanel(effectiveDate)}</View>
+              </View>
+            ) : (
+              dayList
+            )}
+            <Sheet
+              visible={!wide && mapSheetDate !== null}
+              onClose={() => setMapSheetDate(null)}
+              title={t('dayMap.title')}
+              subtitle={mapSheetDate ? formatDayHeading(mapSheetDate, currentLocale()) : undefined}
+              icon="map-outline"
+              tint="blue"
+              size="lg"
+            >
+              {mapSheetDate ? mapPanel(mapSheetDate) : null}
+            </Sheet>
             <ItemDetailSheet
               tripId={tripId}
               item={items.data.find((item) => item.id === viewId)}
@@ -148,9 +239,24 @@ interface DayListProps {
   canWrite: boolean;
   onAdd: (date: string) => void;
   onView: (item: ItineraryItem) => void;
+  selectedDate: string | null;
+  stopCounts: Map<string, number>;
+  onSelectDate: (date: string) => void;
 }
 
-function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onView }: DayListProps) {
+function DayList({
+  trip,
+  tripId,
+  dates,
+  timeline,
+  items,
+  canWrite,
+  onAdd,
+  onView,
+  selectedDate,
+  stopCounts,
+  onSelectDate,
+}: DayListProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const router = useRouter();
@@ -198,7 +304,16 @@ function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onView
         return (
           <View key={date} style={styles.day} testID={`day-${date}`}>
             <View style={styles.rail}>
-              <View style={[styles.tile, isToday && styles.tileToday]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('dayMap.viewOnMap')}
+                onPress={() => onSelectDate(date)}
+                style={[
+                  styles.tile,
+                  isToday && styles.tileToday,
+                  selectedDate === date && styles.tileSelected,
+                ]}
+              >
                 <Text
                   variant="caption"
                   tone={isToday ? 'onAccent' : 'secondary'}
@@ -213,7 +328,7 @@ function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onView
                 >
                   {parts.day}
                 </Text>
-              </View>
+              </Pressable>
               {isLast ? null : <View style={styles.line} />}
             </View>
 
@@ -236,6 +351,16 @@ function DayList({ trip, tripId, dates, timeline, items, canWrite, onAdd, onView
                   </Text>
                 </View>
                 {isToday ? <Badge label={t('common.today')} tone="accent" /> : null}
+                {(stopCounts.get(date) ?? 0) > 0 ? (
+                  <Button
+                    testID={`day-map-${date}`}
+                    title={t('dayMap.viewOnMap')}
+                    icon="map-outline"
+                    variant={selectedDate === date ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onPress={() => onSelectDate(date)}
+                  />
+                ) : null}
                 {canWrite ? (
                   <Button
                     testID={`add-item-${date}`}
