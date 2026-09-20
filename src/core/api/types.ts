@@ -63,3 +63,4 @@ export type InitDocumentRequest = Schemas['InitDocumentRequest'];
 export type SignedRequest = Schemas['SignedRequest'];
 
 export type MapRequest = Schemas['MapRequest'];
+export type LocationMapRequest = Schemas['LocationMapRequest'];

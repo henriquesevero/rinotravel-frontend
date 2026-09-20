@@ -299,6 +299,16 @@ export const en: Translation = {
     },
   },
   content: {
+    mapTitle: 'Place map',
+    mapPlaceholder: 'The map shows up here once you pick a place.',
+    mapUnavailable: 'The map is not available right now.',
+    openMaps: 'Open in Google Maps',
+    openApple: 'Open in Apple Maps',
+    share: 'Share',
+    copied: 'Copied. Paste it anywhere.',
+    shareFailed: 'We could not share.',
+    openFailed: 'We could not open the maps app.',
+    noValue: '—',
     sec: {
       basic: 'Details',
       when: 'When',

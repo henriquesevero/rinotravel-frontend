@@ -303,6 +303,16 @@ export const ptBR = {
     },
   },
   content: {
+    mapTitle: 'Mapa do local',
+    mapPlaceholder: 'O mapa aparece aqui quando você escolher um local.',
+    mapUnavailable: 'O mapa não está disponível agora.',
+    openMaps: 'Abrir no Google Maps',
+    openApple: 'Abrir no Apple Maps',
+    share: 'Compartilhar',
+    copied: 'Copiado. Cole onde quiser.',
+    shareFailed: 'Não foi possível compartilhar.',
+    openFailed: 'Não foi possível abrir o app de mapas.',
+    noValue: '—',
     sec: {
       basic: 'Informações',
       when: 'Quando',

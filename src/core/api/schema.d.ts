@@ -579,6 +579,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/maps/location": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Desenha o mapa de um único local (item do roteiro, lugar, restaurante ou hotel). Só existe quando o servidor tem GOOGLE_MAPS_API_KEY
+         * @description Devolve uma imagem PNG com o local marcado. A imagem é feita na hora e nada dela é guardada no servidor.
+         *     Qualquer membro da viagem (inclusive LEITOR) pode pedir.
+         */
+        post: operations["renderLocationMap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/documents": {
         parameters: {
             query?: never;
@@ -1289,6 +1312,10 @@ export interface components {
             destination: components["schemas"]["Location"];
             mode?: components["schemas"]["TransferMode"];
             departureAt?: components["schemas"]["ZonedTime"];
+            language?: string;
+        };
+        LocationMapRequest: {
+            location: components["schemas"]["Location"];
             language?: string;
         };
         MapRequest: {
@@ -3061,6 +3088,38 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["MapRequest"];
+            };
+        };
+        responses: {
+            /** @description A imagem do mapa (cache privado de 5 minutos). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/png": string;
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
+            503: components["responses"]["Unavailable"];
+        };
+    };
+    renderLocationMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LocationMapRequest"];
             };
         };
         responses: {

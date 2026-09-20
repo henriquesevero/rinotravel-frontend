@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 
-import { fetchImage, type MapRequest } from '@/core/api';
+import { fetchImage, type LocationMapRequest, type MapRequest } from '@/core/api';
 
 import { createResourceHooks } from '@/core/resource/hooks';
 
@@ -23,6 +23,18 @@ export function useRouteMap(tripId: string, request: MapRequest | null) {
     enabled: request !== null,
     queryKey: ['route-map', tripId, request],
     queryFn: ({ signal }) => fetchImage(`/api/v1/trips/${tripId}/transfers/map`, request, signal),
+    staleTime: 10 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: false,
+  });
+}
+
+/** The picture of one place, drawn by the server on request (see `useRouteMap`). */
+export function useLocationMap(tripId: string, request: LocationMapRequest | null) {
+  return useQuery({
+    enabled: request !== null,
+    queryKey: ['location-map', tripId, request],
+    queryFn: ({ signal }) => fetchImage(`/api/v1/trips/${tripId}/maps/location`, request, signal),
     staleTime: 10 * 60_000,
     gcTime: 10 * 60_000,
     retry: false,
