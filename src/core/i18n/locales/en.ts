@@ -332,6 +332,8 @@ export const en: Translation = {
     open: 'Open file',
   },
   dayMap: {
+    tripCaption: 'Trip map',
+    tripHeading: 'Complete itinerary',
     scope: { day: 'Day', trip: 'Whole trip' },
     dayHeader: 'Day {{n}}',
     nextMorning: 'Next morning',

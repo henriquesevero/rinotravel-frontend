@@ -178,11 +178,11 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             {wide ? (
               <View style={styles.mapTitle}>
                 <Text variant="caption" tone="secondary" style={{ letterSpacing: 0.8 }}>
-                  {t('dayMap.title').toUpperCase()}
+                  {(scope === 'trip' ? t('dayMap.tripCaption') : t('dayMap.title')).toUpperCase()}
                 </Text>
                 <Text variant="headline" heading>
                   {scope === 'trip'
-                    ? t('dayMap.scope.trip')
+                    ? t('dayMap.tripHeading')
                     : formatDayHeading(date, currentLocale())}
                 </Text>
               </View>

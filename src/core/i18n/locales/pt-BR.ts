@@ -336,6 +336,8 @@ export const ptBR = {
     open: 'Abrir arquivo',
   },
   dayMap: {
+    tripCaption: 'Mapa da viagem',
+    tripHeading: 'Roteiro completo',
     scope: { day: 'Dia', trip: 'Viagem toda' },
     dayHeader: 'Dia {{n}}',
     nextMorning: 'Na manhã seguinte',

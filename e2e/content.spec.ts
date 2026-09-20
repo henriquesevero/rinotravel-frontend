@@ -525,8 +525,9 @@ test.describe('trip content', () => {
     await page.getByTestId('map-day-2027-04-02').click();
     await expect(panel.getByTestId('day-stop-0')).toContainText('Templo Senso-ji');
     expect(requests.length).toBe(asked);
+    // The arrows step through every day, including the ones with nothing on them.
     await page.getByTestId('map-prev-day').click();
-    await expect(page.getByTestId('map-day-2027-04-01')).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByTestId('day-map-empty')).toBeVisible();
   });
 
   test('itinerary: the whole trip on one map, every place in order with a colour and number per day', async ({
@@ -549,8 +550,9 @@ test.describe('trip content', () => {
     await expect(panel).toContainText('5 paradas');
     // Days appear as groups, in order, and the trip from one day's last place to the next day's first
     // is marked as the next morning.
-    await expect(panel.getByTestId('day-group-0')).toContainText('Dia 1');
+    // Days are numbered as in the trip: the first day has no places, so these are days 2 and 3.
     await expect(panel.getByTestId('day-group-1')).toContainText('Dia 2');
+    await expect(panel.getByTestId('day-group-2')).toContainText('Dia 3');
     await expect(panel.getByTestId('day-stop-2')).toContainText('Jantar em Shibuya');
     await expect(panel.getByTestId('day-stop-3')).toContainText('Parque Ueno');
     await expect(panel.getByTestId('day-leg-2')).toContainText('Na manhã seguinte');
@@ -560,18 +562,19 @@ test.describe('trip content', () => {
     // One request with every place, each tagged with its day's colour group and the day on its pin.
     const body = requests.at(-1) as { stops: { label: string; group: number; pin: string }[] };
     expect(body.stops.map((s) => [s.label, s.group, s.pin])).toEqual([
-      ['Templo Senso-ji', 0, '1'],
-      ['Museu Nacional', 0, '1'],
-      ['Jantar em Shibuya', 0, '1'],
-      ['Parque Ueno', 1, '2'],
-      ['Akihabara', 1, '2'],
+      ['Templo Senso-ji', 1, '2'],
+      ['Museu Nacional', 1, '2'],
+      ['Jantar em Shibuya', 1, '2'],
+      ['Parque Ueno', 2, '3'],
+      ['Akihabara', 2, '3'],
     ]);
 
     // On the map: pins carry their day number, and the four trips between the five places are lines.
     const drawn = await page.evaluate(
       () => (window as never as { __maps: { markers: string[]; lines: number } }).__maps,
     );
-    expect(drawn.markers.map((m) => m.split(':')[0])).toEqual(['1', '1', '1', '2', '2']);
+    // (The log keeps earlier drawings too: the day view was drawn before the trip.)
+    expect(drawn.markers.slice(-5).map((m) => m.split(':')[0])).toEqual(['2', '2', '2', '3', '3']);
     expect(drawn.lines).toBeGreaterThanOrEqual(4);
 
     // Going back to one day works too.
