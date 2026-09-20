@@ -17,6 +17,7 @@ import {
   type IconName,
 } from '@/shared/ui';
 
+import { TransferDetailSheet } from './TransferDetailSheet';
 import { TransferSheet } from './TransferSheet';
 import { transferHooks } from './hooks';
 
@@ -35,6 +36,8 @@ export function TransfersScreen({ tripId }: { tripId: string }) {
   const { t } = useTranslation();
   const transfers = transferHooks.useList(tripId);
   const [sheet, setSheet] = useState<{ transfer?: Transfer | undefined } | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const detail = transfers.data?.find((transfer) => transfer.id === detailId);
 
   return (
     <TripPage
@@ -110,13 +113,27 @@ export function TransfersScreen({ tripId }: { tripId: string }) {
                             />
                           )
                         }
-                        {...(canWrite ? { onPress: () => setSheet({ transfer }) } : {})}
+                        onPress={() => setDetailId(transfer.id)}
                       />
                     );
                   })}
               </Card>
             )}
+            <TransferDetailSheet
+              visible={detailId !== null}
+              onClose={() => setDetailId(null)}
+              transfer={detail}
+              onEdit={
+                canWrite
+                  ? () => {
+                      setDetailId(null);
+                      setSheet({ transfer: detail });
+                    }
+                  : undefined
+              }
+            />
             <TransferSheet
+              onSaved={(saved) => setDetailId(saved.id)}
               tripId={tripId}
               visible={sheet !== null}
               onClose={() => setSheet(null)}

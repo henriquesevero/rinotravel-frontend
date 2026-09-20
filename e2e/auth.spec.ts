@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 
 import {
+  API,
   PASSWORD,
   REGISTRATION_CODE,
   collectBrowserErrors,
@@ -80,7 +81,7 @@ test.describe('authentication', () => {
     await signInViaUi(page, account);
     await expect(page.getByRole('heading', { name: /^Olá, / })).toBeVisible();
 
-    const revoke = await request.post('http://localhost:8080/api/v1/auth/logout', {
+    const revoke = await request.post(`${API}/api/v1/auth/logout`, {
       headers: {
         Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('rinotravel.session-token'))}`,
       },

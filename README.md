@@ -13,7 +13,7 @@ App do Rhino Travel, uma plataforma pessoal e colaborativa de gerenciamento de v
 | Roteiro | dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, editar e excluir itens |
 | Lugares | lista de desejos com prioridade, restaurantes com reserva e pratos, busca no Google (quando o servidor tem a chave), agendar um lugar no roteiro |
 | Reservas | voos (fusos de cada aeroporto, duração calculada) e hospedagens (noites, código de confirmação) |
-| Deslocamentos | deslocamentos em etapas e sugestão de rotas do Google (quando disponível) |
+| Deslocamentos | deslocamentos em etapas, sugestão de rotas do Google (quando disponível), mapa com a rota A→B, abrir no app de mapas do celular e compartilhar |
 | Documentos | envio com SHA-256, armazenamento no MongoDB via link assinado, abrir, renomear, visibilidade, excluir |
 
 Computadores têm menu lateral (que vira uma barra de ícones em janelas estreitas); celulares têm barra inferior própria, que dentro de uma viagem mostra as seções dela e um menu "Mais".
@@ -63,13 +63,16 @@ No emulador Android, `localhost` é o próprio emulador: use `EXPO_PUBLIC_API_UR
 | `npm run check` | formatação, lint, tipos e testes unitários (o gate) |
 | `npm run api:types` | regenera `src/core/api/schema.d.ts` a partir do OpenAPI da API |
 | `npm run build:web` | exporta o site estático em `dist/` |
-| `npm run e2e` | build web e Playwright (precisa da API com Mongo rodando) |
+| `npm run preview` | serve `dist/` com os mesmos cabeçalhos de segurança da Vercel |
+| `npm run e2e` | build web isolado e Playwright (precisa do Mongo; usa API na porta 18080 e site na 3100, sem chave do Google) |
+
+O mapa dos deslocamentos usa a **Maps Embed API** (gratuita e sem limite): é o próprio Google que desenha a rota, então nada de mapa ou rota é guardado no nosso banco, o que os termos do Google exigem. Ela precisa de uma chave de navegador em `EXPO_PUBLIC_GOOGLE_MAPS_EMBED_KEY`, restrita a essa API e aos endereços do site. Sem a chave, ou no app nativo, a tela mostra um cartão que abre o app de mapas com origem e destino preenchidos. Os botões "Abrir no Google Maps", "Abrir no Apple Maps" (só em aparelhos Apple) e "Compartilhar" funcionam sempre e não usam chave. Como o Metro guarda o valor das variáveis `EXPO_PUBLIC_*` no cache, use `expo export --clear` ao trocá-las.
 
 Depois de mudar o OpenAPI da API, rode `npm run api:types`: se um contrato mudou, o `tsc` aponta o que quebrou. Uma mensagem de erro nova do servidor sem tradução também falha na compilação.
 
 ## Testes end-to-end
 
-O Playwright usa o Chrome instalado e sobe (ou reaproveita) o site estático em `:3000` e a API em `:8080`, num banco separado (`rinotravel_e2e`). Cada teste cria os próprios usuários pela API. Os projetos `desktop` e `mobile` rodam a mesma suíte.
+O Playwright usa o Chrome instalado e sobe o site estático em `:3100` e uma API própria em `:18080`, com banco separado (`rinotravel_e2e`) e sem chave do Google, então nunca mexe nos dados de demonstração nem gasta cota. Cada teste cria os próprios usuários pela API. Os projetos `desktop` e `mobile` rodam a mesma suíte.
 
 ## Deploy (Vercel)
 

@@ -62,8 +62,10 @@
     "format:check": "prettier --check .",
     "api:types": "npx --yes openapi-typescript@7.13.0 ../rinotravel-api/docs/openapi.yaml -o src/core/api/schema.d.ts",
     "build:web": "expo export --platform web",
-    "e2e": "npm run build:web && playwright test",
-    "check": "npm run format:check && npm run lint && npm run typecheck && npm test"
+    "e2e": "npm run build:web:e2e && playwright test",
+    "check": "npm run format:check && npm run lint && npm run typecheck && npm test",
+    "preview": "node scripts/preview.mjs dist 3000",
+    "build:web:e2e": "EXPO_PUBLIC_API_URL=http://localhost:18080 EXPO_PUBLIC_GOOGLE_MAPS_EMBED_KEY=e2e-fake-embed-key expo export --clear --platform web --output-dir dist-e2e"
   },
   "private": true
 }

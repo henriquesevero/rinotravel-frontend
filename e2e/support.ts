@@ -1,6 +1,6 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 
-export const API = process.env.E2E_API_URL ?? 'http://localhost:8080';
+export const API = process.env.E2E_API_URL ?? 'http://localhost:18080';
 export const REGISTRATION_CODE = process.env.E2E_REGISTRATION_CODE ?? 'dev-registration-code';
 export const PASSWORD = 'correct horse battery';
 

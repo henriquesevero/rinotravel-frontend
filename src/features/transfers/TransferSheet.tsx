@@ -53,6 +53,8 @@ interface TransferSheetProps {
   timezone: string;
   defaultDate: string;
   transfer?: Transfer | undefined;
+  /** Called with the saved transfer once the sheet has closed, e.g. to show its map. */
+  onSaved?: (transfer: Transfer) => void;
 }
 
 export function TransferSheet({
@@ -63,6 +65,7 @@ export function TransferSheet({
   timezone,
   defaultDate,
   transfer,
+  onSaved,
 }: TransferSheetProps) {
   const { t } = useTranslation();
   const describe = useDescribeError();
@@ -169,16 +172,15 @@ export function TransferSheet({
     };
     const legs = chosen ? chosen.transfer.legs : editsLegs ? [legFromForm(values)] : undefined;
     try {
-      if (transfer) {
-        await update.mutateAsync({
-          id: transfer.id,
-          baseVersion: transfer.version,
-          patch: { ...base, ...(legs ? { legs } : {}) },
-        });
-      } else {
-        await create.mutateAsync({ id: newId(), ...base, legs: legs ?? [] });
-      }
+      const saved = transfer
+        ? await update.mutateAsync({
+            id: transfer.id,
+            baseVersion: transfer.version,
+            patch: { ...base, ...(legs ? { legs } : {}) },
+          })
+        : await create.mutateAsync({ id: newId(), ...base, legs: legs ?? [] });
       close();
+      onSaved?.(saved);
     } catch (cause) {
       fail(cause);
     }

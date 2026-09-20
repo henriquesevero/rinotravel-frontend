@@ -46,3 +46,4 @@ example
 playwright-report/
 test-results/
 coverage/
+dist-e2e/

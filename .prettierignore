@@ -6,3 +6,4 @@ src/core/api/schema.d.ts
 playwright-report
 test-results
 *.md
+dist-e2e

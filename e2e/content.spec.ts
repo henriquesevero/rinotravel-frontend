@@ -22,7 +22,7 @@ test.describe('trip content', () => {
     const trip = await createTripViaApi(request, ana);
     await signInToDashboard(page, ana);
     await page.goto(`/trips/${trip.id}/itinerary`);
-    await expect(page.getByRole('heading', { name: 'Roteiro' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Roteiro', exact: true })).toBeVisible();
 
     await page.getByTestId('add-item').click();
     await page.getByTestId('item-title').fill('Templo Senso-ji');
@@ -136,7 +136,51 @@ test.describe('trip content', () => {
     await expect(page.getByTestId('day-2027-04-03')).toContainText('Hotel Sakura');
   });
 
-  test('transfers: a transfer is saved and route suggestions degrade gracefully', async ({
+  test('transfers: a transfer is saved and opens with its embedded route map', async ({
+    page,
+    request,
+    context,
+  }) => {
+    const errors = collectBrowserErrors(page);
+    // The bundle carries a fake embed key: answer Google's embed page ourselves and keep the address.
+    const embedded: string[] = [];
+    await context.route('https://www.google.com/maps/embed/**', async (route) => {
+      embedded.push(route.request().url());
+      await route.fulfill({ status: 200, contentType: 'text/html', body: '<p>map</p>' });
+    });
+
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/transfers`);
+
+    await page.getByTestId('add-transfer').click();
+    await page.getByTestId('transfer-origin').fill('Aeroporto de Narita');
+    await page.getByTestId('transfer-destination').fill('Hotel Sakura');
+
+    // Saving opens the transfer, so the map is the first thing seen.
+    await page.getByTestId('transfer-sheet-submit').click();
+    const detail = page.getByTestId('transfer-detail');
+    await expect(detail).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByRole('heading', { name: 'Aeroporto de Narita → Hotel Sakura' }),
+    ).toBeVisible();
+    await expect(detail.getByText('Metrô').first()).toBeVisible();
+
+    const map = page.locator('iframe[title="Mapa da rota"]');
+    await expect(map).toBeVisible();
+    await expect.poll(() => embedded.length).toBeGreaterThan(0);
+    const url = new URL(embedded[0] ?? '');
+    expect(url.pathname).toBe('/maps/embed/v1/directions');
+    expect(url.searchParams.get('key')).toBe('e2e-fake-embed-key');
+    expect(url.searchParams.get('origin')).toBe('Aeroporto de Narita');
+    expect(url.searchParams.get('destination')).toBe('Hotel Sakura');
+    expect(url.searchParams.get('mode')).toBe('transit');
+    // A blocked frame (CSP) or any other browser problem would show up here.
+    expect(errors).toEqual([]);
+  });
+
+  test('transfers: route suggestions degrade gracefully without a Google key', async ({
     page,
     request,
   }) => {
@@ -150,10 +194,77 @@ test.describe('trip content', () => {
     await page.getByTestId('transfer-destination').fill('Hotel Sakura');
     await page.getByTestId('suggest-routes').click();
     await expect(page.getByText('As rotas automáticas não estão disponíveis')).toBeVisible();
+  });
 
-    await page.getByTestId('transfer-sheet-submit').click();
-    await expect(page.getByText('Aeroporto de Narita → Hotel Sakura')).toBeVisible();
-    await expect(page.getByText('Metrô').filter({ visible: true }).first()).toBeVisible();
+  test('transfers: the route opens in the maps app with origin, destination and mode filled in', async ({
+    page,
+    request,
+    context,
+  }) => {
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    const created = await request.post(`${API}/api/v1/trips/${trip.id}/transfers`, {
+      headers: { Authorization: `Bearer ${ana.token}` },
+      data: {
+        origin: { name: 'Aeroporto de Narita' },
+        destination: { name: 'Hotel Sakura', address: 'Asakusa, Tokyo' },
+        legs: [
+          {
+            mode: 'TRAIN',
+            line: 'Skyliner',
+            origin: { name: 'Aeroporto de Narita' },
+            destination: { name: 'Ueno' },
+          },
+          { mode: 'WALKING', origin: { name: 'Ueno' }, destination: { name: 'Hotel Sakura' } },
+        ],
+      },
+    });
+    expect(created.status(), await created.text()).toBe(201);
+
+    // Opening a maps link starts a navigation to google.com; record it instead of going there.
+    const opened: string[] = [];
+    await context.route('https://www.google.com/**', async (route) => {
+      opened.push(route.request().url());
+      await route.fulfill({ status: 200, contentType: 'text/html', body: 'ok' });
+    });
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/transfers`);
+    await page.getByText('Aeroporto de Narita → Hotel Sakura').click();
+    await expect(page.getByTestId('transfer-detail')).toBeVisible();
+    await expect(page.getByText('Skyliner').first()).toBeVisible();
+
+    await page.getByTestId('open-google-maps').click();
+    // The embedded map also asks google.com for its page; only the directions link matters here.
+    await expect.poll(() => opened.some((address) => address.includes('/maps/dir/'))).toBe(true);
+    const url = new URL(opened.find((address) => address.includes('/maps/dir/')) ?? '');
+    expect(url.pathname).toBe('/maps/dir/');
+    expect(url.searchParams.get('origin')).toBe('Aeroporto de Narita');
+    expect(url.searchParams.get('destination')).toBe('Asakusa, Tokyo');
+    expect(url.searchParams.get('travelmode')).toBe('transit');
+    await expect(page.getByTestId('share-transfer')).toBeVisible();
+  });
+
+  test('transfers: a viewer can open the map but not edit', async ({ page, request }) => {
+    const ana = await registerViaApi(request, 'Ana');
+    const bia = await registerViaApi(request, 'Bia');
+    const trip = await createTripViaApi(request, ana);
+    await addMemberViaApi(request, ana, trip.id, bia, 'VIEWER');
+    const created = await request.post(`${API}/api/v1/trips/${trip.id}/transfers`, {
+      headers: { Authorization: `Bearer ${ana.token}` },
+      data: {
+        origin: { name: 'Shinjuku' },
+        destination: { name: 'Shibuya' },
+        legs: [{ mode: 'SUBWAY', origin: { name: 'Shinjuku' }, destination: { name: 'Shibuya' } }],
+      },
+    });
+    expect(created.status()).toBe(201);
+
+    await signInToDashboard(page, bia);
+    await page.goto(`/trips/${trip.id}/transfers`);
+    await page.getByText('Shinjuku → Shibuya').click();
+    await expect(page.getByTestId('open-google-maps')).toBeVisible();
+    await expect(page.getByTestId('transfer-edit')).toHaveCount(0);
   });
 
   test('documents: a file is uploaded to MongoDB storage and comes back identical', async ({
