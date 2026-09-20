@@ -1,6 +1,6 @@
 import { useRouter, type Href } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import type { ItineraryItem, TimelineEntry, Trip } from '@/core/api';
 import { todayIn } from '@/core/datetime/civil-date';
@@ -53,9 +53,12 @@ const createStyles = ({ colors }: Theme) =>
     },
     tileToday: { backgroundColor: colors.accent, borderColor: colors.accent },
     tileSelected: { borderColor: colors.accent, borderWidth: 2 },
-    split: { flexDirection: 'row', gap: space.xl, alignItems: 'flex-start' },
+    // Two columns that fill the window; each scrolls on its own.
+    split: { flex: 1, minHeight: 0, flexDirection: 'row', gap: space.xl },
     listSide: { flex: 1, minWidth: 0 },
-    mapSide: { width: 460, ...({ position: 'sticky', top: 16 } as object) },
+    // A ScrollView grows and shrinks by default; the map column must keep its width.
+    mapSide: { width: 460, flexGrow: 0, flexShrink: 0, minHeight: 0 },
+    columnContent: { paddingBottom: space.xxl },
     mapTitle: { gap: 2, paddingBottom: space.md },
     line: {
       flex: 1,
@@ -104,6 +107,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
   return (
     <TripPage
       tripId={tripId}
+      fill={wide}
       title={t('itinerary.title')}
       onRefresh={refresh}
       right={({ trip, canWrite }) =>
@@ -197,7 +201,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
               }
               onOpenStop={openStop}
               onAddLocation={(item) => addLocation(item, date)}
-              {...(wide ? { listMaxHeight: 320 } : {})}
+              pinMap={wide}
             />
           </View>
         );
@@ -224,8 +228,22 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
           <>
             {wide ? (
               <View style={styles.split}>
-                <View style={styles.listSide}>{dayList}</View>
-                <View style={styles.mapSide}>{mapPanel(effectiveDate, setSelectedDate)}</View>
+                <ScrollView
+                  testID="itinerary-list"
+                  style={styles.listSide}
+                  contentContainerStyle={styles.columnContent}
+                  showsVerticalScrollIndicator
+                >
+                  {dayList}
+                </ScrollView>
+                <ScrollView
+                  testID="itinerary-map-column"
+                  style={styles.mapSide}
+                  contentContainerStyle={styles.columnContent}
+                  showsVerticalScrollIndicator
+                >
+                  {mapPanel(effectiveDate, setSelectedDate)}
+                </ScrollView>
               </View>
             ) : (
               dayList

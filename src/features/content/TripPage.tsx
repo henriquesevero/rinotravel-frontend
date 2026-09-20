@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { hasCode, type Trip } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
-import { space } from '@/shared/theme';
+import { space, useContentMaxWidth } from '@/shared/theme';
 import { Banner, EmptyState, ErrorState, Screen, ScreenHeader, Skeleton } from '@/shared/ui';
 
 import { TripBanner } from '@/features/trips/components/TripBanner';
@@ -19,6 +19,11 @@ interface TripPageProps {
   /** Pull to refresh; also refetches the trip itself. */
   onRefresh?: () => void;
   refreshing?: boolean;
+  /**
+   * Fills the window instead of scrolling as one page: the banner and title stay put and the content
+   * below is given all the remaining height, for screens that scroll in several parts of their own.
+   */
+  fill?: boolean;
   children: (access: { trip: Trip; canWrite: boolean }) => ReactNode;
 }
 
@@ -30,10 +35,12 @@ export function TripPage({
   right,
   onRefresh,
   refreshing,
+  fill = false,
   children,
 }: TripPageProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const maxWidth = useContentMaxWidth();
   const { query, trip, canWrite } = useTripAccess(tripId);
 
   const refresh = () => {
@@ -75,6 +82,28 @@ export function TripPage({
   }
 
   const access = { trip, canWrite };
+  if (fill) {
+    return (
+      <Screen scroll={false}>
+        <View style={[styles.fill, { maxWidth }]}>
+          <View style={styles.banner}>
+            <TripBanner trip={trip} />
+          </View>
+          <ScreenHeader
+            title={title}
+            {...(subtitle ? { subtitle } : {})}
+            {...(right ? { right: right(access) } : {})}
+          />
+          {canWrite ? null : (
+            <View style={styles.notice}>
+              <Banner tone="info" message={t('content.readOnly')} />
+            </View>
+          )}
+          <View style={styles.fillBody}>{children(access)}</View>
+        </View>
+      </Screen>
+    );
+  }
   return (
     <Screen refreshing={(refreshing ?? false) || query.isRefetching} onRefresh={refresh}>
       <View style={styles.banner}>
@@ -94,6 +123,9 @@ export function TripPage({
 }
 
 const styles = StyleSheet.create({
+  fill: { flex: 1, width: '100%', alignSelf: 'center', paddingHorizontal: space.lg },
+  fillBody: { flex: 1, minHeight: 0 },
+  notice: { paddingBottom: space.md },
   stack: { gap: space.lg },
   banner: { paddingTop: space.lg, paddingBottom: space.md },
 });

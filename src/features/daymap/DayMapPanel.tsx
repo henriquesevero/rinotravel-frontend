@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
 import type { DayMap } from '@/core/api';
 import { env } from '@/core/config/env';
 import { formatDayHeading, formatDuration } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { LocationMap } from '@/features/content/LocationMap';
+import { isMobileDevice } from '@/shared/platform';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import {
   Badge,
@@ -13,7 +14,9 @@ import {
   Button,
   Icon,
   IconButton,
+  ListRow,
   SegmentedControl,
+  Sheet,
   Skeleton,
   Text,
   type IconName,
@@ -22,6 +25,7 @@ import {
 import { dayColor } from './colors';
 import { useDayMap, type DayMode } from './hooks';
 import { InteractiveMap, type MapPath, type MapPin } from './InteractiveMap';
+import { MAX_POINTS_DESKTOP, MAX_POINTS_MOBILE, legUrl, routeLinks, type RouteLink } from './links';
 import { decodePolyline, type LatLng } from './polyline';
 import { dayLabel, stopsSignature, type Stop, type UnlocatedItem } from './stops';
 import { formatDistance, legViews, totals, type LegView } from './timing';
@@ -35,9 +39,31 @@ const MODE_ICON: Record<DayMode, IconName> = {
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
     root: { gap: space.lg },
+    pinned: {
+      backgroundColor: colors.background,
+      paddingBottom: space.sm,
+      zIndex: 2,
+      ...({ position: 'sticky', top: 0 } as object),
+    },
     summary: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
     mapBox: { minHeight: 200, borderRadius: radius.lg, overflow: 'hidden' },
+    openChip: {
+      position: 'absolute',
+      top: space.sm,
+      left: space.sm,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: space.xs,
+      paddingHorizontal: space.md,
+      paddingVertical: space.sm,
+      borderRadius: radius.pill,
+      backgroundColor: colors.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: colors.border,
+      zIndex: 3,
+    },
     image: { width: '100%', aspectRatio: 16 / 9 },
+    imagePinned: { aspectRatio: 2 },
     empty: {
       alignItems: 'center',
       gap: space.sm,
@@ -109,8 +135,11 @@ interface DayMapPanelProps {
   unlocated?: UnlocatedItem[];
   onOpenStop: (stop: Stop) => void;
   onAddLocation?: (item: UnlocatedItem) => void;
-  /** Keeps a long list from pushing the map out of view; the list scrolls inside. */
-  listMaxHeight?: number;
+  /**
+   * For a panel that sits in a column of its own that scrolls: the map stays pinned at the top of
+   * that column while the stops and trips scroll underneath.
+   */
+  pinMap?: boolean;
 }
 
 /**
@@ -125,7 +154,7 @@ export function DayMapPanel({
   unlocated = [],
   onOpenStop,
   onAddLocation,
-  listMaxHeight,
+  pinMap = false,
 }: DayMapPanelProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
@@ -136,6 +165,7 @@ export function DayMapPanel({
   const [mode, setMode] = useState<DayMode>('TRANSIT');
   const [selected, setSelected] = useState<number | null>(null);
   const [interactiveFailed, setInteractiveFailed] = useState(false);
+  const [chooser, setChooser] = useState(false);
   const trip = scope === 'trip';
 
   const interactive =
@@ -145,6 +175,17 @@ export function DayMapPanel({
 
   const views = useMemo(() => (data ? legViews(stops, data.legs) : []), [stops, data]);
   const total = totals(views);
+  const maxPoints = isMobileDevice() ? MAX_POINTS_MOBILE : MAX_POINTS_DESKTOP;
+  const links = useMemo(
+    () => routeLinks(stops, { mode, maxPoints, scope }),
+    [stops, mode, maxPoints, scope],
+  );
+  const openUrl = (url: string) => void Linking.openURL(url);
+  // One link opens straight away; a route too long for one link asks which part.
+  const openMaps = () => {
+    if (links.length === 1 && links[0]) openUrl(links[0].url);
+    else if (links.length > 1) setChooser(true);
+  };
   const label = (stop: Stop, index: number) => (trip ? dayLabel(stop.dayIndex) : orderLabel(index));
   const colorOf = (stop: Stop) => (trip ? dayColor(stop.dayIndex) : dayColor(0));
 
@@ -184,7 +225,7 @@ export function DayMapPanel({
     }
     const only = stops[0];
     if (stops.length === 1 && only) return <LocationMap tripId={tripId} location={only.location} />;
-    if (map.isPending) return <Skeleton height={300} borderRadius={radius.lg} />;
+    if (map.isPending) return <Skeleton height={pinMap ? 240 : 300} borderRadius={radius.lg} />;
     if (map.isError) return <Banner tone="warning" message={t('dayMap.loadError')} />;
     if (interactive) {
       return (
@@ -194,19 +235,26 @@ export function DayMapPanel({
           selectedIndex={selected}
           onSelect={setSelected}
           onError={() => setInteractiveFailed(true)}
+          height={pinMap ? 240 : 300}
         />
       );
     }
     if (data?.image) {
       return (
-        <View style={styles.mapBox} testID="day-map-image">
+        <Pressable
+          style={styles.mapBox}
+          testID="day-map-image"
+          accessibilityRole="link"
+          accessibilityLabel={t('dayMap.openMaps')}
+          onPress={openMaps}
+        >
           <Image
             source={{ uri: data.image }}
             accessibilityLabel={t('dayMap.title')}
             resizeMode="cover"
-            style={styles.image}
+            style={[styles.image, pinMap && styles.imagePinned]}
           />
-        </View>
+        </Pressable>
       );
     }
     return <Banner tone="info" message={t('dayMap.mapUnavailable')} />;
@@ -271,6 +319,8 @@ export function DayMapPanel({
                 view={views[index]}
                 mode={mode}
                 overnight={trip && stops[index + 1]?.date !== stop.date}
+                url={stops[index + 1] ? legUrl(stop, stops[index + 1] as Stop, mode) : null}
+                onOpen={openUrl}
               />
             ) : null}
           </View>
@@ -311,17 +361,63 @@ export function DayMapPanel({
         />
       ) : null}
 
-      {mapArea}
+      <View style={pinMap ? styles.pinned : undefined}>
+        <View>
+          {mapArea}
+          {stops.length >= 1 && links.length > 0 && !map.isPending && !map.isError ? (
+            <Pressable
+              testID="day-map-open"
+              accessibilityRole="link"
+              accessibilityLabel={t('dayMap.openMaps')}
+              onPress={openMaps}
+              style={styles.openChip}
+            >
+              <Icon name="open-outline" size={14} tone="accent" />
+              <Text variant="caption" tone="accent" style={{ fontWeight: '700' }}>
+                {t('dayMap.openMaps')}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
 
-      {stops.length > 0 ? (
-        listMaxHeight ? (
-          <ScrollView style={{ maxHeight: listMaxHeight }} nestedScrollEnabled>
-            {list}
-          </ScrollView>
-        ) : (
-          list
-        )
+      {stops.length > 0 ? list : null}
+
+      {stops.length >= 2 && mode === 'TRANSIT' && links.length > 0 ? (
+        <Text variant="footnote" tone="secondary" testID="day-map-transit-note">
+          {t('dayMap.transitNote')}
+        </Text>
       ) : null}
+
+      <Sheet
+        visible={chooser}
+        onClose={() => setChooser(false)}
+        title={t('dayMap.chooserTitle')}
+        subtitle={t('dayMap.chooserHint')}
+        icon="map-outline"
+        tint="blue"
+      >
+        <View testID="day-map-chooser">
+          {links.map((link, index) => (
+            <ListRow
+              key={link.key}
+              testID={`day-map-open-part-${index}`}
+              divider={index > 0}
+              icon="navigate-outline"
+              title={partTitle(link, index, trip, t)}
+              subtitle={
+                link.date
+                  ? formatDayHeading(link.date, currentLocale())
+                  : t('dayMap.openRange', { from: link.first, to: link.last })
+              }
+              onPress={() => {
+                setChooser(false);
+                openUrl(link.url);
+              }}
+            />
+          ))}
+        </View>
+      </Sheet>
 
       {!trip && unlocated.length > 0 ? (
         <View style={styles.unlocated} testID="day-map-unlocated">
@@ -365,18 +461,30 @@ function LegRow({
   view,
   mode,
   overnight,
+  url,
+  onOpen,
 }: {
   view: LegView | undefined;
   mode: DayMode;
   /** The trip from one day's last place to the next day's first. */
   overnight: boolean;
+  /** This hop in Google Maps, with the real transit of that stretch. */
+  url: string | null;
+  onOpen: (url: string) => void;
 }) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   if (!view) return null;
 
   return (
-    <View style={styles.leg} testID={`day-leg-${view.from}`}>
+    <Pressable
+      style={styles.leg}
+      testID={`day-leg-${view.from}`}
+      accessibilityRole={url ? 'link' : undefined}
+      accessibilityLabel={url ? t('dayMap.openLeg') : undefined}
+      disabled={!url}
+      onPress={() => url && onOpen(url)}
+    >
       <View style={styles.legRail}>
         <View style={styles.legLine} />
       </View>
@@ -411,6 +519,18 @@ function LegRow({
           </Text>
         )}
       </View>
-    </View>
+      {url ? <Icon name="open-outline" size={16} tone="secondary" /> : null}
+    </Pressable>
   );
+}
+
+function partTitle(
+  link: RouteLink,
+  index: number,
+  trip: boolean,
+  t: ReturnType<typeof useTranslation>['t'],
+): string {
+  return trip && link.dayIndex !== undefined
+    ? t('dayMap.openDay', { n: link.dayIndex + 1 })
+    : t('dayMap.openPart', { n: index + 1 });
 }

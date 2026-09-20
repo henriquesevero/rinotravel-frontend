@@ -25,3 +25,15 @@ export function useBreakpoint(): Breakpoint {
 export function useContentMaxWidth(): number {
   return useBreakpoint() === 'compact' ? contentMaxWidth : contentMaxWidthExpanded;
 }
+
+export interface FieldMetrics {
+  height: number;
+  fontSize: number;
+  dense: boolean;
+}
+
+/** Text fields are compact on computers and tablets, where a pointer is precise, and roomy on phones. */
+export function useFieldMetrics(): FieldMetrics {
+  const dense = useBreakpoint() !== 'compact';
+  return dense ? { height: 42, fontSize: 15, dense } : { height: 50, fontSize: 17, dense };
+}

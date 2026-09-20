@@ -21,6 +21,8 @@ export interface InteractiveMapProps {
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onError: () => void;
+  /** Pixels of height; shorter when the map stays pinned above a scrolling list. */
+  height?: number;
 }
 
 /** Native apps show the day as a picture instead: an interactive web map needs the browser. */

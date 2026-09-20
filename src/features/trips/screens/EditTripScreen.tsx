@@ -20,7 +20,11 @@ export function EditTripScreen({ tripId }: { tripId: string }) {
   if (trip.isPending) {
     return (
       <Screen>
-        <ScreenHeader title={t('trips.edit.title')} backFallback={`/trips/${tripId}`} />
+        <ScreenHeader
+          title={t('trips.edit.title')}
+          subtitle={t('trips.form.editSubtitle')}
+          backFallback={`/trips/${tripId}`}
+        />
         <Skeleton height={52} />
       </Screen>
     );

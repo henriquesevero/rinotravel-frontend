@@ -3,7 +3,16 @@ import { Pressable, StyleSheet, TextInput, View, type TextInputProps } from 'rea
 
 import { useTranslation } from '@/core/i18n';
 
-import { FONT_FAMILY, radius, space, typography, useStyles, useTheme, type Theme } from '../theme';
+import {
+  FONT_FAMILY,
+  radius,
+  space,
+  typography,
+  useFieldMetrics,
+  useStyles,
+  useTheme,
+  type Theme,
+} from '../theme';
 import { FieldMessage } from './FieldMessage';
 import { Icon } from './Icon';
 import { Text } from './Text';
@@ -22,9 +31,8 @@ export interface TextFieldProps extends Omit<
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    container: { gap: space.xs + 2 },
+    container: { gap: space.xs + 1 },
     box: {
-      minHeight: 52,
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.surface,
@@ -37,15 +45,14 @@ const createStyles = ({ colors }: Theme) =>
     boxError: { borderColor: colors.danger },
     input: {
       flex: 1,
-      minHeight: 50,
-      paddingVertical: space.md,
       paddingRight: space.lg,
       color: colors.text,
       ...typography.body,
       fontFamily: FONT_FAMILY.regular,
       fontWeight: 'normal',
     },
-    toggle: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
+    label: { fontWeight: '500' },
+    toggle: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   });
 
 export function TextField({
@@ -61,22 +68,37 @@ export function TextField({
   const styles = useStyles(createStyles);
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const metrics = useFieldMetrics();
   const [focused, setFocused] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
   return (
     <View style={styles.container}>
-      <Text variant="subhead" tone="secondary">
+      <Text variant={metrics.dense ? 'footnote' : 'subhead'} tone="secondary" style={styles.label}>
         {label}
       </Text>
-      <View style={[styles.box, focused && styles.boxFocused, !!error && styles.boxError]}>
+      <View
+        style={[
+          styles.box,
+          { minHeight: metrics.height },
+          focused && styles.boxFocused,
+          !!error && styles.boxError,
+        ]}
+      >
         <TextInput
           ref={inputRef}
           accessibilityLabel={label}
           aria-invalid={!!error}
           placeholderTextColor={colors.textSecondary}
           secureTextEntry={password && !revealed}
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              minHeight: metrics.height - 2,
+              fontSize: metrics.fontSize,
+              paddingVertical: metrics.dense ? space.sm : space.md,
+            },
+          ]}
           onFocus={(event) => {
             setFocused(true);
             onFocus?.(event);

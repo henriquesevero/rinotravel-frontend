@@ -3,7 +3,15 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { useTranslation } from '@/core/i18n';
 
-import { FONT_FAMILY, radius, space, typography, useStyles, type Theme } from '../theme';
+import {
+  FONT_FAMILY,
+  radius,
+  space,
+  typography,
+  useFieldMetrics,
+  useStyles,
+  type Theme,
+} from '../theme';
 import { FieldMessage } from './FieldMessage';
 import { Icon } from './Icon';
 import { ListRow } from './ListRow';
@@ -32,9 +40,9 @@ interface SelectFieldProps {
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    container: { gap: space.xs + 2 },
+    container: { gap: space.xs + 1 },
+    label: { fontWeight: '500' },
     box: {
-      minHeight: 52,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -69,6 +77,7 @@ export function SelectField({
 }: SelectFieldProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
+  const metrics = useFieldMetrics();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -89,7 +98,7 @@ export function SelectField({
 
   return (
     <View style={styles.container}>
-      <Text variant="subhead" tone="secondary">
+      <Text variant={metrics.dense ? 'footnote' : 'subhead'} tone="secondary" style={styles.label}>
         {label}
       </Text>
       <Pressable
@@ -97,9 +106,9 @@ export function SelectField({
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${selected?.label ?? ''}`}
         onPress={() => setOpen(true)}
-        style={[styles.box, !!error && styles.boxError]}
+        style={[styles.box, { minHeight: metrics.height }, !!error && styles.boxError]}
       >
-        <Text style={styles.value} numberOfLines={1}>
+        <Text style={[styles.value, { fontSize: metrics.fontSize }]} numberOfLines={1}>
           {selected?.label ?? ''}
         </Text>
         <Icon name="chevron-down" size={18} tone="secondary" />

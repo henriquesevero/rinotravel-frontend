@@ -1,19 +1,22 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { Href } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
-import { View, type TextInput } from 'react-native';
+import { StyleSheet, View, useWindowDimensions, type TextInput } from 'react-native';
 
 import { isApiError } from '@/core/api';
 import { applyApiFieldErrors } from '@/core/forms/apply-api-errors';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
-import { space } from '@/shared/theme';
+import { space, useStyles, type Theme } from '@/shared/theme';
 import {
   Banner,
   Button,
+  Card,
+  FieldRow,
   FormDateField,
   FormSelectField,
+  FormSection,
   FormTextField,
   Screen,
   ScreenHeader,
@@ -24,6 +27,7 @@ import { TRIP_FORM_FIELDS, tripFormSchema, type TripFormValues } from '../schema
 
 interface TripFormProps {
   title: string;
+  subtitle?: string;
   backFallback: Href;
   submitLabel: string;
   defaultValues: TripFormValues;
@@ -35,8 +39,29 @@ interface TripFormProps {
   notice?: ReactNode;
 }
 
+const WIDE_BREAKPOINT = 768;
+const FORM_MAX_WIDTH = 760;
+
+const createStyles = ({ colors }: Theme) =>
+  StyleSheet.create({
+    card: { width: '100%', maxWidth: FORM_MAX_WIDTH, padding: 0 },
+    body: { padding: space.xl, gap: space.xl },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: space.md,
+      paddingHorizontal: space.xl,
+      paddingVertical: space.lg,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+      backgroundColor: colors.surfaceMuted,
+    },
+    stack: { gap: space.xl },
+  });
+
 export function TripForm({
   title,
+  subtitle,
   backFallback,
   submitLabel,
   defaultValues,
@@ -46,6 +71,9 @@ export function TripForm({
   notice,
 }: TripFormProps) {
   const { t } = useTranslation();
+  const styles = useStyles(createStyles);
+  const router = useRouter();
+  const wide = useWindowDimensions().width >= WIDE_BREAKPOINT;
   const describe = useDescribeError();
   const destinationRef = useRef<TextInput>(null);
   const { control, handleSubmit, setError } = useForm<TripFormValues>({
@@ -69,16 +97,23 @@ export function TripForm({
   const submit = handleSubmit(onSubmit);
   const hasFieldErrors = isApiError(error) && error.fieldErrors.length > 0;
 
-  return (
-    <Screen
-      footer={<Button title={submitLabel} onPress={submit} loading={isSubmitting} fullWidth />}
-    >
-      <ScreenHeader title={title} backFallback={backFallback} />
-      <View style={{ gap: space.lg }}>
-        {notice}
-        {error && !hasFieldErrors && !notice ? (
-          <Banner tone="danger" message={describe(error)} />
-        ) : null}
+  const goBack = () => {
+    if (router.canGoBack()) router.back();
+    else router.replace(backFallback);
+  };
+
+  const feedback = (
+    <>
+      {notice}
+      {error && !hasFieldErrors && !notice ? (
+        <Banner tone="danger" message={describe(error)} />
+      ) : null}
+    </>
+  );
+
+  const fields = (
+    <>
+      <FormSection title={t('trips.form.secBasic')}>
         <FormTextField
           control={control}
           name="name"
@@ -95,37 +130,80 @@ export function TripForm({
           inputRef={destinationRef}
           returnKeyType="done"
         />
-        <FormDateField
-          control={control}
-          name="startDate"
-          label={t('trips.form.startDate')}
-          testID="trip-start-date"
-        />
-        <FormDateField
-          control={control}
-          name="endDate"
-          label={t('trips.form.endDate')}
-          testID="trip-end-date"
-        />
-        <FormSelectField
-          control={control}
-          name="timezone"
-          label={t('trips.form.timezone')}
-          title={t('trips.form.pickTimezone')}
-          hint={t('trips.form.timezoneHint')}
-          options={timezones}
-          searchable
-          testID="trip-timezone"
-        />
-        <FormSelectField
-          control={control}
-          name="currency"
-          label={t('trips.form.currency')}
-          title={t('trips.form.pickCurrency')}
-          options={currencies}
-          searchable
-          testID="trip-currency"
-        />
+      </FormSection>
+      <FormSection title={t('trips.form.secDates')}>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="startDate"
+            label={t('trips.form.startDate')}
+            testID="trip-start-date"
+          />
+          <FormDateField
+            control={control}
+            name="endDate"
+            label={t('trips.form.endDate')}
+            testID="trip-end-date"
+          />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('trips.form.secRegion')}>
+        <FieldRow>
+          <FormSelectField
+            control={control}
+            name="timezone"
+            label={t('trips.form.timezone')}
+            title={t('trips.form.pickTimezone')}
+            hint={t('trips.form.timezoneHint')}
+            options={timezones}
+            searchable
+            testID="trip-timezone"
+          />
+          <FormSelectField
+            control={control}
+            name="currency"
+            label={t('trips.form.currency')}
+            title={t('trips.form.pickCurrency')}
+            options={currencies}
+            searchable
+            testID="trip-currency"
+          />
+        </FieldRow>
+      </FormSection>
+    </>
+  );
+
+  const header = (
+    <ScreenHeader title={title} backFallback={backFallback} {...(subtitle ? { subtitle } : {})} />
+  );
+
+  // On computers the form is a card with its buttons at the foot; on phones the button rides the bottom edge.
+  if (wide) {
+    return (
+      <Screen>
+        {header}
+        <Card padded={false} style={styles.card}>
+          <View style={styles.body}>
+            {feedback}
+            {fields}
+          </View>
+          <View style={styles.actions}>
+            <Button title={t('common.cancel')} variant="secondary" onPress={goBack} />
+            <Button title={submitLabel} onPress={submit} loading={isSubmitting} />
+          </View>
+        </Card>
+      </Screen>
+    );
+  }
+
+  return (
+    <Screen
+      footer={<Button title={submitLabel} onPress={submit} loading={isSubmitting} fullWidth />}
+    >
+      {header}
+      <View style={styles.stack}>
+        {feedback}
+        {fields}
       </View>
     </Screen>
   );

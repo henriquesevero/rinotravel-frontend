@@ -193,6 +193,11 @@ export const ptBR = {
       pickTimezone: 'Escolha o fuso horário',
       pickCurrency: 'Escolha a moeda',
       pickDate: 'Escolher data',
+      secBasic: 'Sobre a viagem',
+      secDates: 'Datas',
+      secRegion: 'Região e moeda',
+      newSubtitle: 'Dê um nome, escolha o destino e o período. Você completa o resto depois.',
+      editSubtitle: 'Atualize os dados principais da viagem.',
     },
     detail: {
       loadError: 'Não foi possível carregar esta viagem.',
@@ -336,6 +341,15 @@ export const ptBR = {
     open: 'Abrir arquivo',
   },
   dayMap: {
+    openMaps: 'Abrir no Google Maps',
+    openLeg: 'Abrir este trajeto no Google Maps',
+    chooserTitle: 'Abrir no Google Maps',
+    chooserHint: 'O Google Maps aceita poucas paradas por link. Escolha a parte a abrir.',
+    openPart: 'Parte {{n}}',
+    openRange: 'Paradas {{from}} a {{to}}',
+    openDay: 'Dia {{n}}',
+    transitNote:
+      'O Google Maps não mostra transporte público com várias paradas: o link abre todas elas. Para o transporte de cada trecho, toque no trajeto na lista.',
     tripCaption: 'Mapa da viagem',
     tripHeading: 'Roteiro completo',
     scope: { day: 'Dia', trip: 'Viagem toda' },

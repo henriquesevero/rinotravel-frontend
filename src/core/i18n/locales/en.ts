@@ -189,6 +189,11 @@ export const en: Translation = {
       pickTimezone: 'Choose a time zone',
       pickCurrency: 'Choose a currency',
       pickDate: 'Choose a date',
+      secBasic: 'About the trip',
+      secDates: 'Dates',
+      secRegion: 'Region and currency',
+      newSubtitle: 'Name it, pick the destination and the dates. You can fill in the rest later.',
+      editSubtitle: "Update the trip's main details.",
     },
     detail: {
       loadError: 'We could not load this trip.',
@@ -332,6 +337,15 @@ export const en: Translation = {
     open: 'Open file',
   },
   dayMap: {
+    openMaps: 'Open in Google Maps',
+    openLeg: 'Open this trip in Google Maps',
+    chooserTitle: 'Open in Google Maps',
+    chooserHint: 'Google Maps takes only a few stops per link. Choose the part to open.',
+    openPart: 'Part {{n}}',
+    openRange: 'Stops {{from}} to {{to}}',
+    openDay: 'Day {{n}}',
+    transitNote:
+      'Google Maps does not show public transit with several stops: the link opens all of them. For the transit of each hop, tap the trip in the list.',
     tripCaption: 'Trip map',
     tripHeading: 'Complete itinerary',
     scope: { day: 'Day', trip: 'Whole trip' },

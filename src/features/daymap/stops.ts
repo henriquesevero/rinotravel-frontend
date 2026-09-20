@@ -110,7 +110,7 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
 
   // Two stops in a row at the same place (a lunch item and its restaurant booking) are one visit.
   return stops.filter(
-    (stop, index) => index === 0 || pointOf(stop.location) !== pointOf(stops[index - 1]?.location),
+    (stop, index) => index === 0 || !sameSpot(stop.location, stops[index - 1]?.location),
   );
 }
 
@@ -127,6 +127,31 @@ export const MAX_TRIP_STOPS = 80;
  * For a whole trip each day is a group with its own colour and its number on the pin. For one day
  * the server numbers the pins itself, in order.
  */
+/**
+ * True when two records point at the same spot even if they were typed differently: the same
+ * coordinates within a few metres, or one address that is the start of the other
+ * ("205 E Houston St" and "205 E Houston St, New York, NY 10002").
+ */
+export function sameSpot(a: Location, b: Location | undefined): boolean {
+  if (!b) return false;
+  if (
+    typeof a.latitude === 'number' &&
+    typeof a.longitude === 'number' &&
+    typeof b.latitude === 'number' &&
+    typeof b.longitude === 'number'
+  ) {
+    return (
+      Math.abs(a.latitude - b.latitude) < 0.0002 && Math.abs(a.longitude - b.longitude) < 0.0002
+    );
+  }
+  const text = (place: Location) =>
+    (place.address || place.name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const x = text(a);
+  const y = text(b);
+  if (x === '' || y === '') return false;
+  return x === y || (Math.min(x.length, y.length) >= 8 && (x.startsWith(y) || y.startsWith(x)));
+}
+
 export function toRequestStops(stops: Stop[], scope: 'day' | 'trip' = 'day'): DayMapStop[] {
   return stops.map((stop) => ({
     label: stop.title,

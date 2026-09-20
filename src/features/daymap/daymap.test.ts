@@ -171,6 +171,46 @@ describe('buildStops', () => {
   });
 });
 
+describe('the same place written two ways', () => {
+  const days = [day('d1', '2027-04-02')];
+  const at = (id: string, title: string, time: string, location: ItineraryItem['location']) =>
+    item(id, 'd1', title, time, location);
+  const build = (items: ItineraryItem[]) =>
+    buildStops({ date: '2027-04-02', days, items, restaurants: [], hotels: [] });
+
+  it('merges an address that is the start of the other one', () => {
+    const stops = build([
+      at('a', 'Reserva', '20:00', { name: 'Katz', address: '205 E Houston St' }),
+      at('b', 'Jantar', '20:00', {
+        name: 'Katz’s',
+        address: '205 E Houston St, New York, NY 10002',
+      }),
+    ]);
+    expect(stops).toHaveLength(1);
+  });
+
+  it('merges coordinates within a few metres, and keeps ones a block apart', () => {
+    const near = build([
+      at('a', 'A', '09:00', { name: 'X', latitude: 40.7, longitude: -73.9 }),
+      at('b', 'B', '10:00', { name: 'Y', latitude: 40.70005, longitude: -73.90005 }),
+    ]);
+    const apart = build([
+      at('a', 'A', '09:00', { name: 'X', latitude: 40.7, longitude: -73.9 }),
+      at('b', 'B', '10:00', { name: 'Y', latitude: 40.701, longitude: -73.9 }),
+    ]);
+    expect(near).toHaveLength(1);
+    expect(apart).toHaveLength(2);
+  });
+
+  it('does not merge different places just because both are short', () => {
+    const stops = build([
+      at('a', 'A', '09:00', { name: 'Met' }),
+      at('b', 'B', '10:00', { name: 'Metro' }),
+    ]);
+    expect(stops).toHaveLength(2);
+  });
+});
+
 describe('legViews', () => {
   const days = [day('d1', '2027-04-02')];
   const stops = buildStops({

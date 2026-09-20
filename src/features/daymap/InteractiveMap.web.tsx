@@ -20,6 +20,7 @@ export function InteractiveMap({
   selectedIndex,
   onSelect,
   onError,
+  height = 300,
 }: InteractiveMapProps) {
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<google.maps.Map | null>(null);
@@ -140,7 +141,7 @@ export function InteractiveMap({
   useEffect(highlight, [selectedIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <View style={styles.frame} testID="interactive-map">
+    <View style={[styles.frame, { height }]} testID="interactive-map">
       <div ref={container} style={{ width: '100%', height: '100%' }} />
     </View>
   );

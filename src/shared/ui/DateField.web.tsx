@@ -1,15 +1,16 @@
 import { StyleSheet, View } from 'react-native';
 
-import { FONT_FAMILY, radius, space, typography, useTheme } from '../theme';
+import { FONT_FAMILY, radius, space, useFieldMetrics, useTheme } from '../theme';
 import type { DateFieldProps } from './DateField.types';
 import { FieldMessage } from './FieldMessage';
 import { Text } from './Text';
 
 export function DateField({ label, value, onChange, error, testID }: DateFieldProps) {
   const { colors, scheme } = useTheme();
+  const metrics = useFieldMetrics();
   return (
     <View style={styles.container}>
-      <Text variant="subhead" tone="secondary">
+      <Text variant={metrics.dense ? 'footnote' : 'subhead'} tone="secondary" style={styles.label}>
         {label}
       </Text>
       <input
@@ -20,7 +21,7 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
         value={value}
         onChange={(event) => onChange(event.target.value)}
         style={{
-          minHeight: 52,
+          minHeight: metrics.height,
           boxSizing: 'border-box',
           width: '100%',
           padding: `0 ${space.lg}px`,
@@ -30,7 +31,7 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
           color: colors.text,
           colorScheme: scheme,
           fontFamily: FONT_FAMILY.regular,
-          fontSize: typography.body.fontSize,
+          fontSize: metrics.fontSize,
         }}
       />
       <FieldMessage error={error} />
@@ -39,5 +40,6 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
 }
 
 const styles = StyleSheet.create({
-  container: { gap: space.xs + 2 },
+  container: { gap: space.xs + 1 },
+  label: { fontWeight: '500' },
 });

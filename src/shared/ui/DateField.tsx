@@ -5,7 +5,7 @@ import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { formatCivilDate, fromJsDate, toJsDate } from '@/core/datetime/civil-date';
 import { currentLocale, useTranslation } from '@/core/i18n';
 
-import { radius, space, useStyles, type Theme } from '../theme';
+import { radius, space, useFieldMetrics, useStyles, type Theme } from '../theme';
 import type { DateFieldProps } from './DateField.types';
 import { FieldMessage } from './FieldMessage';
 import { Button } from './Button';
@@ -15,9 +15,9 @@ import { Text } from './Text';
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    container: { gap: space.xs + 2 },
+    container: { gap: space.xs + 1 },
+    label: { fontWeight: '500' },
     box: {
-      minHeight: 52,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -33,6 +33,7 @@ const createStyles = ({ colors }: Theme) =>
 export function DateField({ label, value, onChange, error, testID }: DateFieldProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
+  const metrics = useFieldMetrics();
   const [iosOpen, setIosOpen] = useState(false);
   const [draft, setDraft] = useState<Date>(() => (value ? toJsDate(value) : new Date()));
 
@@ -52,7 +53,7 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
 
   return (
     <View style={styles.container}>
-      <Text variant="subhead" tone="secondary">
+      <Text variant={metrics.dense ? 'footnote' : 'subhead'} tone="secondary" style={styles.label}>
         {label}
       </Text>
       <Pressable
@@ -60,9 +61,9 @@ export function DateField({ label, value, onChange, error, testID }: DateFieldPr
         accessibilityRole="button"
         accessibilityLabel={`${label}: ${value ? formatCivilDate(value, currentLocale()) : t('trips.form.pickDate')}`}
         onPress={open}
-        style={[styles.box, !!error && styles.boxError]}
+        style={[styles.box, { minHeight: metrics.height }, !!error && styles.boxError]}
       >
-        <Text tone={value ? 'primary' : 'secondary'}>
+        <Text tone={value ? 'primary' : 'secondary'} style={{ fontSize: metrics.fontSize }}>
           {value ? formatCivilDate(value, currentLocale()) : t('trips.form.pickDate')}
         </Text>
         <Icon name="calendar-outline" tone="secondary" />

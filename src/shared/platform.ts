@@ -9,3 +9,14 @@ export function isApplePlatform(): boolean {
     /iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)
   );
 }
+
+/**
+ * Phone browsers and native apps open Google Maps links with far fewer stops than a computer does
+ * (three in between, against nine), so route links are cut into smaller parts there.
+ */
+export function isMobileDevice(): boolean {
+  if (Platform.OS !== 'web') return true;
+  return (
+    typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+  );
+}

@@ -607,6 +607,218 @@ test.describe('trip content', () => {
     await expect(page.getByTestId('item-place-search')).toBeVisible();
   });
 
+  test('itinerary: on a computer each column scrolls on its own and the map stays in view', async ({
+    page,
+    request,
+  }) => {
+    test.skip(isPhone(page), 'The two columns exist only on computers');
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap([]));
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    await page.getByTestId('map-scope-trip').click();
+    await expect(page.getByTestId('day-map-panel')).toContainText('5 paradas');
+    await expect(page.locator('[data-fake-map="1"]')).toBeVisible();
+
+    const list = page.getByTestId('itinerary-list');
+    const column = page.getByTestId('itinerary-map-column');
+    const state = (locator: import('@playwright/test').Locator) =>
+      locator.evaluate((el) => ({
+        top: el.scrollTop,
+        scrollable: el.scrollHeight > el.clientHeight,
+      }));
+
+    // Both columns have more than fits, so each needs its own scroll; the page itself does not scroll.
+    expect((await state(list)).scrollable).toBe(true);
+    expect((await state(column)).scrollable).toBe(true);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+
+    // Scrolling the map column leaves the day list where it was, and the map stays in view.
+    // (React Native Web replaces the element's own scrollTo with its own, so set scrollTop.)
+    await column.evaluate((el) => {
+      el.scrollTop = 500;
+    });
+    expect((await state(column)).top).toBeGreaterThan(0);
+    expect((await state(list)).top).toBe(0);
+    const map = await page.locator('[data-fake-map="1"]').boundingBox();
+    expect(map?.y ?? -1).toBeGreaterThanOrEqual(0);
+    expect(map?.y ?? 9999).toBeLessThan(page.viewportSize()?.height ?? 0);
+
+    // And the other way round: the day list scrolls to its end without moving the map column.
+    const before = (await state(column)).top;
+    await list.evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+    });
+    expect((await state(list)).top).toBeGreaterThan(0);
+    expect((await state(column)).top).toBe(before);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+
+  // Opening a Google Maps link starts a navigation to google.com; record it instead of going there.
+  async function recordMapsLinks(context: import('@playwright/test').BrowserContext) {
+    const opened: URL[] = [];
+    await context.route('https://www.google.com/**', async (route) => {
+      opened.push(new URL(route.request().url()));
+      await route.fulfill({ status: 200, contentType: 'text/html', body: 'ok' });
+    });
+    return opened;
+  }
+
+  test('itinerary: the map, its button and each trip open in Google Maps', async ({
+    page,
+    request,
+    context,
+  }) => {
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap([]));
+    const opened = await recordMapsLinks(context);
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    const latest = async (count: number) => {
+      await expect.poll(() => opened.length).toBe(count);
+      return opened[count - 1] as URL;
+    };
+
+    // The whole day as one route: first place to last, the middle one as a stop between.
+    await page.getByTestId('day-map-open').click();
+    const all = await latest(1);
+    expect(all.pathname).toBe('/maps/dir/');
+    expect(all.searchParams.get('origin')).toBe('35.7148,139.7967');
+    expect(all.searchParams.get('waypoints')).toBe('35.7189,139.7765');
+    expect(all.searchParams.get('destination')).toBe('Shibuya, Tóquio');
+    // Public transit cannot have stops in between, so the link leaves the mode out and the panel says why.
+    expect(all.searchParams.has('travelmode')).toBe(false);
+    await expect(page.getByTestId('day-map-transit-note')).toBeVisible();
+
+    // Walking has no such limit: the mode goes into the link and the note goes away.
+    await page.getByTestId('day-mode-WALKING').click();
+    await expect(page.getByTestId('day-map-transit-note')).toHaveCount(0);
+    await page.getByTestId('day-map-open').click();
+    expect((await latest(2)).searchParams.get('travelmode')).toBe('walking');
+
+    // One hop opens with the real public transit of that stretch, whatever the rest of the day.
+    await page.getByTestId('day-mode-TRANSIT').click();
+    await page.getByTestId('day-leg-0').click();
+    const hop = await latest(3);
+    expect(hop.searchParams.get('origin')).toBe('35.7148,139.7967');
+    expect(hop.searchParams.get('destination')).toBe('35.7189,139.7765');
+    expect(hop.searchParams.get('travelmode')).toBe('transit');
+    expect(hop.searchParams.has('waypoints')).toBe(false);
+  });
+
+  test('itinerary: clicking the picture of the day opens it in Google Maps', async ({
+    page,
+    request,
+    context,
+  }) => {
+    const PNG =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'window.__rinoMapsReady(); setTimeout(() => window.gm_authFailure && window.gm_authFailure(), 50);',
+      }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', async (route) => {
+      const body = route.request().postDataJSON() as { stops: unknown[]; includeImage: boolean };
+      const legs = body.stops.slice(1).map((_, index) => ({
+        from: index,
+        to: index + 1,
+        available: true,
+        durationSeconds: 1500,
+        distanceMeters: 5000,
+      }));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ legs, ...(body.includeImage ? { image: PNG } : {}) }),
+      });
+    });
+    const opened = await recordMapsLinks(context);
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    await page.getByTestId('day-map-image').click();
+
+    await expect.poll(() => opened.length).toBe(1);
+    expect(opened[0]?.pathname).toBe('/maps/dir/');
+    expect(opened[0]?.searchParams.get('waypoints')).toBe('35.7189,139.7765');
+  });
+
+  test('itinerary: a route too long for one link is opened in parts on a phone', async ({
+    page,
+    request,
+    context,
+  }) => {
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap([]));
+    const opened = await recordMapsLinks(context);
+
+    // Seven places in one day: more than a phone's link can take, fewer than a computer's.
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    const headers = { Authorization: `Bearer ${ana.token}` };
+    const day = await (
+      await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-days`, {
+        headers,
+        data: { date: '2027-04-02' },
+      })
+    ).json();
+    for (let i = 0; i < 7; i++) {
+      const made = await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-items`, {
+        headers,
+        data: {
+          dayId: day.id,
+          title: `Lugar ${i + 1}`,
+          category: 'ATTRACTION',
+          start: {
+            dateTime: `2027-04-02T${String(8 + i).padStart(2, '0')}:00:00`,
+            timezone: 'Asia/Tokyo',
+          },
+          location: { name: `Lugar ${i + 1}`, latitude: 35 + i / 100, longitude: 139 },
+        },
+      });
+      expect(made.status()).toBe(201);
+    }
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    await expect(page.getByTestId('day-map-panel')).toContainText('7 paradas');
+    await page.getByTestId('day-map-open').click();
+
+    if (isPhone(page)) {
+      // Phone links take three stops in between: the day is offered as two parts sharing a stop.
+      await expect(page.getByTestId('day-map-chooser')).toContainText('Parte 1');
+      await expect(page.getByTestId('day-map-chooser')).toContainText('Paradas 5 a 7');
+      await page.getByTestId('day-map-open-part-1').click();
+      await expect.poll(() => opened.length).toBe(1);
+      expect(opened[0]?.searchParams.get('origin')).toBe('35.04,139');
+      expect(opened[0]?.searchParams.get('destination')).toBe('35.06,139');
+      expect(opened[0]?.searchParams.get('waypoints')).toBe('35.05,139');
+    } else {
+      // A computer's link takes nine: all seven places fit in one.
+      await expect.poll(() => opened.length).toBe(1);
+      expect(opened[0]?.searchParams.get('origin')).toBe('35,139');
+      expect(opened[0]?.searchParams.get('destination')).toBe('35.06,139');
+      expect(opened[0]?.searchParams.get('waypoints')?.split('|')).toHaveLength(5);
+    }
+  });
+
   test('places: a wishlist place is scheduled into the itinerary', async ({ page, request }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);

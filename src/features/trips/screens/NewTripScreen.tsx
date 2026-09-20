@@ -24,6 +24,7 @@ export function NewTripScreen() {
   return (
     <TripForm
       title={t('trips.new')}
+      subtitle={t('trips.form.newSubtitle')}
       backFallback="/"
       submitLabel={t('trips.form.create')}
       defaultValues={emptyTrip()}

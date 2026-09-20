@@ -13,7 +13,9 @@ export {
   breakpointFor,
   useBreakpoint,
   useContentMaxWidth,
+  useFieldMetrics,
   type Breakpoint,
+  type FieldMetrics,
 } from './use-breakpoint';
 export { tintColors, type Tint, type TintColors } from './tints';
 export { FONT_FAMILY, fontFamilyFor } from './fonts';
