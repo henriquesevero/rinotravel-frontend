@@ -1,0 +1,8 @@
+node_modules
+dist
+.expo
+package-lock.json
+src/core/api/schema.d.ts
+playwright-report
+test-results
+*.md
