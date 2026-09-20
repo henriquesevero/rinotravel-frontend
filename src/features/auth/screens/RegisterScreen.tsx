@@ -113,7 +113,6 @@ export function RegisterScreen() {
           fullWidth
         />
       </View>
-
     </AuthLayout>
   );
 }

@@ -14,6 +14,7 @@ interface ButtonProps {
   disabled?: boolean;
   icon?: IconName;
   fullWidth?: boolean;
+  size?: 'md' | 'sm';
   testID?: string;
 }
 
@@ -36,6 +37,7 @@ const createStyles = ({ colors }: Theme) =>
       gap: space.sm,
     },
     fullWidth: { alignSelf: 'stretch' },
+    small: { minHeight: 40, paddingHorizontal: space.lg },
     primary: { backgroundColor: colors.accent },
     primaryPressed: { backgroundColor: colors.accentPressed },
     secondary: { backgroundColor: colors.surfaceMuted },
@@ -55,6 +57,7 @@ export function Button({
   disabled = false,
   icon,
   fullWidth = false,
+  size = 'md',
   testID,
 }: ButtonProps) {
   const styles = useStyles(createStyles);
@@ -74,6 +77,7 @@ export function Button({
         styles.base,
         styles[variant],
         pressed && styles[`${variant}Pressed`],
+        size === 'sm' && styles.small,
         fullWidth && styles.fullWidth,
         inactive && styles.disabled,
       ]}

@@ -45,7 +45,12 @@ const createStyles = ({ colors }: Theme) =>
     points: { gap: space.lg, marginTop: space.md },
     point: { flexDirection: 'row', alignItems: 'flex-start', gap: space.md },
     formSide: { flex: 1, backgroundColor: colors.background },
-    formContent: { flexGrow: 1, justifyContent: 'center', maxWidth: 460, paddingVertical: space.xxl },
+    formContent: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      maxWidth: 460,
+      paddingVertical: space.xxl,
+    },
     header: { gap: space.sm, marginBottom: space.xl },
     banner: {
       backgroundColor: colors.accent,
@@ -55,7 +60,13 @@ const createStyles = ({ colors }: Theme) =>
       marginBottom: space.xl,
       overflow: 'hidden',
     },
-    footer: { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap', gap: space.xs, marginTop: space.xl },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      flexWrap: 'wrap',
+      gap: space.xs,
+      marginTop: space.xl,
+    },
   });
 
 /**

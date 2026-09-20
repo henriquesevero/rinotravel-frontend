@@ -1,4 +1,10 @@
-import { Pressable, ScrollView, StyleSheet, View, type PressableStateCallbackType } from 'react-native';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+} from 'react-native';
 
 import { useTranslation } from '@/core/i18n';
 import { useMe } from '@/features/auth';
@@ -19,7 +25,12 @@ const createStyles = ({ colors }: Theme) =>
       borderRightColor: colors.border,
       paddingVertical: space.lg,
     },
-    brand: { paddingHorizontal: space.lg, paddingBottom: space.xl, minHeight: 56, justifyContent: 'center' },
+    brand: {
+      paddingHorizontal: space.lg,
+      paddingBottom: space.xl,
+      minHeight: 56,
+      justifyContent: 'center',
+    },
     scroll: { flex: 1 },
     section: { paddingHorizontal: space.md, gap: space.xs, marginBottom: space.lg },
     sectionTitle: { paddingHorizontal: space.md, paddingBottom: space.xs },
@@ -34,7 +45,11 @@ const createStyles = ({ colors }: Theme) =>
     itemCollapsed: { justifyContent: 'center', paddingHorizontal: 0 },
     itemHover: { backgroundColor: colors.surfaceMuted },
     itemActive: { backgroundColor: colors.accentSoft },
-    divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginHorizontal: space.lg },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: colors.border,
+      marginHorizontal: space.lg,
+    },
     user: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -77,7 +92,12 @@ export function Sidebar({ collapsed, onOpenAccount }: SidebarProps) {
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           {nav.main.map((item) => (
-            <SidebarItem key={item.key} item={item} collapsed={collapsed} onPress={() => nav.go(item.href)} />
+            <SidebarItem
+              key={item.key}
+              item={item}
+              collapsed={collapsed}
+              onPress={() => nav.go(item.href)}
+            />
           ))}
         </View>
 
@@ -96,7 +116,12 @@ export function Sidebar({ collapsed, onOpenAccount }: SidebarProps) {
               </View>
             )}
             {nav.trip.map((item) => (
-              <SidebarItem key={item.key} item={item} collapsed={collapsed} onPress={() => nav.go(item.href)} />
+              <SidebarItem
+                key={item.key}
+                item={item}
+                collapsed={collapsed}
+                onPress={() => nav.go(item.href)}
+              />
             ))}
           </View>
         ) : null}
@@ -108,7 +133,11 @@ export function Sidebar({ collapsed, onOpenAccount }: SidebarProps) {
         accessibilityRole="button"
         accessibilityLabel={t('auth.account.open')}
         onPress={onOpenAccount}
-        style={(state) => [styles.user, collapsed && styles.userCollapsed, hovered(state) && styles.itemHover]}
+        style={(state) => [
+          styles.user,
+          collapsed && styles.userCollapsed,
+          hovered(state) && styles.itemHover,
+        ]}
       >
         <Avatar name={me.data?.name ?? '?'} size={36} />
         {collapsed ? null : (
@@ -152,9 +181,16 @@ function SidebarItem({ item, collapsed, onPress }: SidebarItemProps) {
         item.active && styles.itemActive,
       ]}
     >
-      <Icon name={item.active ? item.activeIcon : item.icon} size={22} tone={item.active ? 'accent' : 'secondary'} />
+      <Icon
+        name={item.active ? item.activeIcon : item.icon}
+        size={22}
+        tone={item.active ? 'accent' : 'secondary'}
+      />
       {collapsed ? null : (
-        <Text tone={item.active ? 'accent' : 'primary'} style={item.active ? { fontWeight: '600' } : undefined}>
+        <Text
+          tone={item.active ? 'accent' : 'primary'}
+          style={item.active ? { fontWeight: '600' } : undefined}
+        >
           {label}
         </Text>
       )}

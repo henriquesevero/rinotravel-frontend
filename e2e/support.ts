@@ -79,3 +79,9 @@ export function collectBrowserErrors(page: Page): string[] {
   });
   return errors;
 }
+
+/** Opens the new-trip form: phones use the raised tab bar action, larger screens the header button. */
+export async function openNewTrip(page: Page) {
+  const phone = (page.viewportSize()?.width ?? 1280) < 768;
+  await page.getByTestId(phone ? 'nav-new' : 'new-trip').click();
+}

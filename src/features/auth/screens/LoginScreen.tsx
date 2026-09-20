@@ -72,7 +72,12 @@ export function LoginScreen() {
           returnKeyType="go"
           onSubmitEditing={submit}
         />
-        <Button title={t('auth.login.submit')} onPress={submit} loading={login.isPending} fullWidth />
+        <Button
+          title={t('auth.login.submit')}
+          onPress={submit}
+          loading={login.isPending}
+          fullWidth
+        />
       </View>
     </AuthLayout>
   );

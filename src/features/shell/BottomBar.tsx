@@ -63,7 +63,11 @@ export function BottomBar({ onOpenAccount, accountOpen }: BottomBarProps) {
         onPress={() => nav.go(trips.href)}
         style={styles.tab}
       >
-        <Icon name={tripsActive ? trips.activeIcon : trips.icon} size={24} tone={tripsActive ? 'accent' : 'secondary'} />
+        <Icon
+          name={tripsActive ? trips.activeIcon : trips.icon}
+          size={24}
+          tone={tripsActive ? 'accent' : 'secondary'}
+        />
         <Text variant="caption" tone={tripsActive ? 'accent' : 'secondary'}>
           {t('nav.trips')}
         </Text>
@@ -89,7 +93,11 @@ export function BottomBar({ onOpenAccount, accountOpen }: BottomBarProps) {
         onPress={onOpenAccount}
         style={styles.tab}
       >
-        <Icon name={accountOpen ? 'person-circle' : 'person-circle-outline'} size={26} tone={accountOpen ? 'accent' : 'secondary'} />
+        <Icon
+          name={accountOpen ? 'person-circle' : 'person-circle-outline'}
+          size={26}
+          tone={accountOpen ? 'accent' : 'secondary'}
+        />
         <Text variant="caption" tone={accountOpen ? 'accent' : 'secondary'}>
           {t('nav.account')}
         </Text>

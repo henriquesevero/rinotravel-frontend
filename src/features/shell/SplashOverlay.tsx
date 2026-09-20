@@ -14,7 +14,6 @@ import { useTranslation } from '@/core/i18n';
 import { space } from '@/shared/theme';
 import { BrandMark, Text } from '@/shared/ui';
 
-
 const BRAND = '#2563EB';
 const MIN_VISIBLE_MS = 1400;
 const FADE_MS = 380;
@@ -33,25 +32,32 @@ export function SplashOverlay({ ready }: SplashOverlayProps) {
   const [mounted, setMounted] = useState(!played);
   const [minElapsed, setMinElapsed] = useState(played);
   const enter = useSharedValue(0);
+  const textEnter = useSharedValue(0);
   const exit = useSharedValue(0);
 
   useEffect(() => {
     // The native splash uses the same brand color, so hiding it here hands over seamlessly.
     void SplashScreen.hideAsync();
     if (played) return undefined;
-    enter.value = withTiming(1, { duration: reduceMotion ? 0 : 700, easing: Easing.out(Easing.cubic) });
+    enter.value = withTiming(1, {
+      duration: reduceMotion ? 0 : 700,
+      easing: Easing.out(Easing.cubic),
+    });
     const timer = setTimeout(() => setMinElapsed(true), reduceMotion ? 500 : MIN_VISIBLE_MS);
     return () => clearTimeout(timer);
-  }, [enter, reduceMotion]);
+  }, [enter, textEnter, reduceMotion]);
 
   const leaving = ready && minElapsed;
   useEffect(() => {
     if (!leaving || !mounted) return undefined;
     exit.value = withTiming(1, { duration: reduceMotion ? 0 : FADE_MS });
-    const timer = setTimeout(() => {
-      played = true;
-      setMounted(false);
-    }, reduceMotion ? 0 : FADE_MS);
+    const timer = setTimeout(
+      () => {
+        played = true;
+        setMounted(false);
+      },
+      reduceMotion ? 0 : FADE_MS,
+    );
     return () => clearTimeout(timer);
   }, [leaving, mounted, exit, reduceMotion]);
 
@@ -64,7 +70,10 @@ export function SplashOverlay({ ready }: SplashOverlayProps) {
     transform: [{ scale: 0.8 + enter.value * 0.2 }],
   }));
   const textStyle = useAnimatedStyle(() => ({
-    opacity: withDelay(reduceMotion ? 0 : 250, withTiming(enter.value, { duration: reduceMotion ? 0 : 500 })),
+    opacity: withDelay(
+      reduceMotion ? 0 : 250,
+      withTiming(enter.value, { duration: reduceMotion ? 0 : 500 }),
+    ),
     transform: [{ translateY: (1 - enter.value) * 8 }],
   }));
 

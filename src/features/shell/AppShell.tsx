@@ -26,9 +26,13 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <View style={[styles.root, breakpoint !== 'compact' && styles.row]}>
-      {breakpoint === 'compact' ? null : <Sidebar collapsed={breakpoint === 'medium'} onOpenAccount={open} />}
+      {breakpoint === 'compact' ? null : (
+        <Sidebar collapsed={breakpoint === 'medium'} onOpenAccount={open} />
+      )}
       <View style={styles.content}>{children}</View>
-      {breakpoint === 'compact' ? <BottomBar onOpenAccount={open} accountOpen={accountOpen} /> : null}
+      {breakpoint === 'compact' ? (
+        <BottomBar onOpenAccount={open} accountOpen={accountOpen} />
+      ) : null}
       <AccountSheet visible={accountOpen} onClose={() => setAccountOpen(false)} />
     </View>
   );

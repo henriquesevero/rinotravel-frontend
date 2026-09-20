@@ -28,7 +28,11 @@ export function BrandMark({ compact = false, inverted = false, size = 40 }: Bran
         <Icon name="airplane" size={size * 0.55} tone="onAccent" />
       </View>
       {compact ? null : (
-        <Text variant="headline" tone={inverted ? 'onAccent' : 'primary'} style={{ fontSize: size * 0.45 }}>
+        <Text
+          variant="headline"
+          tone={inverted ? 'onAccent' : 'primary'}
+          style={{ fontSize: size * 0.45 }}
+        >
           {t('app.name')}
         </Text>
       )}
@@ -40,4 +44,3 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   mark: { alignItems: 'center', justifyContent: 'center' },
 });
-

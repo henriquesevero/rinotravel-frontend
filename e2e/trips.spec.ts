@@ -5,6 +5,7 @@ import {
   addMemberViaApi,
   collectBrowserErrors,
   createTripViaApi,
+  openNewTrip,
   registerViaApi,
   signInViaUi,
 } from './support';
@@ -34,7 +35,7 @@ test.describe('trips and members', () => {
     await expect(
       page.getByText('Sua próxima viagem começa aqui').filter({ visible: true }),
     ).toBeVisible();
-    await page.getByTestId('new-trip').click();
+    await openNewTrip(page);
     await fillTripForm(page);
     await page.getByRole('button', { name: 'Criar viagem', exact: true }).click();
 

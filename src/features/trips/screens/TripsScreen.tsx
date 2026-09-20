@@ -1,16 +1,14 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
 import { FlatList, View } from 'react-native';
 
 import type { Trip } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
-import { AccountSheet } from '@/features/auth';
-import { space } from '@/shared/theme';
+import { space, useBreakpoint } from '@/shared/theme';
 import {
   Card,
+  Button,
   EmptyState,
   ErrorState,
-  IconButton,
   Screen,
   ScreenHeader,
   Skeleton,
@@ -25,27 +23,23 @@ export function TripsScreen() {
   const router = useRouter();
   const trips = useTrips();
   const contentStyle = useContentStyle();
-  const [accountOpen, setAccountOpen] = useState(false);
+  const breakpoint = useBreakpoint();
+  const columns = breakpoint === 'expanded' ? 2 : 1;
 
   const header = (
     <ScreenHeader
       title={t('trips.title')}
       right={
-        <>
-          <IconButton
-            icon="add-circle"
-            label={t('trips.new')}
+        // Phones have the raised action in the tab bar; larger screens get it in the header.
+        breakpoint === 'compact' ? undefined : (
+          <Button
+            title={t('trips.new')}
+            icon="add"
+            size="sm"
             onPress={() => router.push('/trips/new')}
             testID="new-trip"
           />
-          <IconButton
-            icon="person-circle-outline"
-            label={t('auth.account.open')}
-            tone="secondary"
-            onPress={() => setAccountOpen(true)}
-            testID="open-account"
-          />
-        </>
+        )
       }
     />
   );
@@ -53,9 +47,16 @@ export function TripsScreen() {
   return (
     <Screen scroll={false}>
       <FlatList<Trip>
+        key={columns}
+        numColumns={columns}
+        {...(columns > 1 ? { columnWrapperStyle: { justifyContent: 'space-between' } } : {})}
         data={trips.data ?? []}
         keyExtractor={(trip) => trip.id}
-        renderItem={({ item }) => <TripCard trip={item} />}
+        renderItem={({ item }) => (
+          <View style={{ width: columns > 1 ? '49%' : '100%' }}>
+            <TripCard trip={item} />
+          </View>
+        )}
         ItemSeparatorComponent={Separator}
         ListHeaderComponent={header}
         ListEmptyComponent={
@@ -82,7 +83,6 @@ export function TripsScreen() {
         onRefresh={() => void trips.refetch()}
         keyboardShouldPersistTaps="handled"
       />
-      <AccountSheet visible={accountOpen} onClose={() => setAccountOpen(false)} />
     </Screen>
   );
 }
