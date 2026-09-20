@@ -8,7 +8,7 @@ import { radius } from '@/shared/theme';
 import type { InteractiveMapProps } from './InteractiveMap';
 import { loadGoogleMaps } from './loader';
 
-export type { InteractiveMapProps, MapPin } from './InteractiveMap';
+export type { InteractiveMapProps, MapPath, MapPin } from './InteractiveMap';
 
 const BLUE = '#2563EB';
 const DARK_BLUE = '#1E3A8A';
@@ -61,22 +61,23 @@ export function InteractiveMap({
     if (!current) return;
     markers.current.forEach((marker) => marker.setMap(null));
     lines.current.forEach((line) => line.setMap(null));
-    markers.current = [];
+    // Indexed like `pins`, with holes for stops that have no position, so selection lines up.
+    markers.current = new Array<google.maps.Marker>(pins.length);
     lines.current = [];
 
     const bounds = new google.maps.LatLngBounds();
-    for (const path of paths) {
-      if (path.length === 0) continue;
+    for (const { points, color } of paths) {
+      if (points.length === 0) continue;
       lines.current.push(
         new google.maps.Polyline({
           map: current,
-          path,
-          strokeColor: BLUE,
+          path: points,
+          strokeColor: color,
           strokeOpacity: 0.85,
           strokeWeight: 5,
         }),
       );
-      path.forEach((point) => bounds.extend(point));
+      points.forEach((point) => bounds.extend(point));
     }
     pins.forEach((pin, index) => {
       if (!pin.position) return;
@@ -88,7 +89,7 @@ export function InteractiveMap({
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: 15,
-          fillColor: BLUE,
+          fillColor: pin.color,
           fillOpacity: 1,
           strokeColor: '#FFFFFF',
           strokeWeight: 2,
@@ -96,7 +97,7 @@ export function InteractiveMap({
         title: pin.title,
       });
       marker.addListener('click', () => onSelect(index));
-      markers.current.push(marker);
+      markers.current[index] = marker;
     });
     if (!bounds.isEmpty()) current.fitBounds(bounds, 48);
     highlight();
@@ -108,10 +109,10 @@ export function InteractiveMap({
       marker.setIcon({
         path: google.maps.SymbolPath.CIRCLE,
         scale: selected ? 19 : 15,
-        fillColor: selected ? DARK_BLUE : BLUE,
+        fillColor: pins[index]?.color ?? BLUE,
         fillOpacity: 1,
-        strokeColor: '#FFFFFF',
-        strokeWeight: selected ? 3 : 2,
+        strokeColor: selected ? DARK_BLUE : '#FFFFFF',
+        strokeWeight: selected ? 4 : 2,
       });
       marker.setZIndex(selected ? 1000 : index);
     });

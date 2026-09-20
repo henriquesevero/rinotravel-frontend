@@ -1,7 +1,14 @@
 import type { DayMapLeg, Hotel, ItineraryDay, ItineraryItem, Restaurant } from '@/core/api';
 
 import { decodePolyline } from './polyline';
-import { buildStops, stopsSignature } from './stops';
+import {
+  buildStops,
+  buildTripStops,
+  buildUnlocated,
+  dayLabel,
+  stopsSignature,
+  toRequestStops,
+} from './stops';
 import { formatClock, formatDistance, legViews, totals } from './timing';
 
 const base = {
@@ -228,5 +235,81 @@ describe('legViews', () => {
     expect(formatClock(9 * 60 + 5)).toBe('09:05');
     expect(formatDistance(800)).toBe('800 m');
     expect(formatDistance(12400)).toBe('12,4 km');
+  });
+});
+
+describe('a whole trip', () => {
+  const days = [day('d1', '2027-04-02'), day('d2', '2027-04-03'), day('d3', '2027-04-04')];
+  const rest = { restaurants: [] as Restaurant[], hotels: [] as Hotel[] };
+  const items = [
+    item('a', 'd1', 'Templo', '09:00', { name: 'A' }),
+    item('b', 'd1', 'Museu', '14:00', { name: 'B' }),
+    item('c', 'd2', 'Parque', '10:00', { name: 'C' }),
+    item('nowhere', 'd3', 'Sem nada', '10:00', { name: 'D' }),
+  ];
+
+  it('lists every day in order, each stop knowing which day it is on', () => {
+    const stops = buildTripStops(['2027-04-02', '2027-04-03', '2027-04-04'], {
+      days,
+      items,
+      ...rest,
+    });
+    expect(stops.map((s) => [s.title, s.date, s.dayIndex])).toEqual([
+      ['Templo', '2027-04-02', 0],
+      ['Museu', '2027-04-02', 0],
+      ['Parque', '2027-04-03', 1],
+      ['Sem nada', '2027-04-04', 2],
+    ]);
+  });
+
+  it('keeps a place that repeats on the next day (the hotel in the evening and again in the morning)', () => {
+    const same = [
+      item('e', 'd1', 'Volta ao hotel', '22:00', { name: 'Hotel' }),
+      item('m', 'd2', 'Sai do hotel', '08:00', { name: 'Hotel' }),
+    ];
+    const stops = buildTripStops(['2027-04-02', '2027-04-03'], { days, items: same, ...rest });
+    expect(stops).toHaveLength(2);
+  });
+
+  it('gives each day a colour group and its number for the pin, as the server expects', () => {
+    const stops = buildTripStops(['2027-04-02', '2027-04-03'], { days, items, ...rest });
+    expect(toRequestStops(stops, 'trip').map((s) => [s.group, s.pin])).toEqual([
+      [0, '1'],
+      [0, '1'],
+      [1, '2'],
+    ]);
+    expect(
+      toRequestStops(stops, 'day').every((s) => s.group === undefined && s.pin === undefined),
+    ).toBe(true);
+    expect([dayLabel(0), dayLabel(8), dayLabel(9), dayLabel(34), dayLabel(35)]).toEqual([
+      '1',
+      '9',
+      'A',
+      'Z',
+      '',
+    ]);
+  });
+
+  it('tells apart the same stops on different days', () => {
+    const one = buildTripStops(['2027-04-02'], { days, items, ...rest });
+    const shifted = one.map((stop) => ({ ...stop, dayIndex: 1 }));
+    expect(stopsSignature(one)).not.toBe(stopsSignature(shifted));
+  });
+});
+
+describe('items a map cannot place', () => {
+  it('lists the ones of the day that have no place, in time order', () => {
+    const days = [day('d1', '2027-04-02')];
+    const items = [
+      item('late', 'd1', 'Sem local tarde', '18:00', undefined),
+      item('placed', 'd1', 'Com local', '09:00', { name: 'X' }),
+      item('early', 'd1', 'Sem local cedo', '08:00', undefined),
+      item('blank', 'd1', 'Local vazio', undefined, { name: '  ', address: '' }),
+    ];
+    expect(buildUnlocated({ date: '2027-04-02', days, items }).map((u) => u.title)).toEqual([
+      'Sem local cedo',
+      'Sem local tarde',
+      'Local vazio',
+    ]);
   });
 });

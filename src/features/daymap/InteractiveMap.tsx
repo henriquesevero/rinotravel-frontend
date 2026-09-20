@@ -6,12 +6,18 @@ export interface MapPin {
   title: string;
   time: string;
   position: LatLng | null;
+  color: string;
+}
+
+export interface MapPath {
+  points: LatLng[];
+  color: string;
 }
 
 export interface InteractiveMapProps {
   pins: MapPin[];
   /** One line per trip between stops. */
-  paths: LatLng[][];
+  paths: MapPath[];
   selectedIndex: number | null;
   onSelect: (index: number) => void;
   onError: () => void;

@@ -238,37 +238,73 @@ test.describe('trip content', () => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);
     const headers = { Authorization: `Bearer ${ana.token}` };
-    const day = await (
-      await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-days`, {
-        headers,
-        data: { date: '2027-04-02' },
-      })
-    ).json();
-    const at = (time: string) => ({ dateTime: `2027-04-02T${time}:00`, timezone: 'Asia/Tokyo' });
-    for (const [title, start, end, place] of [
+    const makeDay = async (date: string) =>
+      (
+        await (
+          await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-days`, {
+            headers,
+            data: { date },
+          })
+        ).json()
+      ).id as string;
+    const first = await makeDay('2027-04-02');
+    const second = await makeDay('2027-04-03');
+    const at = (date: string, time: string) => ({
+      dateTime: `${date}T${time}:00`,
+      timezone: 'Asia/Tokyo',
+    });
+    for (const [dayId, date, title, start, end, place] of [
       [
+        first,
+        '2027-04-02',
         'Templo Senso-ji',
         '09:00',
         '10:30',
         { name: 'Senso-ji', latitude: 35.7148, longitude: 139.7967 },
       ],
       [
+        first,
+        '2027-04-02',
         'Museu Nacional',
         '11:00',
         '13:00',
         { name: 'Museu Nacional', latitude: 35.7189, longitude: 139.7765 },
       ],
-      ['Jantar em Shibuya', '13:20', undefined, { name: 'Shibuya', address: 'Shibuya, Tóquio' }],
+      [
+        first,
+        '2027-04-02',
+        'Jantar em Shibuya',
+        '13:20',
+        undefined,
+        { name: 'Shibuya', address: 'Shibuya, Tóquio' },
+      ],
+      [first, '2027-04-02', 'Café sem local', '08:00', undefined, undefined],
+      [
+        second,
+        '2027-04-03',
+        'Parque Ueno',
+        '10:00',
+        '12:00',
+        { name: 'Ueno Park', latitude: 35.7146, longitude: 139.7732 },
+      ],
+      [
+        second,
+        '2027-04-03',
+        'Akihabara',
+        '15:00',
+        undefined,
+        { name: 'Akihabara', latitude: 35.6984, longitude: 139.7731 },
+      ],
     ] as const) {
       const made = await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-items`, {
         headers,
         data: {
-          dayId: day.id,
+          dayId,
           title,
           category: 'ATTRACTION',
-          start: at(start),
-          ...(end ? { end: at(end) } : {}),
-          location: place,
+          start: at(date, start),
+          ...(end ? { end: at(date, end) } : {}),
+          ...(place ? { location: place } : {}),
         },
       });
       expect(made.status(), await made.text()).toBe(201);
@@ -429,6 +465,143 @@ test.describe('trip content', () => {
     expect(requests.at(-1)).toMatchObject({ includeImage: true });
     // The list and the times are the same with or without the interactive map.
     await expect(page.getByTestId('day-leg-0')).toContainText('Saia às 10:35');
+  });
+
+  // One leg per pair of stops asked for, whatever their number: the first 25 min, the rest 45.
+  const answerDayMap =
+    (requests: Record<string, unknown>[]) => async (route: import('@playwright/test').Route) => {
+      const body = route.request().postDataJSON() as { stops: unknown[] };
+      requests.push(body);
+      const legs = body.stops.slice(1).map((_, index) => ({
+        from: index,
+        to: index + 1,
+        available: true,
+        durationSeconds: index === 0 ? 1500 : 2700,
+        distanceMeters: 5000,
+        polyline: '_p~iF~ps|U_ulLnnqC',
+      }));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ legs }),
+      });
+    };
+
+  test('itinerary: any day of the trip can be put on the map, one after the other', async ({
+    page,
+    request,
+  }) => {
+    const requests: Record<string, unknown>[] = [];
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap(requests));
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    const panel = page.getByTestId('day-map-panel');
+    await expect(panel.getByTestId('day-stop-0')).toContainText('Templo Senso-ji');
+
+    // The strip holds every day of the trip, not only the ones with places.
+    await expect(page.locator('[data-testid^="map-day-"]')).toHaveCount(15);
+
+    await page.getByTestId('map-next-day').click();
+    await expect(panel.getByTestId('day-stop-0')).toContainText('Parque Ueno');
+    await expect(panel.getByTestId('day-stop-1')).toContainText('Akihabara');
+    await expect(panel.getByTestId('day-stop-2')).toHaveCount(0);
+    expect((requests.at(-1) as { stops: { label: string }[] }).stops.map((s) => s.label)).toEqual([
+      'Parque Ueno',
+      'Akihabara',
+    ]);
+
+    // A day with nothing to map says so instead of showing a blank map.
+    await page.getByTestId('map-day-2027-04-05').click();
+    await expect(page.getByTestId('day-map-empty')).toBeVisible();
+
+    // Coming back to a day already seen does not ask the server again.
+    const asked = requests.length;
+    await page.getByTestId('map-day-2027-04-02').click();
+    await expect(panel.getByTestId('day-stop-0')).toContainText('Templo Senso-ji');
+    expect(requests.length).toBe(asked);
+    await page.getByTestId('map-prev-day').click();
+    await expect(page.getByTestId('map-day-2027-04-01')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  test('itinerary: the whole trip on one map, every place in order with a colour and number per day', async ({
+    page,
+    request,
+  }) => {
+    const requests: Record<string, unknown>[] = [];
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap(requests));
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    await page.getByTestId('map-scope-trip').click();
+
+    const panel = page.getByTestId('day-map-panel');
+    await expect(panel).toContainText('5 paradas');
+    // Days appear as groups, in order, and the trip from one day's last place to the next day's first
+    // is marked as the next morning.
+    await expect(panel.getByTestId('day-group-0')).toContainText('Dia 1');
+    await expect(panel.getByTestId('day-group-1')).toContainText('Dia 2');
+    await expect(panel.getByTestId('day-stop-2')).toContainText('Jantar em Shibuya');
+    await expect(panel.getByTestId('day-stop-3')).toContainText('Parque Ueno');
+    await expect(panel.getByTestId('day-leg-2')).toContainText('Na manhã seguinte');
+    // The chip strip belongs to the day view only.
+    await expect(page.getByTestId('map-next-day')).toHaveCount(0);
+
+    // One request with every place, each tagged with its day's colour group and the day on its pin.
+    const body = requests.at(-1) as { stops: { label: string; group: number; pin: string }[] };
+    expect(body.stops.map((s) => [s.label, s.group, s.pin])).toEqual([
+      ['Templo Senso-ji', 0, '1'],
+      ['Museu Nacional', 0, '1'],
+      ['Jantar em Shibuya', 0, '1'],
+      ['Parque Ueno', 1, '2'],
+      ['Akihabara', 1, '2'],
+    ]);
+
+    // On the map: pins carry their day number, and the four trips between the five places are lines.
+    const drawn = await page.evaluate(
+      () => (window as never as { __maps: { markers: string[]; lines: number } }).__maps,
+    );
+    expect(drawn.markers.map((m) => m.split(':')[0])).toEqual(['1', '1', '1', '2', '2']);
+    expect(drawn.lines).toBeGreaterThanOrEqual(4);
+
+    // Going back to one day works too.
+    await page.getByTestId('map-scope-day').click();
+    await expect(panel).toContainText('3 paradas');
+  });
+
+  test('itinerary: things with no place are listed apart, with a way to add one', async ({
+    page,
+    request,
+  }) => {
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap([]));
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+
+    const unlocated = page.getByTestId('day-map-unlocated');
+    await expect(unlocated).toContainText('Café sem local');
+    await expect(unlocated).toContainText('08:00');
+    // It is not a stop, so it is not numbered on the map.
+    await expect(page.getByTestId('day-map-stops')).not.toContainText('Café sem local');
+
+    await unlocated.getByRole('button', { name: 'Adicionar local' }).click();
+    await expect(page.getByTestId('item-title')).toHaveValue('Café sem local');
+    await expect(page.getByTestId('item-place-search')).toBeVisible();
   });
 
   test('places: a wishlist place is scheduled into the itinerary', async ({ page, request }) => {

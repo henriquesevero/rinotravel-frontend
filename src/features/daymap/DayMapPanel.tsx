@@ -3,13 +3,14 @@ import { Image, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-
 
 import type { DayMap } from '@/core/api';
 import { env } from '@/core/config/env';
-import { formatDuration } from '@/core/datetime/zoned';
-import { useTranslation } from '@/core/i18n';
+import { formatDayHeading, formatDuration } from '@/core/datetime/zoned';
+import { currentLocale, useTranslation } from '@/core/i18n';
 import { LocationMap } from '@/features/content/LocationMap';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import {
   Badge,
   Banner,
+  Button,
   Icon,
   IconButton,
   SegmentedControl,
@@ -18,10 +19,11 @@ import {
   type IconName,
 } from '@/shared/ui';
 
+import { dayColor } from './colors';
 import { useDayMap, type DayMode } from './hooks';
-import { InteractiveMap, type MapPin } from './InteractiveMap';
+import { InteractiveMap, type MapPath, type MapPin } from './InteractiveMap';
 import { decodePolyline, type LatLng } from './polyline';
-import { stopsSignature, type Stop } from './stops';
+import { dayLabel, stopsSignature, type Stop, type UnlocatedItem } from './stops';
 import { formatDistance, legViews, totals, type LegView } from './timing';
 
 const MODE_ICON: Record<DayMode, IconName> = {
@@ -46,6 +48,15 @@ const createStyles = ({ colors }: Theme) =>
       borderColor: 'rgba(37, 99, 235, 0.35)',
     },
     list: { gap: 0 },
+    dayHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: space.sm,
+      paddingHorizontal: space.md,
+      paddingTop: space.lg,
+      paddingBottom: space.xs,
+    },
+    dayDot: { width: 12, height: 12, borderRadius: radius.pill },
     stop: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -58,21 +69,27 @@ const createStyles = ({ colors }: Theme) =>
       width: 30,
       height: 30,
       borderRadius: radius.pill,
-      backgroundColor: colors.accent,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    numberSelected: { backgroundColor: '#1E3A8A' },
     stopText: { flex: 1, minWidth: 0, gap: 2 },
     leg: { flexDirection: 'row', gap: space.md, paddingLeft: space.md + 14 },
     legRail: { alignItems: 'center', width: 2 },
     legLine: { width: 2, flex: 1, backgroundColor: colors.border, borderRadius: 1 },
     legBody: { flex: 1, gap: space.xs, paddingVertical: space.sm },
     legRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
+    unlocated: { gap: space.xs, paddingTop: space.lg },
+    unlocatedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: space.md,
+      paddingHorizontal: space.md,
+      paddingVertical: space.sm,
+    },
   });
 
-/** The label a pin carries: 1 to 9, then A, B, C (what the map service can print). */
-function pinLabel(index: number): string {
+/** The label a pin carries within one day: 1 to 9, then A, B, C (what the picture can print). */
+function orderLabel(index: number): string {
   return index < 9 ? String(index + 1) : String.fromCharCode(65 + index - 9);
 }
 
@@ -86,34 +103,50 @@ function coordsOf(stop: Stop): LatLng | null {
 interface DayMapPanelProps {
   tripId: string;
   stops: Stop[];
+  /** `day` numbers the stops in order; `trip` shows every day, one colour and one number per day. */
+  scope?: 'day' | 'trip';
+  /** Scheduled things of this day the map cannot place yet; the day view lists them. */
+  unlocated?: UnlocatedItem[];
   onOpenStop: (stop: Stop) => void;
+  onAddLocation?: (item: UnlocatedItem) => void;
   /** Keeps a long list from pushing the map out of view; the list scrolls inside. */
   listMaxHeight?: number;
 }
 
 /**
- * One day on a map: every place in order with the time to be there, the trip between each pair with
- * how long it takes and when to leave, and the whole route drawn. Pass `key={date}` so a new day
- * starts with nothing selected.
+ * A day, or the whole trip, on a map: every place in order with the time to be there, the trip
+ * between each pair with how long it takes and when to leave, and the whole route drawn. Pass a
+ * `key` that changes with the day or scope so the panel starts with nothing selected.
  */
-export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }: DayMapPanelProps) {
+export function DayMapPanel({
+  tripId,
+  stops: given,
+  scope = 'day',
+  unlocated = [],
+  onOpenStop,
+  onAddLocation,
+  listMaxHeight,
+}: DayMapPanelProps) {
+  const styles = useStyles(createStyles);
+  const { t } = useTranslation();
   // The parent rebuilds the array on every render; the map should only react to a real change.
   const signature = stopsSignature(given);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the signature on purpose
   const stops = useMemo(() => given, [signature]);
-  const styles = useStyles(createStyles);
-  const { t } = useTranslation();
   const [mode, setMode] = useState<DayMode>('TRANSIT');
   const [selected, setSelected] = useState<number | null>(null);
   const [interactiveFailed, setInteractiveFailed] = useState(false);
+  const trip = scope === 'trip';
 
   const interactive =
     Platform.OS === 'web' && env.googleMapsBrowserKey !== '' && !interactiveFailed;
-  const map = useDayMap(tripId, stops, mode, !interactive);
+  const map = useDayMap(tripId, stops, mode, !interactive, scope);
   const data: DayMap | undefined = map.data;
 
   const views = useMemo(() => (data ? legViews(stops, data.legs) : []), [stops, data]);
   const total = totals(views);
+  const label = (stop: Stop, index: number) => (trip ? dayLabel(stop.dayIndex) : orderLabel(index));
+  const colorOf = (stop: Stop) => (trip ? dayColor(stop.dayIndex) : dayColor(0));
 
   // Stops given only as an address have no coordinates of their own; the routes know where they start
   // and end, so the pin is put there.
@@ -121,13 +154,19 @@ export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }:
     const decoded = (data?.legs ?? []).map((leg) => decodePolyline(leg.polyline ?? ''));
     const pinsOut: MapPin[] = stops.map((stop, index) => ({
       key: stop.key,
-      label: pinLabel(index),
-      title: stop.title,
+      label: trip ? dayLabel(stop.dayIndex) : orderLabel(index),
+      title: trip ? `${stop.title} · ${stop.date}` : stop.title,
       time: stop.time,
+      color: trip ? dayColor(stop.dayIndex) : dayColor(0),
       position: coordsOf(stop) ?? decoded[index]?.[0] ?? decoded[index - 1]?.at(-1) ?? null,
     }));
-    return { pins: pinsOut, paths: decoded };
-  }, [stops, data]);
+    // A trip belongs to the day it arrives in, like the picture the server draws.
+    const pathsOut: MapPath[] = decoded.map((points, index) => ({
+      points,
+      color: trip ? dayColor(stops[index + 1]?.dayIndex ?? 0) : dayColor(0),
+    }));
+    return { pins: pinsOut, paths: pathsOut };
+  }, [stops, data, trip]);
 
   const mapArea = (() => {
     if (stops.length === 0) {
@@ -177,9 +216,21 @@ export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }:
     <View style={styles.list} testID="day-map-stops">
       {stops.map((stop, index) => {
         const isSelected = selected === index;
-        const view = views[index];
+        const previous = stops[index - 1];
+        const startsDay = trip && (!previous || previous.date !== stop.date);
         return (
           <View key={stop.key}>
+            {startsDay ? (
+              <View style={styles.dayHeader} testID={`day-group-${stop.dayIndex}`}>
+                <View style={[styles.dayDot, { backgroundColor: dayColor(stop.dayIndex) }]} />
+                <Text variant="subhead" heading style={{ fontWeight: '700' }}>
+                  {t('dayMap.dayHeader', { n: stop.dayIndex + 1 })}
+                </Text>
+                <Text variant="footnote" tone="secondary">
+                  {formatDayHeading(stop.date, currentLocale())}
+                </Text>
+              </View>
+            ) : null}
             <Pressable
               testID={`day-stop-${index}`}
               accessibilityRole="button"
@@ -187,9 +238,9 @@ export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }:
               onPress={() => setSelected(isSelected ? null : index)}
               style={[styles.stop, isSelected && styles.stopSelected]}
             >
-              <View style={[styles.number, isSelected && styles.numberSelected]}>
+              <View style={[styles.number, { backgroundColor: colorOf(stop) }]}>
                 <Text variant="footnote" tone="onAccent" style={{ fontWeight: '700' }}>
-                  {pinLabel(index)}
+                  {label(stop, index)}
                 </Text>
               </View>
               <View style={styles.stopText}>
@@ -215,7 +266,13 @@ export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }:
                 testID={`day-stop-open-${index}`}
               />
             </Pressable>
-            {index < stops.length - 1 && data ? <LegRow view={view} mode={mode} /> : null}
+            {index < stops.length - 1 && data ? (
+              <LegRow
+                view={views[index]}
+                mode={mode}
+                overnight={trip && stops[index + 1]?.date !== stop.date}
+              />
+            ) : null}
           </View>
         );
       })}
@@ -265,11 +322,55 @@ export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }:
           list
         )
       ) : null}
+
+      {!trip && unlocated.length > 0 ? (
+        <View style={styles.unlocated} testID="day-map-unlocated">
+          <Text variant="caption" tone="secondary" style={{ letterSpacing: 0.8 }}>
+            {t('dayMap.unlocated').toUpperCase()}
+          </Text>
+          <Text variant="footnote" tone="secondary">
+            {t('dayMap.unlocatedHint')}
+          </Text>
+          {unlocated.map((item) => (
+            <View key={item.key} style={styles.unlocatedRow} testID={`day-unlocated-${item.refId}`}>
+              <Icon name="location-outline" size={18} tone="secondary" />
+              <View style={styles.stopText}>
+                <Text numberOfLines={1}>
+                  {item.time ? (
+                    <Text numeric tone="secondary" style={{ fontWeight: '600' }}>
+                      {`${item.time}  `}
+                    </Text>
+                  ) : null}
+                  {item.title}
+                </Text>
+              </View>
+              {onAddLocation ? (
+                <Button
+                  testID={`day-add-location-${item.refId}`}
+                  title={t('dayMap.addLocation')}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => onAddLocation(item)}
+                />
+              ) : null}
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
 
-function LegRow({ view, mode }: { view: LegView | undefined; mode: DayMode }) {
+function LegRow({
+  view,
+  mode,
+  overnight,
+}: {
+  view: LegView | undefined;
+  mode: DayMode;
+  /** The trip from one day's last place to the next day's first. */
+  overnight: boolean;
+}) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   if (!view) return null;
@@ -288,11 +389,13 @@ function LegRow({ view, mode }: { view: LegView | undefined; mode: DayMode }) {
                 {formatDuration(view.minutes)}
                 {view.meters ? ` · ${formatDistance(view.meters)}` : ''}
               </Text>
-              {view.leaveBy ? (
+              {overnight ? (
+                <Badge label={t('dayMap.nextMorning')} tone="neutral" />
+              ) : view.leaveBy ? (
                 <Badge label={t('dayMap.leaveBy', { time: view.leaveBy })} tone="neutral" />
               ) : null}
             </View>
-            {view.tight && view.gapMinutes !== null ? (
+            {!overnight && view.tight && view.gapMinutes !== null ? (
               <Badge
                 label={t('dayMap.tight', {
                   trip: formatDuration(view.minutes),

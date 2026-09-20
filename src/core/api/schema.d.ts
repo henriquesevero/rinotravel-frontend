@@ -615,7 +615,7 @@ export interface paths {
         put?: never;
         /**
          * Planeja o mapa de um dia. Dado a lista de paradas em ordem, devolve o trecho entre cada par (tempo, distância e traçado) e, se pedido, uma imagem numerada. Só existe quando o servidor tem GOOGLE_MAPS_API_KEY
-         * @description Um trecho sem rota encontrada volta com `available: false`, sem inventar tempo, e nunca derruba o dia inteiro.
+         * @description Cabem até 80 paradas, o bastante para a viagem toda. Um trecho sem rota encontrada volta com `available: false`, sem inventar tempo, e nunca derruba o dia inteiro.
          *     Paradas consecutivas no mesmo lugar não geram trecho. O traçado (`polyline`) é para ser desenhado num mapa do
          *     Google. Nada é guardado no servidor. Qualquer membro da viagem (inclusive LEITOR) pode pedir.
          */
@@ -1345,6 +1345,10 @@ export interface components {
         DayMapStop: {
             label?: string;
             location: components["schemas"]["Location"];
+            /** @description Agrupa as paradas que andam juntas (o dia da viagem); cada grupo ganha uma cor na imagem. 0 para um dia só. */
+            group?: number;
+            /** @description O que o pino mostra na imagem (um caractere). Vazio numera as paradas em ordem. */
+            pin?: string;
         };
         DayMapRequest: {
             stops: components["schemas"]["DayMapStop"][];

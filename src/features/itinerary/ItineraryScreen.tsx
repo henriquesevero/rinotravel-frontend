@@ -9,11 +9,29 @@ import { currentLocale, useTranslation } from '@/core/i18n';
 import { hotelHooks } from '@/features/bookings/hooks';
 import { TripPage } from '@/features/content/TripPage';
 import { DayMapPanel } from '@/features/daymap/DayMapPanel';
-import { buildStops, type Stop } from '@/features/daymap/stops';
+import { DayNavigator } from '@/features/daymap/DayNavigator';
+import {
+  MAX_TRIP_STOPS,
+  buildStops,
+  buildTripStops,
+  buildUnlocated,
+  type Stop,
+  type UnlocatedItem,
+} from '@/features/daymap/stops';
 import { restaurantHooks } from '@/features/places/hooks';
 import { TimelineRow } from '@/features/content/TimelineRow';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
-import { Badge, Button, Card, EmptyState, ErrorState, Sheet, Skeleton, Text } from '@/shared/ui';
+import {
+  Badge,
+  Banner,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Sheet,
+  Skeleton,
+  Text,
+} from '@/shared/ui';
 
 import { ItemDetailSheet } from './ItemDetailSheet';
 import { ItemSheet } from './ItemSheet';
@@ -75,6 +93,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
   const wide = width >= 1200;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [mapSheetDate, setMapSheetDate] = useState<string | null>(null);
+  const [scope, setScope] = useState<'day' | 'trip'>('day');
 
   const refresh = () => {
     void timeline.refetch();
@@ -135,24 +154,50 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             router.push({ pathname: '/trips/[id]/places', params: { id: tripId } });
           } else router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
         };
-        const mapPanel = (date: string) => (
-          <View>
+        const tripStopsAll = buildTripStops(allDates, sources);
+        const tripStops = tripStopsAll.slice(0, MAX_TRIP_STOPS);
+        const addLocation = (item: UnlocatedItem, date: string) => {
+          const found = items.data.find((candidate) => candidate.id === item.refId);
+          setMapSheetDate(null);
+          if (found) setSheet({ item: found, date });
+        };
+        // The day navigator, the trip switch and the map with its list: one view for the side panel
+        // on computers and for the sheet on phones.
+        const mapPanel = (date: string, onSelect: (next: string) => void) => (
+          <View style={{ gap: space.lg }}>
+            <DayNavigator
+              days={allDates.map((day) => ({ date: day, count: stopCounts.get(day) ?? 0 }))}
+              selected={date}
+              onSelect={onSelect}
+              scope={scope}
+              onScope={setScope}
+            />
+            {scope === 'trip' && tripStopsAll.length > MAX_TRIP_STOPS ? (
+              <Banner tone="info" message={t('dayMap.tooMany', { count: MAX_TRIP_STOPS })} />
+            ) : null}
             {wide ? (
               <View style={styles.mapTitle}>
                 <Text variant="caption" tone="secondary" style={{ letterSpacing: 0.8 }}>
                   {t('dayMap.title').toUpperCase()}
                 </Text>
                 <Text variant="headline" heading>
-                  {formatDayHeading(date, currentLocale())}
+                  {scope === 'trip'
+                    ? t('dayMap.scope.trip')
+                    : formatDayHeading(date, currentLocale())}
                 </Text>
               </View>
             ) : null}
             <DayMapPanel
-              key={date}
+              key={scope === 'trip' ? 'trip' : date}
               tripId={tripId}
-              stops={stopsFor(date)}
+              scope={scope}
+              stops={scope === 'trip' ? tripStops : stopsFor(date)}
+              unlocated={
+                scope === 'day' ? buildUnlocated({ date, days: days.data, items: items.data }) : []
+              }
               onOpenStop={openStop}
-              {...(wide ? { listMaxHeight: 340 } : {})}
+              onAddLocation={(item) => addLocation(item, date)}
+              {...(wide ? { listMaxHeight: 320 } : {})}
             />
           </View>
         );
@@ -164,9 +209,13 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             timeline={timeline.data.days}
             items={items.data}
             canWrite={canWrite}
-            selectedDate={wide ? effectiveDate : null}
+            selectedDate={wide && scope === 'day' ? effectiveDate : null}
             stopCounts={stopCounts}
-            onSelectDate={(date) => (wide ? setSelectedDate(date) : setMapSheetDate(date))}
+            onSelectDate={(date) => {
+              setScope('day');
+              if (wide) setSelectedDate(date);
+              else setMapSheetDate(date);
+            }}
             onAdd={(date) => setSheet({ date })}
             onView={(item) => setViewId(item.id)}
           />
@@ -176,7 +225,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             {wide ? (
               <View style={styles.split}>
                 <View style={styles.listSide}>{dayList}</View>
-                <View style={styles.mapSide}>{mapPanel(effectiveDate)}</View>
+                <View style={styles.mapSide}>{mapPanel(effectiveDate, setSelectedDate)}</View>
               </View>
             ) : (
               dayList
@@ -190,7 +239,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
               tint="blue"
               size="lg"
             >
-              {mapSheetDate ? mapPanel(mapSheetDate) : null}
+              {mapSheetDate ? mapPanel(mapSheetDate, setMapSheetDate) : null}
             </Sheet>
             <ItemDetailSheet
               tripId={tripId}

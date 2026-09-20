@@ -16,6 +16,10 @@ export type StopKind = 'item' | 'restaurant' | 'hotel-in' | 'hotel-out';
 export interface Stop {
   key: string;
   kind: StopKind;
+  /** The civil date of the day it happens on. */
+  date: string;
+  /** Position of that day in the trip (0-based); tells days apart in a whole-trip map. */
+  dayIndex: number;
   /** The id of the record it came from, for opening it. */
   refId: string;
   title: string;
@@ -50,6 +54,8 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
     stops.push({
       key: `item-${item.id}`,
       kind: 'item',
+      date,
+      dayIndex: 0,
       refId: item.id,
       title: item.title,
       ...(item.location.address ? { subtitle: item.location.address } : {}),
@@ -67,6 +73,8 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
     stops.push({
       key: `restaurant-${restaurant.id}`,
       kind: 'restaurant',
+      date,
+      dayIndex: 0,
       refId: restaurant.id,
       title: restaurant.name,
       ...(restaurant.location.address ? { subtitle: restaurant.location.address } : {}),
@@ -85,6 +93,8 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
       stops.push({
         key: `${kind}-${hotel.id}`,
         kind,
+        date,
+        dayIndex: 0,
         refId: hotel.id,
         title: hotel.name,
         ...(hotel.location.address ? { subtitle: hotel.location.address } : {}),
@@ -104,11 +114,60 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
   );
 }
 
-export function toRequestStops(stops: Stop[]): DayMapStop[] {
-  return stops.map((stop) => ({ label: stop.title, location: stop.location }));
+/** What a pin says for a day of the trip: 1 to 9, then A to Z (the map picture takes one character). */
+export function dayLabel(dayIndex: number): string {
+  if (dayIndex < 9) return String(dayIndex + 1);
+  return dayIndex < 35 ? String.fromCharCode(65 + dayIndex - 9) : '';
+}
+
+/** The most stops the server draws at once; a trip longer than this is cut, and the screen says so. */
+export const MAX_TRIP_STOPS = 80;
+
+/**
+ * For a whole trip each day is a group with its own colour and its number on the pin. For one day
+ * the server numbers the pins itself, in order.
+ */
+export function toRequestStops(stops: Stop[], scope: 'day' | 'trip' = 'day'): DayMapStop[] {
+  return stops.map((stop) => ({
+    label: stop.title,
+    location: stop.location,
+    ...(scope === 'trip' ? { group: stop.dayIndex, pin: dayLabel(stop.dayIndex) } : {}),
+  }));
+}
+
+/** Every stop of every day in trip order, each tagged with its day. Days are given in order. */
+export function buildTripStops(dates: string[], sources: Omit<Sources, 'date'>): Stop[] {
+  return dates.flatMap((date, dayIndex) =>
+    buildStops({ date, ...sources }).map((stop) => ({ ...stop, dayIndex })),
+  );
+}
+
+/** Things scheduled that day that a map cannot place because they have no location yet. */
+export interface UnlocatedItem {
+  key: string;
+  refId: string;
+  title: string;
+  time: string;
+}
+
+export function buildUnlocated({
+  date,
+  days,
+  items,
+}: Pick<Sources, 'date' | 'days' | 'items'>): UnlocatedItem[] {
+  const dayIds = new Set(days.filter((day) => day.date === date).map((day) => day.id));
+  return items
+    .filter((item) => dayIds.has(item.dayId) && !pointOf(item.location))
+    .map((item) => ({
+      key: `item-${item.id}`,
+      refId: item.id,
+      title: item.title,
+      time: item.start ? zonedTime(item.start) : '',
+    }))
+    .sort((a, b) => (a.time || LAST).localeCompare(b.time || LAST));
 }
 
 /** A stable text for a set of stops, so the same day is not fetched twice. */
 export function stopsSignature(stops: Stop[]): string {
-  return stops.map((stop) => `${stop.key}@${pointOf(stop.location)}`).join('|');
+  return stops.map((stop) => `${stop.key}@${pointOf(stop.location)}#${stop.dayIndex}`).join('|');
 }
