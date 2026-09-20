@@ -33,6 +33,8 @@ import {
   ListRow,
   Text,
   useConfirm,
+  FormSection,
+  FieldRow,
 } from '@/shared/ui';
 
 import { transferHooks, usePlanTransfer } from './hooks';
@@ -211,6 +213,8 @@ export function TransferSheet({
 
   return (
     <EntitySheet
+      icon="swap-horizontal-outline"
+      tint="green"
       testID="transfer-sheet"
       visible={visible}
       title={transfer ? t('transfers.edit') : t('transfers.add')}
@@ -220,111 +224,123 @@ export function TransferSheet({
       error={error}
       {...(transfer ? { onDelete: () => void askDelete() } : {})}
     >
-      <FormTextField
-        control={control}
-        name="origin"
-        label={t('transfers.origin')}
-        testID="transfer-origin"
-      />
-      <FormTextField
-        control={control}
-        name="destination"
-        label={t('transfers.destination')}
-        testID="transfer-destination"
-      />
-      <FormSelectField
-        control={control}
-        name="mode"
-        label={t('transfers.mode')}
-        title={t('transfers.mode')}
-        options={MODES.map((value) => ({ value, label: t(`enums.mode.${value}`) }))}
-        testID="transfer-mode"
-      />
-
-      {transfer ? null : (
-        <View style={{ gap: space.sm }}>
-          <Button
-            testID="suggest-routes"
-            title={t('transfers.suggest')}
-            variant="secondary"
-            icon="navigate-outline"
-            loading={plan.isPending}
-            onPress={searchRoutes}
-            fullWidth
+      <FormSection title={t('content.sec.route')}>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="origin"
+            label={t('transfers.origin')}
+            testID="transfer-origin"
           />
-          {plan.isError ? (
-            <Banner
-              tone="warning"
-              message={planUnavailable ? t('transfers.suggestUnavailable') : describe(plan.error)}
+          <FormTextField
+            control={control}
+            name="destination"
+            label={t('transfers.destination')}
+            testID="transfer-destination"
+          />
+        </FieldRow>
+        <FormSelectField
+          control={control}
+          name="mode"
+          label={t('transfers.mode')}
+          title={t('transfers.mode')}
+          options={MODES.map((value) => ({ value, label: t(`enums.mode.${value}`) }))}
+          testID="transfer-mode"
+        />
+        {transfer ? null : (
+          <View style={{ gap: space.sm }}>
+            <Button
+              testID="suggest-routes"
+              title={t('transfers.suggest')}
+              variant="secondary"
+              icon="navigate-outline"
+              loading={plan.isPending}
+              onPress={searchRoutes}
+              fullWidth
             />
-          ) : null}
-          {routes && routes.length > 0 ? (
-            <View style={{ gap: space.sm }}>
-              <Text variant="subhead" tone="secondary">
-                {t('transfers.suggestions')}
-              </Text>
-              <Card padded={false}>
-                {routes.map((route, index) => (
-                  <ListRow
-                    key={`${route.transfer.externalRouteId ?? index}`}
-                    testID={`route-${index}`}
-                    divider={index > 0}
-                    icon={chosen === route ? 'checkmark-circle' : 'navigate-outline'}
-                    title={`${formatDuration(route.durationMinutes)} · ${t('transfers.km', { value: km(route.distanceMeters) })}`}
-                    subtitle={t(
-                      route.transfer.legs.length === 1
-                        ? 'transfers.steps.one'
-                        : 'transfers.steps.other',
-                      {
-                        count: route.transfer.legs.length,
-                      },
-                    )}
-                    onPress={() => chooseRoute(route)}
-                  />
-                ))}
-              </Card>
-            </View>
-          ) : null}
-          {chosen ? <Banner tone="info" message={t('transfers.routeUsed')} /> : null}
-        </View>
-      )}
-
-      <FormDateField control={control} name="date" label={t('transfers.date')} />
-      <FormTimeField
-        control={control}
-        name="departTime"
-        label={t('transfers.departTime')}
-        hint={t('content.timeHint')}
-      />
-      <FormTimeField control={control} name="arriveTime" label={t('transfers.arriveTime')} />
-      <FormTextField
-        control={control}
-        name="duration"
-        label={t('transfers.duration')}
-        keyboardType="number-pad"
-      />
-      <FormTextField control={control} name="line" label={t('transfers.line')} />
-      <FormTextField
-        control={control}
-        name="instructions"
-        label={t('transfers.instructions')}
-        multiline
-      />
-      <FormTextField
-        control={control}
-        name="cost"
-        label={t('content.cost')}
-        hint={t('content.costHint', { currency })}
-        keyboardType="decimal-pad"
-      />
-      <FormSelectField
-        control={control}
-        name="status"
-        label={t('content.status')}
-        title={t('content.status')}
-        options={STATUSES.map((value) => ({ value, label: t(`enums.status.${value}`) }))}
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+            {plan.isError ? (
+              <Banner
+                tone="warning"
+                message={planUnavailable ? t('transfers.suggestUnavailable') : describe(plan.error)}
+              />
+            ) : null}
+            {routes && routes.length > 0 ? (
+              <View style={{ gap: space.sm }}>
+                <Text variant="subhead" tone="secondary">
+                  {t('transfers.suggestions')}
+                </Text>
+                <Card padded={false}>
+                  {routes.map((route, index) => (
+                    <ListRow
+                      key={`${route.transfer.externalRouteId ?? index}`}
+                      testID={`route-${index}`}
+                      divider={index > 0}
+                      icon={chosen === route ? 'checkmark-circle' : 'navigate-outline'}
+                      title={`${formatDuration(route.durationMinutes)} · ${t('transfers.km', { value: km(route.distanceMeters) })}`}
+                      subtitle={t(
+                        route.transfer.legs.length === 1
+                          ? 'transfers.steps.one'
+                          : 'transfers.steps.other',
+                        {
+                          count: route.transfer.legs.length,
+                        },
+                      )}
+                      onPress={() => chooseRoute(route)}
+                    />
+                  ))}
+                </Card>
+              </View>
+            ) : null}
+            {chosen ? <Banner tone="info" message={t('transfers.routeUsed')} /> : null}
+          </View>
+        )}
+      </FormSection>
+      <FormSection title={t('content.sec.when')}>
+        <FieldRow>
+          <FormDateField control={control} name="date" label={t('transfers.date')} />
+          <FormTimeField
+            control={control}
+            name="departTime"
+            label={t('transfers.departTime')}
+            hint={t('content.timeHint')}
+          />
+          <FormTimeField control={control} name="arriveTime" label={t('transfers.arriveTime')} />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.money')}>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="duration"
+            label={t('transfers.duration')}
+            keyboardType="number-pad"
+          />
+          <FormTextField control={control} name="line" label={t('transfers.line')} />
+        </FieldRow>
+        <FormTextField
+          control={control}
+          name="instructions"
+          label={t('transfers.instructions')}
+          multiline
+        />
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="cost"
+            label={t('content.cost')}
+            hint={t('content.costHint', { currency })}
+            keyboardType="decimal-pad"
+          />
+          <FormSelectField
+            control={control}
+            name="status"
+            label={t('content.status')}
+            title={t('content.status')}
+            options={STATUSES.map((value) => ({ value, label: t(`enums.status.${value}`) }))}
+          />
+        </FieldRow>
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

@@ -133,3 +133,13 @@ export function zonedInstant(zoned: Zoned): number {
 export function minutesBetween(from: Zoned, to: Zoned): number {
   return Math.round((zonedInstant(to) - zonedInstant(from)) / 60_000);
 }
+
+/** Pieces of a civil date for a calendar tile: `SET`, `10` and `quinta-feira`. */
+export function dayParts(date: CivilDate, locale: string) {
+  const at = new Date(utcMs(date));
+  return {
+    month: utc(locale, { month: 'short' }).format(at).replace('.', ''),
+    day: Number(date.slice(8, 10)),
+    weekday: utc(locale, { weekday: 'long' }).format(at),
+  };
+}

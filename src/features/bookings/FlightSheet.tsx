@@ -13,6 +13,8 @@ import {
   FormTextField,
   FormTimeField,
   useConfirm,
+  FormSection,
+  FieldRow,
 } from '@/shared/ui';
 
 import { flightHooks } from './hooks';
@@ -133,6 +135,8 @@ export function FlightSheet({
 
   return (
     <EntitySheet
+      icon="airplane-outline"
+      tint="sky"
       testID="flight-sheet"
       visible={visible}
       title={flight ? t('bookings.editFlight') : t('bookings.addFlight')}
@@ -142,69 +146,89 @@ export function FlightSheet({
       error={error}
       {...(flight ? { onDelete: () => void askDelete() } : {})}
     >
-      <FormTextField control={control} name="airline" label={t('bookings.airline')} />
-      <FormTextField
-        control={control}
-        name="flightNumber"
-        label={t('bookings.flightNumber')}
-        autoCapitalize="characters"
-        testID="flight-number"
-      />
-      <FormTextField
-        control={control}
-        name="from"
-        label={t('bookings.from')}
-        autoCapitalize="characters"
-        maxLength={3}
-        testID="flight-from"
-      />
-      <FormTextField
-        control={control}
-        name="to"
-        label={t('bookings.to')}
-        autoCapitalize="characters"
-        maxLength={3}
-        testID="flight-to"
-      />
-      <FormDateField
-        control={control}
-        name="depDate"
-        label={t('bookings.depDate')}
-        testID="flight-dep-date"
-      />
-      <FormTimeField
-        control={control}
-        name="depTime"
-        label={t('bookings.depTime')}
-        hint={t('content.timeHint')}
-        testID="flight-dep-time"
-      />
-      {zoneField('depTimezone')}
-      <FormDateField
-        control={control}
-        name="arrDate"
-        label={t('bookings.arrDate')}
-        testID="flight-arr-date"
-      />
-      <FormTimeField
-        control={control}
-        name="arrTime"
-        label={t('bookings.arrTime')}
-        hint={t('content.timeHint')}
-        testID="flight-arr-time"
-      />
-      {zoneField('arrTimezone')}
-      <FormTextField control={control} name="terminal" label={t('bookings.terminal')} />
-      <FormTextField control={control} name="gate" label={t('bookings.gate')} />
-      <FormTextField control={control} name="seat" label={t('bookings.seat')} />
-      <FormTextField control={control} name="baggage" label={t('bookings.baggage')} />
-      <FormTextField
-        control={control}
-        name="bookingCode"
-        label={t('bookings.bookingCode')}
-        autoCapitalize="characters"
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      <FormSection title={t('content.sec.basic')}>
+        <FieldRow>
+          <FormTextField control={control} name="airline" label={t('bookings.airline')} />
+          <FormTextField
+            control={control}
+            name="flightNumber"
+            label={t('bookings.flightNumber')}
+            autoCapitalize="characters"
+            testID="flight-number"
+          />
+        </FieldRow>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="from"
+            label={t('bookings.from')}
+            autoCapitalize="characters"
+            maxLength={3}
+            testID="flight-from"
+          />
+          <FormTextField
+            control={control}
+            name="to"
+            label={t('bookings.to')}
+            autoCapitalize="characters"
+            maxLength={3}
+            testID="flight-to"
+          />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('bookings.departure')}>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="depDate"
+            label={t('bookings.depDate')}
+            testID="flight-dep-date"
+          />
+          <FormTimeField
+            control={control}
+            name="depTime"
+            label={t('bookings.depTime')}
+            hint={t('content.timeHint')}
+            testID="flight-dep-time"
+          />
+        </FieldRow>
+        {zoneField('depTimezone')}
+      </FormSection>
+      <FormSection title={t('bookings.arrival')}>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="arrDate"
+            label={t('bookings.arrDate')}
+            testID="flight-arr-date"
+          />
+          <FormTimeField
+            control={control}
+            name="arrTime"
+            label={t('bookings.arrTime')}
+            hint={t('content.timeHint')}
+            testID="flight-arr-time"
+          />
+        </FieldRow>
+        {zoneField('arrTimezone')}
+      </FormSection>
+      <FormSection title={t('content.sec.booking')}>
+        <FieldRow>
+          <FormTextField control={control} name="terminal" label={t('bookings.terminal')} />
+          <FormTextField control={control} name="gate" label={t('bookings.gate')} />
+          <FormTextField control={control} name="seat" label={t('bookings.seat')} />
+        </FieldRow>
+        <FieldRow>
+          <FormTextField control={control} name="baggage" label={t('bookings.baggage')} />
+          <FormTextField
+            control={control}
+            name="bookingCode"
+            label={t('bookings.bookingCode')}
+            autoCapitalize="characters"
+          />
+        </FieldRow>
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

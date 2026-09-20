@@ -27,5 +27,5 @@ export function RouteMap(props: RouteMapProps) {
 }
 
 const styles = StyleSheet.create({
-  frame: { height: 260, borderRadius: radius.lg, overflow: 'hidden' },
+  frame: { height: 340, borderRadius: radius.lg, overflow: 'hidden' },
 });

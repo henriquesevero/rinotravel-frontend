@@ -166,6 +166,7 @@ function FlightList({
           testID={`flight-${flight.id}`}
           divider={index > 0}
           icon="airplane-outline"
+          tint="sky"
           title={`${flight.departureAirport} → ${flight.arrivalAirport} · ${flight.flightNumber}`}
           subtitle={`${formatZoned(flight.departure, locale)} → ${formatZoned(flight.arrival, locale)} · ${formatDuration(flight.durationMinutes)}`}
           right={
@@ -224,6 +225,7 @@ function HotelList({
             testID={`hotel-${hotel.id}`}
             divider={index > 0}
             icon="bed-outline"
+            tint="indigo"
             title={hotel.name}
             subtitle={`${formatZoned(hotel.checkIn, locale)} → ${formatZoned(hotel.checkOut, locale)} · ${t(nights === 1 ? 'bookings.nights.one' : 'bookings.nights.other', { count: nights })}`}
             right={

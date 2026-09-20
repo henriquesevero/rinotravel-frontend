@@ -7,6 +7,8 @@ import { useTranslation } from '@/core/i18n';
 import { space } from '@/shared/theme';
 import { Banner, EmptyState, ErrorState, Screen, ScreenHeader, Skeleton } from '@/shared/ui';
 
+import { TripBanner } from '@/features/trips/components/TripBanner';
+
 import { useTripAccess } from './access';
 
 interface TripPageProps {
@@ -75,6 +77,9 @@ export function TripPage({
   const access = { trip, canWrite };
   return (
     <Screen refreshing={(refreshing ?? false) || query.isRefetching} onRefresh={refresh}>
+      <View style={styles.banner}>
+        <TripBanner trip={trip} />
+      </View>
       <ScreenHeader
         title={title}
         {...(subtitle ? { subtitle } : {})}
@@ -90,4 +95,5 @@ export function TripPage({
 
 const styles = StyleSheet.create({
   stack: { gap: space.lg },
+  banner: { paddingTop: space.lg, paddingBottom: space.md },
 });

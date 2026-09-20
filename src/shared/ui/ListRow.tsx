@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableStateCallbackType } from 'react-native';
 
-import { space, useStyles, type Theme } from '../theme';
+import { space, useStyles, type Theme, type Tint } from '../theme';
 import { Icon, type IconName } from './Icon';
+import { IconBadge } from './IconBadge';
 import { Text, type TextTone } from './Text';
 
 interface ListRowProps {
@@ -10,6 +11,8 @@ interface ListRowProps {
   subtitle?: string;
   left?: ReactNode;
   icon?: IconName;
+  /** Colour of the icon tile; rows of the same kind share one so lists scan at a glance. */
+  tint?: Tint;
   right?: ReactNode;
   onPress?: () => void;
   tone?: TextTone;
@@ -21,7 +24,7 @@ interface ListRowProps {
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
     row: {
-      minHeight: 56,
+      minHeight: 64,
       flexDirection: 'row',
       alignItems: 'center',
       gap: space.md,
@@ -30,6 +33,7 @@ const createStyles = ({ colors }: Theme) =>
     },
     divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     pressed: { backgroundColor: colors.surfaceMuted },
+    hovered: { backgroundColor: colors.surfaceMuted },
     text: { flex: 1, gap: 2 },
   });
 
@@ -38,6 +42,7 @@ export function ListRow({
   subtitle,
   left,
   icon,
+  tint = 'blue',
   right,
   onPress,
   tone = 'primary',
@@ -48,7 +53,13 @@ export function ListRow({
   const content = (
     <>
       {left ??
-        (icon ? <Icon name={icon} size={22} tone={tone === 'primary' ? 'accent' : tone} /> : null)}
+        (icon ? (
+          tone === 'primary' ? (
+            <IconBadge icon={icon} tint={tint} />
+          ) : (
+            <Icon name={icon} size={22} tone={tone} />
+          )
+        ) : null)}
       <View style={styles.text}>
         <Text tone={tone}>{title}</Text>
         {subtitle ? (
@@ -71,7 +82,12 @@ export function ListRow({
       accessibilityRole="button"
       accessibilityLabel={subtitle ? `${title}, ${subtitle}` : title}
       onPress={onPress}
-      style={({ pressed }) => [styles.row, divider && styles.divider, pressed && styles.pressed]}
+      style={(state) => [
+        styles.row,
+        divider && styles.divider,
+        state.pressed && styles.pressed,
+        (state as PressableStateCallbackType & { hovered?: boolean }).hovered && styles.hovered,
+      ]}
     >
       {content}
     </Pressable>

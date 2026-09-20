@@ -20,7 +20,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTranslation } from '@/core/i18n';
 
-import { motion, radius, space, useStyles, useTheme, type Theme } from '../theme';
+import { motion, radius, space, useStyles, useTheme, type Theme, type Tint } from '../theme';
+import type { IconName } from './Icon';
+import { IconBadge } from './IconBadge';
 import { IconButton } from './IconButton';
 import { Text } from './Text';
 
@@ -28,12 +30,17 @@ interface SheetProps {
   visible: boolean;
   onClose: () => void;
   title: string;
+  subtitle?: string;
+  icon?: IconName;
+  tint?: Tint;
+  /** `lg` gives detail views room for two columns on computers. */
+  size?: 'md' | 'lg';
   children: ReactNode;
   footer?: ReactNode;
 }
 
 const SLIDE_DISTANCE = 600;
-const DIALOG_BREAKPOINT = 768;
+export const DIALOG_BREAKPOINT = 768;
 
 const createStyles = ({ colors, shadow }: Theme) =>
   StyleSheet.create({
@@ -53,7 +60,7 @@ const createStyles = ({ colors, shadow }: Theme) =>
       borderTopLeftRadius: radius.xl,
       borderTopRightRadius: radius.xl,
     },
-    dialogPanel: { maxWidth: 480, borderRadius: radius.xl },
+    dialogPanel: { borderRadius: radius.xl + 4, maxHeight: '92%' },
     grabber: {
       alignSelf: 'center',
       width: 36,
@@ -65,19 +72,44 @@ const createStyles = ({ colors, shadow }: Theme) =>
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      gap: space.md,
       paddingLeft: space.xl,
-      paddingRight: space.sm,
-      paddingTop: space.sm,
-      minHeight: 56,
+      paddingRight: space.md,
+      paddingTop: space.md,
+      paddingBottom: space.md,
+      minHeight: 72,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
     },
-    title: { flex: 1 },
+    titles: { flex: 1, gap: 2 },
     body: { flexShrink: 1 },
-    bodyContent: { paddingHorizontal: space.xl, paddingBottom: space.lg, gap: space.lg },
-    footer: { paddingHorizontal: space.xl, paddingTop: space.md, gap: space.sm },
+    bodyContent: {
+      paddingHorizontal: space.xl,
+      paddingTop: space.xl,
+      paddingBottom: space.xl,
+      gap: space.xl,
+    },
+    footer: {
+      paddingHorizontal: space.xl,
+      paddingTop: space.md,
+      paddingBottom: space.xs,
+      gap: space.sm,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: colors.border,
+    },
   });
 
-export function Sheet({ visible, onClose, title, children, footer }: SheetProps) {
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  subtitle,
+  icon,
+  tint,
+  size = 'md',
+  children,
+  footer,
+}: SheetProps) {
   const styles = useStyles(createStyles);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -139,15 +171,29 @@ export function Sheet({ visible, onClose, title, children, footer }: SheetProps)
             style={[
               styles.panel,
               dialog ? styles.dialogPanel : styles.sheetPanel,
-              { paddingBottom: dialog ? space.lg : Math.max(insets.bottom, space.lg) },
+              dialog && { maxWidth: size === 'lg' ? 980 : 720 },
+              { paddingBottom: dialog ? space.md : Math.max(insets.bottom, space.md) },
               panelStyle,
             ]}
           >
             {dialog ? null : <View style={styles.grabber} />}
             <View style={styles.header}>
-              <Text variant="headline" heading style={styles.title}>
-                {title}
-              </Text>
+              {icon ? <IconBadge icon={icon} tint={tint ?? 'blue'} size={44} /> : null}
+              <View style={styles.titles}>
+                <Text
+                  variant="title"
+                  heading
+                  numberOfLines={2}
+                  style={{ fontSize: 20, lineHeight: 26 }}
+                >
+                  {title}
+                </Text>
+                {subtitle ? (
+                  <Text variant="footnote" tone="secondary" numberOfLines={2}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
               <IconButton
                 icon="close"
                 tone="secondary"

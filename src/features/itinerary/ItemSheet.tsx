@@ -7,7 +7,14 @@ import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
 import { fromMoney, mergeLocation, toMoneyInput } from '@/features/content/mappers';
 import { useEntityForm } from '@/features/content/use-entity-form';
-import { FormSelectField, FormTextField, FormTimeField, useConfirm } from '@/shared/ui';
+import {
+  FormSelectField,
+  FormTextField,
+  FormTimeField,
+  useConfirm,
+  FormSection,
+  FieldRow,
+} from '@/shared/ui';
 
 import { itemHooks, useEnsureDay } from './hooks';
 import { ITEM_ALIASES, ITEM_FIELDS, itemSchema, type ItemFormValues } from './schemas';
@@ -135,6 +142,8 @@ export function ItemSheet({
   const { control } = form;
   return (
     <EntitySheet
+      icon="calendar-outline"
+      tint="blue"
       testID="item-sheet"
       visible={visible}
       title={item ? t('itinerary.editTitle') : t('itinerary.itemTitle')}
@@ -144,68 +153,79 @@ export function ItemSheet({
       error={error}
       {...(item ? { onDelete: () => void remove() } : {})}
     >
-      <FormTextField
-        control={control}
-        name="title"
-        label={t('itinerary.fieldTitle')}
-        placeholder={t('itinerary.fieldTitlePlaceholder')}
-        testID="item-title"
-      />
-      <FormSelectField
-        control={control}
-        name="date"
-        label={t('itinerary.fieldDay')}
-        title={t('itinerary.pickDay')}
-        options={dateOptions}
-        testID="item-date"
-      />
-      <FormTimeField
-        control={control}
-        name="startTime"
-        label={t('content.startTime')}
-        hint={t('content.timeHint')}
-        testID="item-start"
-      />
-      <FormTimeField
-        control={control}
-        name="endTime"
-        label={t('content.endTime')}
-        testID="item-end"
-      />
-      <FormSelectField
-        control={control}
-        name="category"
-        label={t('content.category')}
-        title={t('content.category')}
-        options={(['ATTRACTION', 'RESTAURANT', 'SHOPPING', 'FREE_TIME', 'OTHER'] as const).map(
-          (value) => ({
-            value,
-            label: t(`enums.category.${value}`),
-          }),
-        )}
-        testID="item-category"
-      />
-      <FormSelectField
-        control={control}
-        name="status"
-        label={t('content.status')}
-        title={t('content.status')}
-        options={(['PLANNED', 'CONFIRMED', 'COMPLETED', 'SKIPPED'] as const).map((value) => ({
-          value,
-          label: t(`enums.status.${value}`),
-        }))}
-        testID="item-status"
-      />
-      <FormTextField control={control} name="locationName" label={t('content.location')} />
-      <FormTextField control={control} name="address" label={t('content.address')} />
-      <FormTextField
-        control={control}
-        name="cost"
-        label={t('content.cost')}
-        hint={t('content.costHint', { currency })}
-        keyboardType="decimal-pad"
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      <FormSection title={t('content.sec.basic')}>
+        <FormTextField
+          control={control}
+          name="title"
+          label={t('itinerary.fieldTitle')}
+          placeholder={t('itinerary.fieldTitlePlaceholder')}
+          testID="item-title"
+        />
+        <FieldRow>
+          <FormSelectField
+            control={control}
+            name="category"
+            label={t('content.category')}
+            title={t('content.category')}
+            options={(['ATTRACTION', 'RESTAURANT', 'SHOPPING', 'FREE_TIME', 'OTHER'] as const).map(
+              (value) => ({ value, label: t(`enums.category.${value}`) }),
+            )}
+            testID="item-category"
+          />
+          <FormSelectField
+            control={control}
+            name="status"
+            label={t('content.status')}
+            title={t('content.status')}
+            options={(['PLANNED', 'CONFIRMED', 'COMPLETED', 'SKIPPED'] as const).map((value) => ({
+              value,
+              label: t(`enums.status.${value}`),
+            }))}
+            testID="item-status"
+          />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.when')}>
+        <FormSelectField
+          control={control}
+          name="date"
+          label={t('itinerary.fieldDay')}
+          title={t('itinerary.pickDay')}
+          options={dateOptions}
+          testID="item-date"
+        />
+        <FieldRow>
+          <FormTimeField
+            control={control}
+            name="startTime"
+            label={t('content.startTime')}
+            hint={t('content.timeHint')}
+            testID="item-start"
+          />
+          <FormTimeField
+            control={control}
+            name="endTime"
+            label={t('content.endTime')}
+            testID="item-end"
+          />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.where')}>
+        <FieldRow>
+          <FormTextField control={control} name="locationName" label={t('content.location')} />
+          <FormTextField control={control} name="address" label={t('content.address')} />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.money')}>
+        <FormTextField
+          control={control}
+          name="cost"
+          label={t('content.cost')}
+          hint={t('content.costHint', { currency })}
+          keyboardType="decimal-pad"
+        />
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

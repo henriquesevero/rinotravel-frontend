@@ -15,3 +15,4 @@ export {
   useContentMaxWidth,
   type Breakpoint,
 } from './use-breakpoint';
+export { tintColors, type Tint, type TintColors } from './tints';

@@ -1,3 +1,4 @@
+import { CATEGORY_VISUAL } from '@/features/content/visuals';
 import { useState } from 'react';
 import { View } from 'react-native';
 
@@ -212,7 +213,8 @@ function PlaceList({
             key={place.id}
             testID={`place-${place.id}`}
             divider={index > 0}
-            icon="location-outline"
+            icon={CATEGORY_VISUAL[place.category].icon}
+            tint={CATEGORY_VISUAL[place.category].tint}
             title={place.name}
             subtitle={parts.join(' · ')}
             right={
@@ -293,6 +295,7 @@ function RestaurantList({
             testID={`restaurant-${restaurant.id}`}
             divider={index > 0}
             icon="restaurant-outline"
+            tint="orange"
             title={restaurant.name}
             subtitle={parts.join(' · ')}
             right={

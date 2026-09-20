@@ -14,6 +14,8 @@ import {
   FormTextField,
   FormTimeField,
   useConfirm,
+  FormSection,
+  FieldRow,
 } from '@/shared/ui';
 
 import { restaurantHooks } from './hooks';
@@ -140,6 +142,8 @@ export function RestaurantSheet({
   const { control } = form;
   return (
     <EntitySheet
+      icon="restaurant-outline"
+      tint="orange"
       testID="restaurant-sheet"
       visible={visible}
       title={restaurant ? t('places.editRestaurant') : t('places.addRestaurant')}
@@ -150,46 +154,66 @@ export function RestaurantSheet({
       {...(restaurant ? { onDelete: () => void askDelete() } : {})}
     >
       {restaurant ? null : <PlaceSearch onPick={pick} testID="restaurant-search" />}
-      <FormTextField
-        control={control}
-        name="name"
-        label={t('places.name')}
-        testID="restaurant-name"
-      />
-      <FormTextField control={control} name="cuisine" label={t('places.cuisine')} />
-      <FormSelectField
-        control={control}
-        name="status"
-        label={t('content.status')}
-        title={t('content.status')}
-        options={RESTAURANT_STATUSES.map((value) => ({
-          value,
-          label: t(`enums.restaurantStatus.${value}`),
-        }))}
-      />
-      <FormTextField control={control} name="address" label={t('content.address')} />
-      <FormDateField control={control} name="reservationDate" label={t('places.reservationDate')} />
-      <FormTimeField
-        control={control}
-        name="reservationTime"
-        label={t('places.reservationTime')}
-        hint={t('content.timeHint')}
-      />
-      <FormTextField control={control} name="reservationCode" label={t('places.reservationCode')} />
-      <FormTextField
-        control={control}
-        name="dishes"
-        label={t('places.dishes')}
-        hint={t('places.dishesHint')}
-      />
-      <FormTextField
-        control={control}
-        name="cost"
-        label={t('content.cost')}
-        hint={t('content.costHint', { currency })}
-        keyboardType="decimal-pad"
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      <FormSection title={t('content.sec.basic')}>
+        <FormTextField
+          control={control}
+          name="name"
+          label={t('places.name')}
+          testID="restaurant-name"
+        />
+        <FieldRow>
+          <FormTextField control={control} name="cuisine" label={t('places.cuisine')} />
+          <FormSelectField
+            control={control}
+            name="status"
+            label={t('content.status')}
+            title={t('content.status')}
+            options={RESTAURANT_STATUSES.map((value) => ({
+              value,
+              label: t(`enums.restaurantStatus.${value}`),
+            }))}
+          />
+        </FieldRow>
+        <FormTextField control={control} name="address" label={t('content.address')} />
+      </FormSection>
+      <FormSection title={t('content.sec.booking')}>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="reservationDate"
+            label={t('places.reservationDate')}
+          />
+          <FormTimeField
+            control={control}
+            name="reservationTime"
+            label={t('places.reservationTime')}
+            hint={t('content.timeHint')}
+          />
+        </FieldRow>
+        <FormTextField
+          control={control}
+          name="reservationCode"
+          label={t('places.reservationCode')}
+        />
+      </FormSection>
+      <FormSection title={t('content.sec.money')}>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="dishes"
+            label={t('places.dishes')}
+            hint={t('places.dishesHint')}
+          />
+          <FormTextField
+            control={control}
+            name="cost"
+            label={t('content.cost')}
+            hint={t('content.costHint', { currency })}
+            keyboardType="decimal-pad"
+          />
+        </FieldRow>
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

@@ -6,7 +6,7 @@ import { darkColors, lightColors, shadows, type ThemeColors } from './tokens';
 export interface Theme {
   scheme: 'light' | 'dark';
   colors: ThemeColors;
-  shadow: { card: string; sheet: string };
+  shadow: { card: string; raised: string; sheet: string };
 }
 
 const ThemeContext = createContext<Theme | null>(null);

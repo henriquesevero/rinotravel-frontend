@@ -1,36 +1,17 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import type { Transfer, TransferMode } from '@/core/api';
+import type { Transfer } from '@/core/api';
 import { formatDuration, formatZoned, zonedKey } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { TripPage } from '@/features/content/TripPage';
+import { MODE_VISUAL } from '@/features/content/visuals';
 import { space } from '@/shared/theme';
-import {
-  Badge,
-  Button,
-  Card,
-  EmptyState,
-  ErrorState,
-  ListRow,
-  Skeleton,
-  type IconName,
-} from '@/shared/ui';
+import { Badge, Button, Card, EmptyState, ErrorState, ListRow, Skeleton } from '@/shared/ui';
 
 import { TransferDetailSheet } from './TransferDetailSheet';
 import { TransferSheet } from './TransferSheet';
 import { transferHooks } from './hooks';
-
-const MODE_ICON: Record<TransferMode, IconName> = {
-  WALKING: 'walk-outline',
-  SUBWAY: 'subway-outline',
-  TRAIN: 'train-outline',
-  BUS: 'bus-outline',
-  TAXI: 'car-outline',
-  RIDESHARE: 'car-outline',
-  CAR: 'car-sport-outline',
-  OTHER: 'swap-horizontal-outline',
-};
 
 export function TransfersScreen({ tripId }: { tripId: string }) {
   const { t } = useTranslation();
@@ -102,7 +83,8 @@ export function TransfersScreen({ tripId }: { tripId: string }) {
                         key={transfer.id}
                         testID={`transfer-${transfer.id}`}
                         divider={index > 0}
-                        icon={first ? MODE_ICON[first.mode] : 'swap-horizontal-outline'}
+                        icon={first ? MODE_VISUAL[first.mode].icon : 'swap-horizontal-outline'}
+                        tint={first ? MODE_VISUAL[first.mode].tint : 'green'}
                         title={`${transfer.origin?.name ?? transfer.origin?.address ?? '?'} → ${transfer.destination?.name ?? transfer.destination?.address ?? '?'}`}
                         subtitle={parts.join(' · ')}
                         right={

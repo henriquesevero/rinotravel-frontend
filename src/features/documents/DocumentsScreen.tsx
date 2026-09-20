@@ -5,6 +5,7 @@ import type { Document } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { TripPage } from '@/features/content/TripPage';
+import { DOCUMENT_VISUAL } from '@/features/content/visuals';
 import { space } from '@/shared/theme';
 import {
   Badge,
@@ -16,23 +17,11 @@ import {
   IconButton,
   ListRow,
   Skeleton,
-  type IconName,
 } from '@/shared/ui';
 
 import { DocumentSheet } from './DocumentSheet';
 import { useDocuments, useOpenDocument } from './hooks';
 import { formatSize } from './schemas';
-
-const TYPE_ICON: Record<Document['type'], IconName> = {
-  TICKET: 'ticket-outline',
-  RESERVATION: 'bookmark-outline',
-  BOARDING_PASS: 'airplane-outline',
-  HOTEL: 'bed-outline',
-  INSURANCE: 'shield-checkmark-outline',
-  RECEIPT: 'receipt-outline',
-  PASSPORT: 'id-card-outline',
-  OTHER: 'document-outline',
-};
 
 export function DocumentsScreen({ tripId }: { tripId: string }) {
   const { t } = useTranslation();
@@ -91,7 +80,8 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
                     key={document.id}
                     testID={`document-${document.id}`}
                     divider={index > 0}
-                    icon={TYPE_ICON[document.type]}
+                    icon={DOCUMENT_VISUAL[document.type].icon}
+                    tint={DOCUMENT_VISUAL[document.type].tint}
                     title={document.name}
                     subtitle={`${t(`enums.docType.${document.type}`)} · ${t(size.key, { value: size.value })}`}
                     right={

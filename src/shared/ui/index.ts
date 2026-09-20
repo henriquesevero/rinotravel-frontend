@@ -7,6 +7,7 @@ export { Card } from './Card';
 export { ConfirmProvider, useConfirm } from './confirm';
 export { EmptyState } from './EmptyState';
 export { ErrorState } from './ErrorState';
+export { FieldRow, FormSection } from './FormLayout';
 export {
   FormDateField,
   FormSelectField,
@@ -15,6 +16,7 @@ export {
   useFieldMessage,
 } from './form';
 export { Icon, type IconName } from './Icon';
+export { IconBadge } from './IconBadge';
 export { IconButton } from './IconButton';
 export { ListRow } from './ListRow';
 export { Screen, useContentStyle } from './Screen';

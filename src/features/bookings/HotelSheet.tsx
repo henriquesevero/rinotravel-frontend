@@ -7,7 +7,14 @@ import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
 import { mergeLocation } from '@/features/content/mappers';
 import { useEntityForm } from '@/features/content/use-entity-form';
-import { FormDateField, FormTextField, FormTimeField, useConfirm } from '@/shared/ui';
+import {
+  FormDateField,
+  FormTextField,
+  FormTimeField,
+  useConfirm,
+  FormSection,
+  FieldRow,
+} from '@/shared/ui';
 
 import { hotelHooks } from './hooks';
 import { HOTEL_ALIASES, HOTEL_FIELDS, hotelSchema, type HotelFormValues } from './schemas';
@@ -95,6 +102,8 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
   const { control } = form;
   return (
     <EntitySheet
+      icon="bed-outline"
+      tint="indigo"
       testID="hotel-sheet"
       visible={visible}
       title={hotel ? t('bookings.editHotel') : t('bookings.addHotel')}
@@ -104,52 +113,64 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
       error={error}
       {...(hotel ? { onDelete: () => void askDelete() } : {})}
     >
-      <FormTextField
-        control={control}
-        name="name"
-        label={t('bookings.hotelName')}
-        testID="hotel-name"
-      />
-      <FormTextField control={control} name="address" label={t('content.address')} />
-      <FormDateField
-        control={control}
-        name="checkInDate"
-        label={t('bookings.checkInDate')}
-        testID="hotel-in-date"
-      />
-      <FormTimeField
-        control={control}
-        name="checkInTime"
-        label={t('bookings.checkInTime')}
-        hint={t('content.timeHint')}
-      />
-      <FormDateField
-        control={control}
-        name="checkOutDate"
-        label={t('bookings.checkOutDate')}
-        testID="hotel-out-date"
-      />
-      <FormTimeField control={control} name="checkOutTime" label={t('bookings.checkOutTime')} />
-      <FormTextField
-        control={control}
-        name="confirmationCode"
-        label={t('bookings.confirmation')}
-        autoCapitalize="characters"
-      />
-      <FormTextField
-        control={control}
-        name="contactPhone"
-        label={t('bookings.phone')}
-        keyboardType="phone-pad"
-      />
-      <FormTextField
-        control={control}
-        name="bookingUrl"
-        label={t('bookings.url')}
-        keyboardType="url"
-        autoCapitalize="none"
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      <FormSection title={t('content.sec.basic')}>
+        <FormTextField
+          control={control}
+          name="name"
+          label={t('bookings.hotelName')}
+          testID="hotel-name"
+        />
+        <FormTextField control={control} name="address" label={t('content.address')} />
+      </FormSection>
+      <FormSection title={t('content.sec.when')}>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="checkInDate"
+            label={t('bookings.checkInDate')}
+            testID="hotel-in-date"
+          />
+          <FormTimeField
+            control={control}
+            name="checkInTime"
+            label={t('bookings.checkInTime')}
+            hint={t('content.timeHint')}
+          />
+        </FieldRow>
+        <FieldRow>
+          <FormDateField
+            control={control}
+            name="checkOutDate"
+            label={t('bookings.checkOutDate')}
+            testID="hotel-out-date"
+          />
+          <FormTimeField control={control} name="checkOutTime" label={t('bookings.checkOutTime')} />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.booking')}>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="confirmationCode"
+            label={t('bookings.confirmation')}
+            autoCapitalize="characters"
+          />
+          <FormTextField
+            control={control}
+            name="contactPhone"
+            label={t('bookings.phone')}
+            keyboardType="phone-pad"
+          />
+        </FieldRow>
+        <FormTextField
+          control={control}
+          name="bookingUrl"
+          label={t('bookings.url')}
+          keyboardType="url"
+          autoCapitalize="none"
+        />
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

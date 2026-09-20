@@ -299,6 +299,16 @@ export const en: Translation = {
     },
   },
   content: {
+    sec: {
+      basic: 'Details',
+      when: 'When',
+      where: 'Where',
+      money: 'Cost and notes',
+      booking: 'Booking',
+      route: 'Route',
+      file: 'File',
+      access: 'Access',
+    },
     optional: 'optional',
     location: 'Place',
     address: 'Address',
@@ -347,6 +357,7 @@ export const en: Translation = {
     loadError: 'We could not load the dashboard.',
   },
   itinerary: {
+    events: { one: '{{count}} item', other: '{{count}} items' },
     title: 'Itinerary',
     add: 'New item',
     dayN: 'Day {{n}}',
@@ -461,6 +472,7 @@ export const en: Translation = {
     loadError: 'We could not load the transfers.',
     detail: {
       mapTitle: 'Route map',
+      duration: 'Duration',
       openGoogle: 'Open in Google Maps',
       openApple: 'Open in Apple Maps',
       share: 'Share',

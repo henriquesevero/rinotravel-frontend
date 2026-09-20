@@ -4,11 +4,16 @@ import { View } from 'react-native';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { space } from '@/shared/theme';
-import { Banner, Button, Sheet } from '@/shared/ui';
+import type { Tint } from '@/shared/theme';
+import { Banner, Button, Sheet, type IconName } from '@/shared/ui';
 
 interface EntitySheetProps {
   visible: boolean;
   title: string;
+  subtitle?: string;
+  icon?: IconName;
+  tint?: Tint;
+  size?: 'md' | 'lg';
   onClose: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -24,6 +29,10 @@ interface EntitySheetProps {
 export function EntitySheet({
   visible,
   title,
+  subtitle,
+  icon,
+  tint,
+  size,
   onClose,
   onSubmit,
   isSubmitting,
@@ -41,28 +50,32 @@ export function EntitySheet({
       visible={visible}
       onClose={onClose}
       title={title}
+      {...(subtitle ? { subtitle } : {})}
+      {...(icon ? { icon } : {})}
+      {...(tint ? { tint } : {})}
+      {...(size ? { size } : {})}
       footer={
-        <View style={{ gap: space.sm }}>
-          <Button
-            testID={testID ? `${testID}-submit` : undefined}
-            title={submitLabel ?? t('common.save')}
-            onPress={onSubmit}
-            loading={isSubmitting}
-            fullWidth
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
           {onDelete ? (
             <Button
               testID={testID ? `${testID}-delete` : undefined}
               title={t('content.delete')}
               variant="ghost"
               onPress={onDelete}
-              fullWidth
             />
           ) : null}
+          <View style={{ flex: 1 }} />
+          <Button title={t('common.cancel')} variant="secondary" onPress={onClose} />
+          <Button
+            testID={testID ? `${testID}-submit` : undefined}
+            title={submitLabel ?? t('common.save')}
+            onPress={onSubmit}
+            loading={isSubmitting}
+          />
         </View>
       }
     >
-      <View style={{ gap: space.lg }}>
+      <View style={{ gap: space.xl }}>
         {error ? <Banner tone="danger" message={describe(error)} /> : null}
         {children}
       </View>

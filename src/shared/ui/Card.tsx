@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  StyleSheet,
+  View,
+  type PressableStateCallbackType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { radius, space, useStyles, type Theme } from '../theme';
 
@@ -24,6 +31,7 @@ const createStyles = ({ colors, shadow }: Theme) =>
     },
     padded: { padding: space.lg },
     pressed: { backgroundColor: colors.surfaceMuted },
+    hovered: { boxShadow: shadow.raised, borderColor: colors.accentSoft },
   });
 
 export function Card({
@@ -48,10 +56,11 @@ export function Card({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [
+      style={(state) => [
         styles.card,
         padded && styles.padded,
-        pressed && styles.pressed,
+        state.pressed && styles.pressed,
+        (state as PressableStateCallbackType & { hovered?: boolean }).hovered && styles.hovered,
         style,
       ]}
     >

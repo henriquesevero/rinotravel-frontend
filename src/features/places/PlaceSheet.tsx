@@ -13,7 +13,7 @@ import {
   toOptionalInt,
 } from '@/features/content/mappers';
 import { useEntityForm } from '@/features/content/use-entity-form';
-import { FormSelectField, FormTextField, useConfirm } from '@/shared/ui';
+import { FormSelectField, FormTextField, useConfirm, FormSection, FieldRow } from '@/shared/ui';
 
 import { placeHooks } from './hooks';
 import {
@@ -125,6 +125,8 @@ export function PlaceSheet({ tripId, visible, onClose, currency, place }: PlaceS
   const { control } = form;
   return (
     <EntitySheet
+      icon="location-outline"
+      tint="violet"
       testID="place-sheet"
       visible={visible}
       title={place ? t('places.editPlace') : t('places.addPlace')}
@@ -135,36 +137,49 @@ export function PlaceSheet({ tripId, visible, onClose, currency, place }: PlaceS
       {...(place ? { onDelete: () => void askDelete() } : {})}
     >
       {place ? null : <PlaceSearch onPick={pick} testID="place-search" />}
-      <FormTextField control={control} name="name" label={t('places.name')} testID="place-name" />
-      <FormSelectField
-        control={control}
-        name="category"
-        label={t('content.category')}
-        title={t('content.category')}
-        options={PLACE_CATEGORIES.map((value) => ({ value, label: t(`enums.category.${value}`) }))}
-      />
-      <FormSelectField
-        control={control}
-        name="priority"
-        label={t('places.priority')}
-        title={t('places.priority')}
-        options={PRIORITIES.map((value) => ({ value, label: t(`enums.priority.${value}`) }))}
-      />
-      <FormTextField control={control} name="address" label={t('content.address')} />
-      <FormTextField
-        control={control}
-        name="duration"
-        label={t('places.duration')}
-        keyboardType="number-pad"
-      />
-      <FormTextField
-        control={control}
-        name="cost"
-        label={t('content.cost')}
-        hint={t('content.costHint', { currency })}
-        keyboardType="decimal-pad"
-      />
-      <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      <FormSection title={t('content.sec.basic')}>
+        <FormTextField control={control} name="name" label={t('places.name')} testID="place-name" />
+        <FieldRow>
+          <FormSelectField
+            control={control}
+            name="category"
+            label={t('content.category')}
+            title={t('content.category')}
+            options={PLACE_CATEGORIES.map((value) => ({
+              value,
+              label: t(`enums.category.${value}`),
+            }))}
+          />
+          <FormSelectField
+            control={control}
+            name="priority"
+            label={t('places.priority')}
+            title={t('places.priority')}
+            options={PRIORITIES.map((value) => ({ value, label: t(`enums.priority.${value}`) }))}
+          />
+        </FieldRow>
+      </FormSection>
+      <FormSection title={t('content.sec.where')}>
+        <FormTextField control={control} name="address" label={t('content.address')} />
+      </FormSection>
+      <FormSection title={t('content.sec.money')}>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="duration"
+            label={t('places.duration')}
+            keyboardType="number-pad"
+          />
+          <FormTextField
+            control={control}
+            name="cost"
+            label={t('content.cost')}
+            hint={t('content.costHint', { currency })}
+            keyboardType="decimal-pad"
+          />
+        </FieldRow>
+        <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
+      </FormSection>
     </EntitySheet>
   );
 }

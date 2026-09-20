@@ -26,6 +26,14 @@ const createStyles = (_theme: Theme) =>
       justifyContent: 'space-between',
     },
     actions: { flexDirection: 'row', alignItems: 'center', gap: space.xs },
+    inline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: space.md,
+      minHeight: 56,
+    },
+    titleBlock: { flex: 1, gap: space.xs, minWidth: 0 },
     back: { marginLeft: -space.sm },
   });
 
@@ -39,26 +47,40 @@ export function ScreenHeader({ title, subtitle, backFallback, right }: ScreenHea
     else if (backFallback) router.replace(backFallback);
   };
 
-  return (
-    <View style={styles.header}>
-      <View style={styles.bar}>
-        {backFallback ? (
-          <View style={styles.back}>
-            <IconButton icon="chevron-back" label={t('common.back')} onPress={goBack} />
-          </View>
-        ) : (
-          <View />
-        )}
-        <View style={styles.actions}>{right}</View>
-      </View>
-      <Text variant="largeTitle" heading>
-        {title}
-      </Text>
+  const titleBlock = (
+    <View style={styles.titleBlock}>
+      {title ? (
+        <Text variant="largeTitle" heading>
+          {title}
+        </Text>
+      ) : null}
       {subtitle ? (
         <Text variant="callout" tone="secondary">
           {subtitle}
         </Text>
       ) : null}
+    </View>
+  );
+
+  // A page with no back button puts its actions on the title's row; with one, actions ride the top bar.
+  if (!backFallback) {
+    return (
+      <View style={[styles.header, styles.inline]}>
+        {titleBlock}
+        <View style={styles.actions}>{right}</View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.header}>
+      <View style={styles.bar}>
+        <View style={styles.back}>
+          <IconButton icon="chevron-back" label={t('common.back')} onPress={goBack} />
+        </View>
+        <View style={styles.actions}>{right}</View>
+      </View>
+      {titleBlock}
     </View>
   );
 }

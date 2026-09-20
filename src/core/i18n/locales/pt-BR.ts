@@ -303,6 +303,16 @@ export const ptBR = {
     },
   },
   content: {
+    sec: {
+      basic: 'Informações',
+      when: 'Quando',
+      where: 'Onde',
+      money: 'Custo e notas',
+      booking: 'Reserva',
+      route: 'Trajeto',
+      file: 'Arquivo',
+      access: 'Acesso',
+    },
     optional: 'opcional',
     location: 'Local',
     address: 'Endereço',
@@ -352,6 +362,7 @@ export const ptBR = {
     loadError: 'Não foi possível carregar o painel.',
   },
   itinerary: {
+    events: { one: '{{count}} item', other: '{{count}} itens' },
     title: 'Roteiro',
     add: 'Novo item',
     dayN: 'Dia {{n}}',
@@ -466,6 +477,7 @@ export const ptBR = {
     loadError: 'Não foi possível carregar os deslocamentos.',
     detail: {
       mapTitle: 'Mapa da rota',
+      duration: 'Duração',
       openGoogle: 'Abrir no Google Maps',
       openApple: 'Abrir no Apple Maps',
       share: 'Compartilhar',

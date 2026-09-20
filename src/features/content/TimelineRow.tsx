@@ -4,53 +4,45 @@ import type { TimelineEntry } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
 import type { TFunction } from 'i18next';
 import { zonedTime } from '@/core/datetime/zoned';
-import { radius, space, useStyles, type Theme } from '@/shared/theme';
-import { Badge, Icon, Text, type IconName } from '@/shared/ui';
+import { space, useStyles, type Theme } from '@/shared/theme';
+import { Badge, IconBadge, Text } from '@/shared/ui';
 
-const KIND_ICON: Record<TimelineEntry['kind'], IconName> = {
-  itinerary_item: 'flag-outline',
-  flight_departure: 'airplane-outline',
-  flight_arrival: 'airplane-outline',
-  hotel_check_in: 'bed-outline',
-  hotel_check_out: 'bed-outline',
-  transfer: 'swap-horizontal-outline',
-  restaurant_reservation: 'restaurant-outline',
-};
+import { entryVisual } from './visuals';
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
     row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-    time: { width: 48 },
-    icon: {
-      width: 36,
-      height: 36,
-      borderRadius: radius.md,
-      backgroundColor: colors.accentSoft,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
+    time: { width: 52 },
     text: { flex: 1, gap: 2 },
+    dim: { color: colors.textSecondary },
   });
 
 export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const time = entry.start ? zonedTime(entry.start) : '';
+  const end = entry.end ? zonedTime(entry.end) : '';
   const subtitle = subtitleOf(entry, t);
   const status = statusOf(entry.status);
+  const visual = entryVisual(entry);
 
   return (
     <View style={styles.row} testID={`timeline-${entry.kind}-${entry.id}`}>
       <View style={styles.time}>
-        <Text variant="subhead" tone="secondary">
+        <Text variant="subhead" style={{ fontWeight: '700' }}>
           {time}
         </Text>
+        {end && end !== time ? (
+          <Text variant="caption" tone="secondary">
+            {end}
+          </Text>
+        ) : null}
       </View>
-      <View style={styles.icon}>
-        <Icon name={KIND_ICON[entry.kind]} size={18} tone="accent" />
-      </View>
+      <IconBadge icon={visual.icon} tint={visual.tint} />
       <View style={styles.text}>
-        <Text numberOfLines={2}>{entry.title}</Text>
+        <Text numberOfLines={2} style={{ fontWeight: '600' }}>
+          {entry.title}
+        </Text>
         {subtitle ? (
           <Text variant="footnote" tone="secondary" numberOfLines={1}>
             {subtitle}

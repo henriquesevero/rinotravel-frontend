@@ -21,7 +21,7 @@ import {
   useConfirm,
 } from '@/shared/ui';
 
-import { TripHero } from '../components/TripHero';
+import { TripBanner } from '../components/TripBanner';
 import { useDeleteTrip, useForgetTrip, useTrip } from '../hooks';
 import { TransferOwnershipSheet } from '../members/components/TransferOwnershipSheet';
 import { useRemoveMember } from '../members/hooks';
@@ -111,10 +111,10 @@ export function TripScreen({ tripId }: { tripId: string }) {
 
   return (
     <Screen refreshing={trip.isRefetching} onRefresh={() => void trip.refetch()}>
-      <ScreenHeader title={data.name} backFallback="/" />
+      <ScreenHeader title="" backFallback="/" />
       <View style={styles.stack}>
         {error ? <Banner tone="danger" message={describe(error)} /> : null}
-        <TripHero trip={data} />
+        <TripBanner trip={data} size="large" />
         <TripOverview trip={data} />
 
         <Card padded={false}>
