@@ -232,6 +232,205 @@ test.describe('trip content', () => {
     await expect(page.getByTestId('hotel-detail-edit')).toBeVisible();
   });
 
+  // A day with three places, timed so the second trip does not fit: the museum ends at 13:00 and
+  // dinner is at 13:20, but the trip takes 45 minutes.
+  async function seedDay(request: import('@playwright/test').APIRequestContext) {
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    const headers = { Authorization: `Bearer ${ana.token}` };
+    const day = await (
+      await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-days`, {
+        headers,
+        data: { date: '2027-04-02' },
+      })
+    ).json();
+    const at = (time: string) => ({ dateTime: `2027-04-02T${time}:00`, timezone: 'Asia/Tokyo' });
+    for (const [title, start, end, place] of [
+      [
+        'Templo Senso-ji',
+        '09:00',
+        '10:30',
+        { name: 'Senso-ji', latitude: 35.7148, longitude: 139.7967 },
+      ],
+      [
+        'Museu Nacional',
+        '11:00',
+        '13:00',
+        { name: 'Museu Nacional', latitude: 35.7189, longitude: 139.7765 },
+      ],
+      ['Jantar em Shibuya', '13:20', undefined, { name: 'Shibuya', address: 'Shibuya, Tóquio' }],
+    ] as const) {
+      const made = await request.post(`${API}/api/v1/trips/${trip.id}/itinerary-items`, {
+        headers,
+        data: {
+          dayId: day.id,
+          title,
+          category: 'ATTRACTION',
+          start: at(start),
+          ...(end ? { end: at(end) } : {}),
+          location: place,
+        },
+      });
+      expect(made.status(), await made.text()).toBe(201);
+    }
+    return { ana, trip };
+  }
+
+  const dayMapResponse = (image?: string) =>
+    JSON.stringify({
+      legs: [
+        {
+          from: 0,
+          to: 1,
+          available: true,
+          durationSeconds: 1500,
+          distanceMeters: 6200,
+          polyline: '_p~iF~ps|U_ulLnnqC',
+        },
+        {
+          from: 1,
+          to: 2,
+          available: true,
+          durationSeconds: 2700,
+          distanceMeters: 12400,
+          polyline: '_ulLnnqC_mqNvxq`@',
+        },
+      ],
+      ...(image ? { image } : {}),
+    });
+
+  // The stand-in for Google's script: it records what the page asks the map to do.
+  const FAKE_GOOGLE_MAPS = `
+    (() => {
+      const log = (window.__maps = { markers: [], lines: 0, maps: 0, info: [], markerObjects: [] });
+      class LatLngBounds { constructor() { this.n = 0; } extend() { this.n++; } isEmpty() { return this.n === 0; } }
+      class Map { constructor(el) { log.maps++; el.setAttribute('data-fake-map', '1'); } fitBounds() {} panTo() {} }
+      class Marker {
+        constructor(o) { this.o = o; this.on = {}; log.markers.push(o.label.text + ':' + o.title); log.markerObjects.push(this); }
+        setMap() {} setIcon(i) { this.icon = i; } setZIndex() {} addListener(e, fn) { this.on[e] = fn; }
+      }
+      class Polyline { constructor() { log.lines++; } setMap() {} }
+      class InfoWindow { setContent(c) { this.c = c; } setPosition() {} open() { log.info.push(this.c.textContent); } close() {} }
+      window.google = { maps: { importLibrary: async () => ({ Map }), Map, Marker, Polyline, InfoWindow, LatLngBounds, SymbolPath: { CIRCLE: 0 } } };
+      window.__rinoMapsReady();
+    })();`;
+
+  test('itinerary: the day map shows each stop with when to be there, each trip and its warning', async ({
+    page,
+    request,
+  }) => {
+    const requests: Record<string, unknown>[] = [];
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', async (route) => {
+      requests.push(route.request().postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'application/json', body: dayMapResponse() });
+    });
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    // Computers show the map beside the list; phones open it from the day.
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+    const panel = page.getByTestId('day-map-panel');
+    await expect(panel).toBeVisible();
+
+    // Every stop, in time order, with when to be there.
+    const stops = panel.getByTestId('day-map-stops');
+    await expect(stops).toContainText('09:00');
+    await expect(stops).toContainText('Templo Senso-ji');
+    await expect(stops.getByTestId('day-stop-1')).toContainText('11:00');
+    await expect(stops.getByTestId('day-stop-2')).toContainText('Jantar em Shibuya');
+
+    // The trips between them: how long, how far, when to leave.
+    const first = panel.getByTestId('day-leg-0');
+    await expect(first).toContainText('25 min');
+    await expect(first).toContainText('6,2 km');
+    await expect(first).toContainText('Saia às 10:35');
+    // The museum ends at 13:00 and dinner is at 13:20: 20 minutes for a 45-minute trip.
+    await expect(panel.getByTestId('day-leg-1')).toContainText('Apertado');
+    await expect(panel.getByTestId('day-leg-0')).not.toContainText('Apertado');
+    await expect(panel).toContainText('3 paradas');
+    await expect(panel).toContainText('1 h 10 em deslocamento');
+
+    // The server was asked once, for the right stops, without a picture (the map is interactive).
+    expect(requests).toHaveLength(1);
+    expect(requests[0]).toMatchObject({ mode: 'TRANSIT', includeImage: false });
+    expect((requests[0] as { stops: { label: string }[] }).stops.map((stop) => stop.label)).toEqual(
+      ['Templo Senso-ji', 'Museu Nacional', 'Jantar em Shibuya'],
+    );
+
+    // The real page-side map got numbered pins and one line per trip.
+    await expect(page.locator('[data-fake-map="1"]')).toBeVisible();
+    const drawn = await page.evaluate(
+      () => (window as never as { __maps: { markers: string[]; lines: number } }).__maps,
+    );
+    expect(drawn.markers).toEqual(['1:Templo Senso-ji', '2:Museu Nacional', '3:Jantar em Shibuya']);
+    expect(drawn.lines).toBe(2);
+
+    // Clicking a pin selects its stop in the list and opens its details on the map.
+    await page.evaluate(() => {
+      const maps = (
+        window as never as { __maps: { markerObjects: { on: { click: () => void } }[] } }
+      ).__maps;
+      maps.markerObjects[1]?.on.click();
+    });
+    await expect(panel.getByTestId('day-stop-1')).toHaveAttribute('aria-label', 'Museu Nacional');
+    const info = await page.evaluate(
+      () => (window as never as { __maps: { info: string[] } }).__maps.info,
+    );
+    expect(info.at(-1)).toContain('Museu Nacional');
+
+    // Another way to get around is another question for the server.
+    await page.getByTestId('day-mode-WALKING').click();
+    await expect.poll(() => requests.length).toBe(2);
+    expect(requests[1]).toMatchObject({ mode: 'WALKING' });
+
+    // A stop opens its own details.
+    await panel.getByTestId('day-stop-open-0').click();
+    await expect(page.getByTestId('item-detail')).toBeVisible();
+    await expect(
+      page.getByRole('dialog').getByRole('heading', { name: 'Templo Senso-ji' }),
+    ).toBeVisible();
+  });
+
+  test('itinerary: when Google refuses the browser key the day falls back to the server picture', async ({
+    page,
+    request,
+  }) => {
+    const PNG =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+    const requests: Record<string, unknown>[] = [];
+    // Google's script loads, then reports that the key is not allowed on this site.
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'text/javascript',
+        body: 'window.__rinoMapsReady(); setTimeout(() => window.gm_authFailure && window.gm_authFailure(), 50);',
+      }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', async (route) => {
+      const body = route.request().postDataJSON();
+      requests.push(body);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: dayMapResponse(body.includeImage ? PNG : undefined),
+      });
+    });
+    const { ana, trip } = await seedDay(request);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    if (isPhone(page)) await page.getByTestId('day-map-2027-04-02').click();
+
+    await expect(page.getByTestId('day-map-image')).toBeVisible();
+    expect(requests.at(-1)).toMatchObject({ includeImage: true });
+    // The list and the times are the same with or without the interactive map.
+    await expect(page.getByTestId('day-leg-0')).toContainText('Saia às 10:35');
+  });
+
   test('places: a wishlist place is scheduled into the itinerary', async ({ page, request }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana);

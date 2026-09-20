@@ -21,7 +21,7 @@ import {
 import { useDayMap, type DayMode } from './hooks';
 import { InteractiveMap, type MapPin } from './InteractiveMap';
 import { decodePolyline, type LatLng } from './polyline';
-import type { Stop } from './stops';
+import { stopsSignature, type Stop } from './stops';
 import { formatDistance, legViews, totals, type LegView } from './timing';
 
 const MODE_ICON: Record<DayMode, IconName> = {
@@ -96,7 +96,11 @@ interface DayMapPanelProps {
  * how long it takes and when to leave, and the whole route drawn. Pass `key={date}` so a new day
  * starts with nothing selected.
  */
-export function DayMapPanel({ tripId, stops, onOpenStop, listMaxHeight }: DayMapPanelProps) {
+export function DayMapPanel({ tripId, stops: given, onOpenStop, listMaxHeight }: DayMapPanelProps) {
+  // The parent rebuilds the array on every render; the map should only react to a real change.
+  const signature = stopsSignature(given);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the signature on purpose
+  const stops = useMemo(() => given, [signature]);
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const [mode, setMode] = useState<DayMode>('TRANSIT');

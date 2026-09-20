@@ -10,7 +10,7 @@ App do Rhino Travel, uma plataforma pessoal e colaborativa de gerenciamento de v
 | Painel | saudação, viagem em andamento ou próxima com contagem regressiva, agenda de hoje ou dos próximos dias, indicadores, suas viagens |
 | Viagens | lista, criação, edição, exclusão, saída, transferência de posse, visão geral com indicadores e "a seguir" |
 | Membros | adicionar, mudar papel, remover; a interface só oferece o que o servidor diz que cada papel pode |
-| Roteiro | dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, visualizar, editar e excluir itens, cada um com o mapa do seu local |
+| Roteiro | **mapa do dia** (todas as paradas em ordem com o horário de cada uma, o tempo e a distância de cada trajeto, quando sair e aviso de trecho apertado; escolha entre transporte, a pé ou carro); dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, visualizar, editar e excluir itens, cada um com o mapa do seu local |
 | Lugares | lista de desejos com prioridade, restaurantes com reserva e pratos, busca no Google com mapa do local no formulário (quando o servidor tem a chave), agendar um lugar no roteiro |
 | Reservas | voos (fusos de cada aeroporto, duração calculada) e hospedagens (noites, código de confirmação) |
 | Deslocamentos | deslocamentos em etapas, sugestão de rotas do Google (quando disponível), sugestões de lugares do Google nos campos, mapa com a rota A→B no formulário, abrir no app de mapas do celular e compartilhar |
@@ -70,6 +70,8 @@ No emulador Android, `localhost` é o próprio emulador: use `EXPO_PUBLIC_API_UR
 | `npm run e2e` | build web isolado e Playwright (precisa do Mongo; usa API na porta 18080 e site na 3100, sem chave do Google) |
 
 O mapa dos deslocamentos é uma imagem desenhada pelo servidor (Maps Static API), então a chave do Google fica só no backend e o front não precisa de nenhuma. Ele aparece no próprio formulário: ao escolher origem e destino nas sugestões do Google (busca de lugares), no computador o mapa fica numa coluna fixa ao lado do formulário. Nada do Google é guardado no banco. Os botões "Abrir no Google Maps", "Abrir no Apple Maps" (só em aparelhos Apple) e "Compartilhar" funcionam sempre e não usam chave. Sem a chave no servidor, ou se o Google falhar, aparece uma ilustração da rota no lugar do mapa.
+
+O **mapa do dia** no roteiro tem dois modos. Sem chave de navegador, o servidor desenha o dia como imagem (pinos numerados e rotas), o que já mostra tudo. Com `EXPO_PUBLIC_GOOGLE_MAPS_BROWSER_KEY` (uma chave de **navegador**, restrita à Maps JavaScript API e aos endereços do site, nunca a chave do servidor), o mapa vira o do Google de verdade: dá para mover, ampliar e clicar nos pinos, que se ligam à lista. Se o Google recusar a chave, a tela volta sozinha para a imagem. O servidor calcula os trechos na hora e não guarda nada do Google.
 
 Depois de mudar o OpenAPI da API, rode `npm run api:types`: se um contrato mudou, o `tsc` aponta o que quebrou. Uma mensagem de erro nova do servidor sem tradução também falha na compilação.
 
