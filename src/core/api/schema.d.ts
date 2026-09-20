@@ -602,6 +602,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/maps/day": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Planeja o mapa de um dia. Dado a lista de paradas em ordem, devolve o trecho entre cada par (tempo, distância e traçado) e, se pedido, uma imagem numerada. Só existe quando o servidor tem GOOGLE_MAPS_API_KEY
+         * @description Um trecho sem rota encontrada volta com `available: false`, sem inventar tempo, e nunca derruba o dia inteiro.
+         *     Paradas consecutivas no mesmo lugar não geram trecho. O traçado (`polyline`) é para ser desenhado num mapa do
+         *     Google. Nada é guardado no servidor. Qualquer membro da viagem (inclusive LEITOR) pode pedir.
+         */
+        post: operations["planDayMap"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/documents": {
         parameters: {
             query?: never;
@@ -1317,6 +1341,37 @@ export interface components {
         LocationMapRequest: {
             location: components["schemas"]["Location"];
             language?: string;
+        };
+        DayMapStop: {
+            label?: string;
+            location: components["schemas"]["Location"];
+        };
+        DayMapRequest: {
+            stops: components["schemas"]["DayMapStop"][];
+            /**
+             * @description Como o dia é percorrido. Padrão TRANSIT.
+             * @enum {string}
+             */
+            mode?: "TRANSIT" | "WALKING" | "DRIVING";
+            language?: string;
+            /** @description Pede também uma imagem com todas as paradas numeradas e as rotas. */
+            includeImage?: boolean;
+        };
+        DayMapLeg: {
+            /** @description Índice da parada de partida. */
+            from: number;
+            to: number;
+            /** @description Falso quando nenhuma rota foi encontrada. */
+            available: boolean;
+            durationSeconds?: number;
+            distanceMeters?: number;
+            /** @description Traçado codificado (Google), para desenhar num mapa do Google. */
+            polyline?: string;
+        };
+        DayMap: {
+            legs: components["schemas"]["DayMapLeg"][];
+            /** @description Data URI PNG, presente só se pedida e desenhada. */
+            image?: string;
         };
         MapRequest: {
             origin: components["schemas"]["Location"];
@@ -3138,6 +3193,37 @@ export interface operations {
             422: components["responses"]["Unprocessable"];
             429: components["responses"]["TooManyRequests"];
             503: components["responses"]["Unavailable"];
+        };
+    };
+    planDayMap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DayMapRequest"];
+            };
+        };
+        responses: {
+            /** @description Os trechos do dia. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DayMap"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+            422: components["responses"]["Unprocessable"];
+            429: components["responses"]["TooManyRequests"];
         };
     };
     listDocuments: {

@@ -64,3 +64,7 @@ export type SignedRequest = Schemas['SignedRequest'];
 
 export type MapRequest = Schemas['MapRequest'];
 export type LocationMapRequest = Schemas['LocationMapRequest'];
+export type DayMap = Schemas['DayMap'];
+export type DayMapLeg = Schemas['DayMapLeg'];
+export type DayMapStop = Schemas['DayMapStop'];
+export type DayMapRequest = Schemas['DayMapRequest'];

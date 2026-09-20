@@ -10,11 +10,13 @@ App do Rhino Travel, uma plataforma pessoal e colaborativa de gerenciamento de v
 | Painel | saudação, viagem em andamento ou próxima com contagem regressiva, agenda de hoje ou dos próximos dias, indicadores, suas viagens |
 | Viagens | lista, criação, edição, exclusão, saída, transferência de posse, visão geral com indicadores e "a seguir" |
 | Membros | adicionar, mudar papel, remover; a interface só oferece o que o servidor diz que cada papel pode |
-| Roteiro | dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, editar e excluir itens |
-| Lugares | lista de desejos com prioridade, restaurantes com reserva e pratos, busca no Google (quando o servidor tem a chave), agendar um lugar no roteiro |
+| Roteiro | dias da viagem com a linha do tempo unificada (itens, voos, hospedagens, deslocamentos, reservas); criar, visualizar, editar e excluir itens, cada um com o mapa do seu local |
+| Lugares | lista de desejos com prioridade, restaurantes com reserva e pratos, busca no Google com mapa do local no formulário (quando o servidor tem a chave), agendar um lugar no roteiro |
 | Reservas | voos (fusos de cada aeroporto, duração calculada) e hospedagens (noites, código de confirmação) |
 | Deslocamentos | deslocamentos em etapas, sugestão de rotas do Google (quando disponível), sugestões de lugares do Google nos campos, mapa com a rota A→B no formulário, abrir no app de mapas do celular e compartilhar |
 | Documentos | envio com SHA-256, armazenamento no MongoDB via link assinado, abrir, renomear, visibilidade, excluir |
+
+**Visualizar antes de editar:** clicar em qualquer registro (item do roteiro, lugar, restaurante, voo, hospedagem, deslocamento, documento) abre uma tela de visualização, com o mapa quando há local e os botões de abrir no app de mapas e compartilhar. O botão "Editar" fica dentro dela e só aparece para quem pode editar a viagem; leitores só visualizam.
 
 Computadores têm menu lateral (que vira uma barra de ícones em janelas estreitas); celulares têm barra inferior própria, que dentro de uma viagem mostra as seções dela e um menu "Mais".
 
