@@ -560,6 +560,8 @@ export const ptBR = {
     savedAlso: 'O arquivo também fica na lista de documentos.',
   },
   expenses: {
+    autoNote:
+      'Custos que já estão na viagem (roteiro, refeições, ingressos, deslocamentos, voos e hospedagens) entram aqui sozinhos. O que já passou conta como gasto.',
     of: 'de {{value}}',
     linkType: {
       place: 'Lugar',
@@ -625,6 +627,9 @@ export const ptBR = {
     loadError: 'Não foi possível carregar os gastos.',
   },
   bookings: {
+    price: 'Preço da passagem',
+    priceStay: 'Preço da hospedagem (total)',
+    priceCurrency: 'Moeda do preço',
     tabTickets: 'Ingressos',
     addTicket: 'Novo ingresso',
     editTicket: 'Editar ingresso',

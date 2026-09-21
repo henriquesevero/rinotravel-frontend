@@ -1,3 +1,4 @@
+import { currencyOptions, timezoneOptions } from '@/features/trips/options';
 import { useMemo } from 'react';
 
 import type { Flight } from '@/core/api';
@@ -6,7 +7,6 @@ import { useTranslation } from '@/core/i18n';
 import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
 import { useEntityForm } from '@/features/content/use-entity-form';
-import { timezoneOptions } from '@/features/trips/options';
 import {
   FormDateField,
   FormSelectField,
@@ -18,6 +18,7 @@ import {
 } from '@/shared/ui';
 
 import { flightHooks } from './hooks';
+import { fromMoney, toMoneyInput } from '@/features/content/mappers';
 import { FLIGHT_ALIASES, FLIGHT_FIELDS, flightSchema, type FlightFormValues } from './schemas';
 
 interface FlightSheetProps {
@@ -27,6 +28,8 @@ interface FlightSheetProps {
   /** Where the trip happens; the arrival is assumed to be there. */
   tripTimezone: string;
   homeTimezone: string;
+  /** The trip's currency, offered first for the price. */
+  currency: string;
   flight?: Flight | undefined;
 }
 
@@ -36,6 +39,7 @@ export function FlightSheet({
   onClose,
   tripTimezone,
   homeTimezone,
+  currency,
   flight,
 }: FlightSheetProps) {
   const { t } = useTranslation();
@@ -63,9 +67,11 @@ export function FlightSheet({
       seat: flight?.seat ?? '',
       baggage: flight?.baggage ?? '',
       bookingCode: flight?.bookingCode ?? '',
+      cost: fromMoney(flight?.cost),
+      costCurrency: flight?.cost?.currency ?? currency,
       notes: flight?.notes ?? '',
     };
-  }, [flight, homeTimezone, tripTimezone]);
+  }, [flight, homeTimezone, tripTimezone, currency]);
   const { form, error, fail, close, clearError } = useEntityForm<FlightFormValues>({
     schema: flightSchema,
     defaults,
@@ -75,6 +81,10 @@ export function FlightSheet({
   });
 
   const zones = useMemo(() => timezoneOptions(homeTimezone), [homeTimezone]);
+  const currencies = useMemo(
+    () => currencyOptions((code) => t(`currencies.${code}`), currency),
+    [currency, t],
+  );
 
   const submit = form.handleSubmit(async (values) => {
     clearError();
@@ -90,6 +100,7 @@ export function FlightSheet({
       seat: values.seat,
       baggage: values.baggage,
       bookingCode: values.bookingCode,
+      cost: toMoneyInput(values.cost, values.costCurrency),
       notes: values.notes,
     };
     try {
@@ -225,6 +236,23 @@ export function FlightSheet({
             name="bookingCode"
             label={t('bookings.bookingCode')}
             autoCapitalize="characters"
+          />
+        </FieldRow>
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="cost"
+            label={t('bookings.price')}
+            keyboardType="decimal-pad"
+            testID="flight-cost"
+          />
+          <FormSelectField
+            control={control}
+            name="costCurrency"
+            label={t('bookings.priceCurrency')}
+            title={t('bookings.priceCurrency')}
+            options={currencies}
+            searchable
           />
         </FieldRow>
         <FormTextField control={control} name="notes" label={t('content.notes')} multiline />

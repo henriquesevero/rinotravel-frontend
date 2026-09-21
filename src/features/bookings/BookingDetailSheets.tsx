@@ -53,6 +53,12 @@ export function FlightDetailSheet({ flight, ...common }: Common & { flight: Flig
         { label: t('detail.gate'), value: flight?.gate },
         { label: t('detail.seat'), value: flight?.seat },
         { label: t('detail.baggage'), value: flight?.baggage },
+        {
+          label: t('detail.cost'),
+          value: flight?.cost
+            ? formatMoney(flight.cost.amount, flight.cost.currency, locale)
+            : undefined,
+        },
       ]}
       notes={flight?.notes}
       testID="flight-detail"
@@ -90,6 +96,12 @@ export function HotelDetailSheet({ hotel, ...common }: Common & { hotel: Hotel |
         },
         { label: t('detail.phone'), value: hotel?.contactPhone },
         { label: t('detail.link'), value: hotel?.bookingUrl },
+        {
+          label: t('detail.cost'),
+          value: hotel?.cost
+            ? formatMoney(hotel.cost.amount, hotel.cost.currency, locale)
+            : undefined,
+        },
       ]}
       notes={hotel?.notes}
       location={hotel?.location}

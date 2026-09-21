@@ -55,6 +55,17 @@ describe('flightSchema', () => {
   });
 });
 
+describe('the price of a flight or a stay', () => {
+  it('is optional, and a number in the currency chosen beside it', () => {
+    expect(flightSchema.safeParse(flight).success).toBe(true);
+    expect(
+      flightSchema.safeParse({ ...flight, cost: '4200,50', costCurrency: 'BRL' }).success,
+    ).toBe(true);
+    const result = flightSchema.safeParse({ ...flight, cost: 'caro', costCurrency: 'BRL' });
+    expect(messages(result)).toContain('validation.moneyInvalid');
+  });
+});
+
 describe('hotelSchema', () => {
   const hotel = {
     name: 'Hotel Sakura',

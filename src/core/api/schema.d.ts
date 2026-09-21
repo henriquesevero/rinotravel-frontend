@@ -1333,6 +1333,7 @@ export interface components {
             baggage?: string;
             /** @description Omitido para VIEWER. */
             bookingCode?: string;
+            cost?: components["schemas"]["Money"];
             notes?: string;
         };
         FlightCreate: {
@@ -1352,6 +1353,7 @@ export interface components {
             seat?: string;
             baggage?: string;
             bookingCode?: string;
+            cost?: components["schemas"]["Money"] | null;
             notes?: string;
         };
         FlightPatch: components["schemas"]["BaseVersion"] & {
@@ -1366,6 +1368,7 @@ export interface components {
             seat?: string;
             baggage?: string;
             bookingCode?: string;
+            cost?: components["schemas"]["Money"] | null;
             notes?: string;
         };
         Hotel: components["schemas"]["ResourceMeta"] & {
@@ -1377,6 +1380,7 @@ export interface components {
             confirmationCode?: string;
             contactPhone?: string;
             bookingUrl?: string;
+            cost?: components["schemas"]["Money"];
             notes?: string;
         };
         HotelCreate: {
@@ -1392,6 +1396,7 @@ export interface components {
             confirmationCode?: string;
             contactPhone?: string;
             bookingUrl?: string;
+            cost?: components["schemas"]["Money"] | null;
             notes?: string;
         };
         HotelPatch: components["schemas"]["BaseVersion"] & {
@@ -1402,6 +1407,7 @@ export interface components {
             confirmationCode?: string;
             contactPhone?: string;
             bookingUrl?: string;
+            cost?: components["schemas"]["Money"] | null;
             notes?: string;
         };
         /** @enum {string} */

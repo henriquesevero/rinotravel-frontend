@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { isCivilDate } from '@/core/datetime/civil-date';
+import { parseMoneyInput } from '@/core/datetime/money';
 import { joinZoned, minutesBetween } from '@/core/datetime/zoned';
 import {
   optionalMoney,
@@ -21,6 +22,13 @@ const iata = z
   .trim()
   .regex(/^[A-Za-z]{3}$/, { error: 'validation.airportCode' });
 
+/** A price is a number in the currency picked beside it, which may not be the trip's. */
+function costIsValid(value: { cost: string; costCurrency: string }): boolean {
+  return (
+    value.cost.trim() === '' || parseMoneyInput(value.cost, value.costCurrency || 'USD') !== null
+  );
+}
+
 export const flightSchema = z
   .object({
     airline: optionalText(100),
@@ -38,8 +46,11 @@ export const flightSchema = z
     seat: optionalText(20),
     baggage: optionalText(100),
     bookingCode: optionalText(50),
+    cost: z.string().default(''),
+    costCurrency: z.string().default(''),
     notes: optionalText(2000),
   })
+  .refine(costIsValid, { path: ['cost'], error: 'validation.moneyInvalid' })
   .refine(
     (f) => {
       const departure = joinZoned(f.depDate, f.depTime, f.depTimezone);
@@ -67,6 +78,8 @@ export const FLIGHT_FIELDS = [
   'seat',
   'baggage',
   'bookingCode',
+  'cost',
+  'costCurrency',
   'notes',
 ] as const;
 export const FLIGHT_ALIASES = {
@@ -87,8 +100,11 @@ export const hotelSchema = z
     confirmationCode: optionalText(50),
     contactPhone: optionalText(50),
     bookingUrl: optionalUrl,
+    cost: z.string().default(''),
+    costCurrency: z.string().default(''),
     notes: optionalText(2000),
   })
+  .refine(costIsValid, { path: ['cost'], error: 'validation.moneyInvalid' })
   .refine((h) => `${h.checkOutDate}T${h.checkOutTime}` > `${h.checkInDate}T${h.checkInTime}`, {
     path: ['checkOutTime'],
     error: 'validation.checkoutBeforeCheckin',
@@ -104,6 +120,8 @@ export const HOTEL_FIELDS = [
   'confirmationCode',
   'contactPhone',
   'bookingUrl',
+  'cost',
+  'costCurrency',
   'notes',
 ] as const;
 export const HOTEL_ALIASES = {

@@ -8,22 +8,23 @@ import { space } from '@/shared/theme';
 import { Card, Text } from '@/shared/ui';
 
 import { BudgetBar } from './BudgetBar';
-import { expenseHooks, limitHooks } from './hooks';
+import { limitHooks } from './hooks';
+import { useTripMoney } from './money';
 import { budgetLine, limitsByCategory, totalsOf } from './summary';
 
 /** The trip's money at a glance for the overview: what it is set to cost and how far it has come. */
 export function BudgetGlance({ trip }: { trip: Trip }) {
   const { t } = useTranslation();
   const router = useRouter();
-  const expenses = expenseHooks.useList(trip.id);
+  const money_ = useTripMoney(trip);
   const limits = limitHooks.useList(trip.id);
-  if (!expenses.data || !limits.data) return null;
+  if (!money_.lines || !limits.data) return null;
 
   const locale = currentLocale();
-  const totals = totalsOf(expenses.data, trip.currency);
+  const totals = totalsOf(money_.lines, trip.currency);
   const limit = limitsByCategory(limits.data, trip.currency).get('TOTAL');
   // Nothing to say until there is a budget or a first expense.
-  if (!limit && expenses.data.length === 0) return null;
+  if (!limit && money_.lines.length === 0) return null;
   const line = limit ? budgetLine(limit.amount.amount, totals) : null;
   const money = (amount: number) => formatMoney(amount, trip.currency, locale);
 

@@ -170,6 +170,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
             onClose={() => setFlightSheet(null)}
             tripTimezone={trip.timezone}
             homeTimezone={defaultTimezone()}
+            currency={trip.currency}
             flight={flightSheet?.flight}
           />
           <HotelSheet
@@ -177,6 +178,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
             visible={hotelSheet !== null}
             onClose={() => setHotelSheet(null)}
             timezone={trip.timezone}
+            currency={trip.currency}
             hotel={hotelSheet?.hotel}
           />
         </>

@@ -553,6 +553,8 @@ export const en: Translation = {
     savedAlso: 'The file also appears in the documents list.',
   },
   expenses: {
+    autoNote:
+      'Prices already in the trip (itinerary, meals, tickets, transfers, flights and stays) show up here on their own. What has already happened counts as spent.',
     of: 'of {{value}}',
     linkType: {
       place: 'Place',
@@ -618,6 +620,9 @@ export const en: Translation = {
     loadError: 'Could not load the expenses.',
   },
   bookings: {
+    price: 'Ticket price',
+    priceStay: 'Price of the stay (total)',
+    priceCurrency: 'Price currency',
     tabTickets: 'Tickets',
     addTicket: 'New ticket',
     editTicket: 'Edit ticket',

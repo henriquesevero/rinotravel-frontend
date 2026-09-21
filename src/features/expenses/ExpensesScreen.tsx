@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -26,8 +26,10 @@ import {
 import { BudgetBar } from './BudgetBar';
 import { BudgetSheet } from './BudgetSheet';
 import { ExpenseSheet } from './ExpenseSheet';
+import { isAuto } from './derived';
 import { expenseHooks, limitHooks } from './hooks';
 import { targetKey, useLinkTargets, type LinkTarget } from './link-targets';
+import { useTripMoney } from './money';
 import {
   amountOf,
   budgetLine,
@@ -77,19 +79,9 @@ export function ExpensesScreen({ tripId }: { tripId: string }) {
   const { t } = useTranslation();
   const router = useRouter();
   const { link } = useLocalSearchParams<{ link?: string }>();
-  const expenses = expenseHooks.useList(tripId);
-  const limits = limitHooks.useList(tripId);
-  const { byKey } = useLinkTargets(tripId);
-  const update = expenseHooks.useUpdate(tripId);
-
-  const [view, setView] = useState<ViewMode>('category');
-  const [filter, setFilter] = useState<Filter>('all');
   const [sheet, setSheet] = useState<{ expense?: Expense | undefined; link?: ExpenseLink } | null>(
     null,
   );
-  const [viewId, setViewId] = useState<string | null>(null);
-  const [budgetOpen, setBudgetOpen] = useState(false);
-  const viewing = expenses.data?.find((expense) => expense.id === viewId);
 
   // Coming from a place ("add a purchase here") opens the form with that place already chosen; the
   // address holds it until the form is closed.
@@ -102,25 +94,10 @@ export function ExpensesScreen({ tripId }: { tripId: string }) {
     if (link) router.setParams({ link: undefined });
   };
 
-  const toggle = (expense: Expense) => {
-    const paid = expense.status === 'PAID';
-    update.mutate({
-      id: expense.id,
-      baseVersion: expense.version,
-      patch: paid
-        ? { status: 'PLANNED', actual: null }
-        : { status: 'PAID', actual: expense.estimate ?? null },
-    });
-  };
-
   return (
     <TripPage
       tripId={tripId}
       title={t('expenses.title')}
-      onRefresh={() => {
-        void expenses.refetch();
-        void limits.refetch();
-      }}
       right={({ canWrite }) =>
         canWrite ? (
           <Button
@@ -133,108 +110,171 @@ export function ExpensesScreen({ tripId }: { tripId: string }) {
         ) : null
       }
     >
-      {({ trip, canWrite }) => {
-        const failed = expenses.error ?? limits.error;
-        if (failed) {
-          return (
-            <ErrorState
-              error={failed}
-              title={t('expenses.loadError')}
-              onRetry={() => void expenses.refetch()}
-            />
-          );
-        }
-        if (!expenses.data || !limits.data) {
-          return (
-            <View style={{ gap: space.sm }}>
-              <Skeleton height={150} borderRadius={16} />
-              <Skeleton height={72} borderRadius={16} />
-            </View>
-          );
-        }
-        const all = expenses.data;
-        const limitMap = limitsByCategory(limits.data, trip.currency);
-        const totals = totalsOf(all, trip.currency);
-        const row: RowProps = {
-          trip,
-          byKey,
-          canWrite,
-          onOpen: (expense) => setViewId(expense.id),
-          onToggle: toggle,
-        };
-        return (
-          <>
-            <Summary
-              trip={trip}
-              totals={totals}
-              limit={limitMap.get('TOTAL')}
-              canWrite={canWrite}
-              onBudget={() => setBudgetOpen(true)}
-            />
-            {all.length === 0 ? (
-              <EmptyState
-                icon="wallet-outline"
-                title={t('expenses.emptyTitle')}
-                message={t('expenses.emptyMessage')}
-                {...(canWrite
-                  ? { actionLabel: t('expenses.add'), onAction: () => setSheet({}) }
-                  : {})}
-              />
-            ) : (
-              <>
-                <SegmentedControl
-                  testID="expense-views"
-                  value={view}
-                  onChange={setView}
-                  segments={[
-                    { value: 'category', label: t('expenses.viewCategory') },
-                    { value: 'place', label: t('expenses.viewPlace') },
-                    { value: 'list', label: t('expenses.viewList') },
-                  ]}
-                />
-                {view === 'category' ? (
-                  <CategoryView all={all} limits={limitMap} {...row} />
-                ) : view === 'place' ? (
-                  <PlaceView all={all} {...row} />
-                ) : (
-                  <ListView all={all} filter={filter} onFilter={setFilter} {...row} />
-                )}
-              </>
-            )}
-            <ExpenseDetail
-              tripId={tripId}
-              expense={viewing}
-              targets={byKey}
-              visible={viewId !== null}
-              onClose={() => setViewId(null)}
-              onEdit={
-                canWrite
-                  ? () => {
-                      setViewId(null);
-                      setSheet({ expense: viewing });
-                    }
-                  : undefined
-              }
-            />
-            <ExpenseSheet
-              tripId={tripId}
-              visible={openSheet !== null}
-              onClose={closeSheet}
-              currency={trip.currency}
-              expense={openSheet?.expense}
-              defaultLink={openSheet?.link}
-            />
-            <BudgetSheet
-              tripId={tripId}
-              visible={budgetOpen}
-              onClose={() => setBudgetOpen(false)}
-              currency={trip.currency}
-              limits={limits.data}
-            />
-          </>
-        );
-      }}
+      {({ trip, canWrite }) => (
+        <Content
+          trip={trip}
+          canWrite={canWrite}
+          openSheet={openSheet}
+          onSheet={setSheet}
+          onCloseSheet={closeSheet}
+        />
+      )}
     </TripPage>
+  );
+}
+
+interface ContentProps {
+  trip: Trip;
+  canWrite: boolean;
+  openSheet: { expense?: Expense | undefined; link?: ExpenseLink } | null;
+  onSheet: (sheet: { expense?: Expense | undefined; link?: ExpenseLink } | null) => void;
+  onCloseSheet: () => void;
+}
+
+/** Where a line that came from another record leads: that record's own screen. */
+const SOURCE_SCREEN: Record<ExpenseLink['type'], string> = {
+  itinerary_item: '/trips/[id]/itinerary',
+  restaurant: '/trips/[id]/places',
+  place: '/trips/[id]/places',
+  ticket: '/trips/[id]/bookings',
+  hotel: '/trips/[id]/bookings',
+  flight: '/trips/[id]/bookings',
+  transfer: '/trips/[id]/transfers',
+};
+
+function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentProps) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const tripId = trip.id;
+  const money_ = useTripMoney(trip);
+  const limits = limitHooks.useList(tripId);
+  const { byKey } = useLinkTargets(tripId);
+  const update = expenseHooks.useUpdate(tripId);
+
+  const [view, setView] = useState<ViewMode>('category');
+  const [filter, setFilter] = useState<Filter>('all');
+  const [viewId, setViewId] = useState<string | null>(null);
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const viewing = money_.manual?.find((expense) => expense.id === viewId);
+
+  const toggle = (expense: Expense) => {
+    const paid = expense.status === 'PAID';
+    update.mutate({
+      id: expense.id,
+      baseVersion: expense.version,
+      patch: paid
+        ? { status: 'PLANNED', actual: null }
+        : { status: 'PAID', actual: expense.estimate ?? null },
+    });
+  };
+
+  const failed = money_.error ?? limits.error;
+  if (failed) {
+    return (
+      <ErrorState
+        error={failed}
+        title={t('expenses.loadError')}
+        onRetry={() => {
+          money_.refetch();
+          void limits.refetch();
+        }}
+      />
+    );
+  }
+  if (!money_.lines || !limits.data) {
+    return (
+      <View style={{ gap: space.sm }}>
+        <Skeleton height={150} borderRadius={16} />
+        <Skeleton height={72} borderRadius={16} />
+      </View>
+    );
+  }
+  const all = money_.lines;
+  const limitMap = limitsByCategory(limits.data, trip.currency);
+  const totals = totalsOf(all, trip.currency);
+  const row: RowProps = {
+    trip,
+    byKey,
+    canWrite,
+    // A line from another record leads to that record; one typed here opens its own view.
+    onOpen: (expense) =>
+      isAuto(expense)
+        ? router.push({
+            pathname: SOURCE_SCREEN[expense.auto.type],
+            params: { id: tripId },
+          } as Href)
+        : setViewId(expense.id),
+    onToggle: toggle,
+  };
+  return (
+    <>
+      <Summary
+        trip={trip}
+        totals={totals}
+        limit={limitMap.get('TOTAL')}
+        canWrite={canWrite}
+        hasAuto={all.some(isAuto)}
+        onBudget={() => setBudgetOpen(true)}
+      />
+      {all.length === 0 ? (
+        <EmptyState
+          icon="wallet-outline"
+          title={t('expenses.emptyTitle')}
+          message={t('expenses.emptyMessage')}
+          {...(canWrite ? { actionLabel: t('expenses.add'), onAction: () => onSheet({}) } : {})}
+        />
+      ) : (
+        <>
+          <SegmentedControl
+            testID="expense-views"
+            value={view}
+            onChange={setView}
+            segments={[
+              { value: 'category', label: t('expenses.viewCategory') },
+              { value: 'place', label: t('expenses.viewPlace') },
+              { value: 'list', label: t('expenses.viewList') },
+            ]}
+          />
+          {view === 'category' ? (
+            <CategoryView all={all} limits={limitMap} {...row} />
+          ) : view === 'place' ? (
+            <PlaceView all={all} {...row} />
+          ) : (
+            <ListView all={all} filter={filter} onFilter={setFilter} {...row} />
+          )}
+        </>
+      )}
+      <ExpenseDetail
+        tripId={tripId}
+        expense={viewing}
+        targets={byKey}
+        visible={viewId !== null}
+        onClose={() => setViewId(null)}
+        onEdit={
+          canWrite
+            ? () => {
+                setViewId(null);
+                onSheet({ expense: viewing });
+              }
+            : undefined
+        }
+      />
+      <ExpenseSheet
+        tripId={tripId}
+        visible={openSheet !== null}
+        onClose={onCloseSheet}
+        currency={trip.currency}
+        expense={openSheet?.expense}
+        defaultLink={openSheet?.link}
+      />
+      <BudgetSheet
+        tripId={tripId}
+        visible={budgetOpen}
+        onClose={() => setBudgetOpen(false)}
+        currency={trip.currency}
+        limits={limits.data}
+      />
+    </>
   );
 }
 
@@ -247,12 +287,14 @@ function Summary({
   totals,
   limit,
   canWrite,
+  hasAuto,
   onBudget,
 }: {
   trip: Trip;
   totals: Totals;
   limit: BudgetLimit | undefined;
   canWrite: boolean;
+  hasAuto: boolean;
   onBudget: () => void;
 }) {
   const { t } = useTranslation();
@@ -312,6 +354,11 @@ function Summary({
         {!limit ? (
           <Text variant="footnote" tone="secondary">
             {t('expenses.noBudgetMessage')}
+          </Text>
+        ) : null}
+        {hasAuto ? (
+          <Text variant="footnote" tone="secondary" testID="expense-auto-note">
+            {t('expenses.autoNote')}
           </Text>
         ) : null}
         {totals.foreign > 0 ? (
@@ -375,7 +422,11 @@ function ExpenseRow({
   const place = expense.link ? byKey.get(targetKey(expense.link.type, expense.link.id)) : undefined;
   const subtitle = [
     t(`enums.expenseCategory.${expense.category}`),
-    showPlace && expense.link ? (place?.name ?? t('expenses.linkGone')) : '',
+    isAuto(expense)
+      ? t(`expenses.linkType.${expense.auto.type}`)
+      : showPlace && expense.link
+        ? (place?.name ?? t('expenses.linkGone'))
+        : '',
     expense.date ?? '',
   ]
     .filter(Boolean)
@@ -399,7 +450,7 @@ function ExpenseRow({
               tone={paid ? 'success' : 'neutral'}
             />
           </View>
-          {canWrite ? (
+          {canWrite && !isAuto(expense) ? (
             <IconButton
               testID={`toggle-expense-${expense.id}`}
               icon={paid ? 'checkmark-circle' : 'ellipse-outline'}

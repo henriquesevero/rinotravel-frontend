@@ -1,3 +1,4 @@
+import { fromMoney, mergeLocation, toMoneyInput } from '@/features/content/mappers';
 import { useMemo } from 'react';
 
 import type { Hotel } from '@/core/api';
@@ -5,10 +6,10 @@ import { joinZoned, splitZoned } from '@/core/datetime/zoned';
 import { useTranslation } from '@/core/i18n';
 import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
-import { mergeLocation } from '@/features/content/mappers';
 import { useEntityForm } from '@/features/content/use-entity-form';
 import {
   FormDateField,
+  FormSelectField,
   FormTextField,
   FormTimeField,
   useConfirm,
@@ -17,6 +18,7 @@ import {
 } from '@/shared/ui';
 
 import { hotelHooks } from './hooks';
+import { currencyOptions } from '@/features/trips/options';
 import { HOTEL_ALIASES, HOTEL_FIELDS, hotelSchema, type HotelFormValues } from './schemas';
 
 interface HotelSheetProps {
@@ -24,10 +26,19 @@ interface HotelSheetProps {
   visible: boolean;
   onClose: () => void;
   timezone: string;
+  /** The trip's currency, offered first for the price. */
+  currency: string;
   hotel?: Hotel | undefined;
 }
 
-export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelSheetProps) {
+export function HotelSheet({
+  tripId,
+  visible,
+  onClose,
+  timezone,
+  currency,
+  hotel,
+}: HotelSheetProps) {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const create = hotelHooks.useCreate(tripId);
@@ -47,9 +58,11 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
       confirmationCode: hotel?.confirmationCode ?? '',
       contactPhone: hotel?.contactPhone ?? '',
       bookingUrl: hotel?.bookingUrl ?? '',
+      cost: fromMoney(hotel?.cost),
+      costCurrency: hotel?.cost?.currency ?? currency,
       notes: hotel?.notes ?? '',
     };
-  }, [hotel]);
+  }, [hotel, currency]);
   const { form, error, fail, close, clearError } = useEntityForm<HotelFormValues>({
     schema: hotelSchema,
     defaults,
@@ -68,6 +81,7 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
       confirmationCode: values.confirmationCode,
       contactPhone: values.contactPhone,
       bookingUrl: values.bookingUrl,
+      cost: toMoneyInput(values.cost, values.costCurrency),
       notes: values.notes,
     };
     try {
@@ -98,6 +112,11 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
       fail(cause);
     }
   };
+
+  const currencies = useMemo(
+    () => currencyOptions((code) => t(`currencies.${code}`), currency),
+    [currency, t],
+  );
 
   const { control } = form;
   return (
@@ -169,6 +188,23 @@ export function HotelSheet({ tripId, visible, onClose, timezone, hotel }: HotelS
           keyboardType="url"
           autoCapitalize="none"
         />
+        <FieldRow>
+          <FormTextField
+            control={control}
+            name="cost"
+            label={t('bookings.priceStay')}
+            keyboardType="decimal-pad"
+            testID="hotel-cost"
+          />
+          <FormSelectField
+            control={control}
+            name="costCurrency"
+            label={t('bookings.priceCurrency')}
+            title={t('bookings.priceCurrency')}
+            options={currencies}
+            searchable
+          />
+        </FieldRow>
         <FormTextField control={control} name="notes" label={t('content.notes')} multiline />
       </FormSection>
     </EntitySheet>
