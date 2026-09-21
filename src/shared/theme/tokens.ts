@@ -35,20 +35,21 @@ export interface ThemeColors {
 }
 
 export const lightColors: ThemeColors = {
-  background: '#F8F8F6',
+  background: '#F5F7FA',
   surface: '#FFFFFF',
-  surfaceMuted: '#F0F0EC',
-  border: '#E5E5E5',
-  scrim: 'rgba(17, 17, 17, 0.4)',
+  surfaceMuted: '#EEF1F6',
+  border: '#E2E7EE',
+  scrim: 'rgba(15, 23, 42, 0.4)',
 
-  text: '#111111',
-  textSecondary: '#6B6B6B',
+  text: '#0F172A',
+  textSecondary: '#5A6779',
   textOnAccent: '#FFFFFF',
 
+  /** Solid fill for primary buttons; `textOnAccent` is readable on top of it. */
   accent: '#2563EB',
   accentPressed: '#1D4ED8',
   accentText: '#2563EB',
-  accentSoft: '#EEF3FE',
+  accentSoft: '#EAF1FE',
 
   success: '#22C55E',
   successText: '#15803D',
@@ -68,36 +69,39 @@ export const lightColors: ThemeColors = {
 };
 
 export const darkColors: ThemeColors = {
-  background: '#0B0B0C',
-  surface: '#1C1C1E',
-  surfaceMuted: '#2C2C2E',
-  border: '#3A3A3C',
-  scrim: 'rgba(0, 0, 0, 0.6)',
+  // A midnight blue rather than black: the page is the deepest layer and cards sit visibly above it.
+  background: '#172033',
+  surface: '#212C43',
+  surfaceMuted: '#2C3956',
+  border: '#3A4869',
+  scrim: 'rgba(5, 9, 20, 0.6)',
 
-  text: '#F5F5F7',
-  textSecondary: '#A1A1A6',
+  text: '#E8EDF6',
+  textSecondary: '#A3AFC5',
   textOnAccent: '#FFFFFF',
 
-  accent: '#2563EB',
-  accentPressed: '#3B74F0',
-  accentText: '#7AA7FF',
-  accentSoft: '#172554',
+  // A touch brighter than in the light theme so buttons stand out from the lighter cards (3:1) while
+  // white text on them still passes.
+  accent: '#2F6FEC',
+  accentPressed: '#4681F2',
+  accentText: '#8DB4FF',
+  accentSoft: '#223B78',
 
   success: '#22C55E',
-  successText: '#4ADE80',
-  successSoft: '#0F2A1A',
+  successText: '#5BDC8B',
+  successSoft: '#153426',
 
   warning: '#F59E0B',
   warningText: '#FBBF24',
-  warningSoft: '#33260A',
+  warningSoft: '#3A2D12',
 
-  danger: '#DC2626',
-  dangerText: '#F87171',
-  dangerSoft: '#3B1414',
+  danger: '#E02D2D',
+  dangerText: '#F98B8B',
+  dangerSoft: '#452127',
 
   ai: '#8B5CF6',
-  aiText: '#A78BFA',
-  aiSoft: '#2A1F4D',
+  aiText: '#B4A0FB',
+  aiSoft: '#2F2657',
 };
 
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32, xxxl: 48 } as const;
@@ -129,14 +133,14 @@ export const typography: Record<TextVariant, TypeStyle> = {
 
 export const shadows = {
   light: {
-    card: '0 1px 2px rgba(17, 17, 17, 0.05), 0 4px 16px rgba(17, 17, 17, 0.04)',
-    raised: '0 2px 4px rgba(17, 17, 17, 0.06), 0 12px 28px rgba(17, 17, 17, 0.10)',
-    sheet: '0 -8px 32px rgba(17, 17, 17, 0.16)',
+    card: '0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 16px rgba(15, 23, 42, 0.05)',
+    raised: '0 2px 4px rgba(15, 23, 42, 0.06), 0 12px 28px rgba(15, 23, 42, 0.10)',
+    sheet: '0 -8px 32px rgba(15, 23, 42, 0.16)',
   },
   dark: {
-    card: '0 1px 2px rgba(0, 0, 0, 0.4)',
-    raised: '0 4px 24px rgba(0, 0, 0, 0.55)',
-    sheet: '0 -8px 32px rgba(0, 0, 0, 0.5)',
+    card: '0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 6px 18px rgba(3, 7, 18, 0.28)',
+    raised: '0 1px 0 rgba(255, 255, 255, 0.05) inset, 0 12px 32px rgba(3, 7, 18, 0.45)',
+    sheet: '0 -8px 32px rgba(3, 7, 18, 0.5)',
   },
 } as const;
 

@@ -74,7 +74,11 @@ export function ListRow({
   );
 
   if (!onPress) {
-    return <View style={[styles.row, divider && styles.divider]}>{content}</View>;
+    return (
+      <View testID={testID} style={[styles.row, divider && styles.divider]}>
+        {content}
+      </View>
+    );
   }
   return (
     <Pressable

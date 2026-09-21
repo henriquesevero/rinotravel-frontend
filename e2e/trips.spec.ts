@@ -208,15 +208,35 @@ test.describe('trips and members', () => {
     await expect(page.getByText('Quioto').filter({ visible: true })).toBeVisible();
   });
 
-  test('renders in dark mode and on small screens without errors', async ({ page, request }) => {
+  test('stays light on a dark computer until the person chooses dark', async ({
+    page,
+    request,
+  }) => {
     const errors = collectBrowserErrors(page);
     await page.emulateMedia({ colorScheme: 'dark' });
     const ana = await registerViaApi(request, 'Ana');
     await createTripViaApi(request, ana);
     await signInToTrips(page, ana);
 
-    await expect(page.getByRole('heading', { name: 'Viagens' })).toBeVisible();
+    const title = page.getByRole('heading', { name: 'Viagens' });
+    const textColor = () => title.evaluate((node) => getComputedStyle(node).color);
+    await expect(title).toBeVisible();
+    expect(await textColor()).toBe('rgb(15, 23, 42)');
+
+    await page.getByTestId('open-account').click();
+    await page.getByTestId('theme-preference').getByText('Escuro', { exact: true }).click();
+    await expect.poll(textColor).toBe('rgb(232, 237, 246)');
     await page.screenshot({ path: 'test-results/trips-dark.png' });
+
+    await page.reload();
+    await expect(title).toBeVisible();
+    expect(await textColor()).toBe('rgb(232, 237, 246)');
+
+    // Computers also have a one-tap switch in the side menu.
+    if ((page.viewportSize()?.width ?? 0) >= 768) {
+      await page.getByTestId('toggle-theme').click();
+      await expect.poll(textColor).toBe('rgb(15, 23, 42)');
+    }
     expect(errors).toEqual([]);
   });
 });

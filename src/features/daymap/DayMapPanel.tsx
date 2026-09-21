@@ -38,7 +38,7 @@ const MODE_ICON: Record<DayMode, IconName> = {
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    root: { gap: space.lg },
+    root: { gap: space.xl },
     pinned: {
       backgroundColor: colors.background,
       paddingBottom: space.sm,
@@ -86,8 +86,8 @@ const createStyles = ({ colors }: Theme) =>
     stop: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: space.md,
-      padding: space.md,
+      gap: space.lg,
+      padding: space.lg,
       borderRadius: radius.md,
     },
     stopSelected: { backgroundColor: colors.accentSoft },
@@ -98,11 +98,11 @@ const createStyles = ({ colors }: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    stopText: { flex: 1, minWidth: 0, gap: 2 },
-    leg: { flexDirection: 'row', gap: space.md, paddingLeft: space.md + 14 },
+    stopText: { flex: 1, minWidth: 0, gap: 4 },
+    leg: { flexDirection: 'row', gap: space.md, paddingLeft: space.lg + 14 },
     legRail: { alignItems: 'center', width: 2 },
     legLine: { width: 2, flex: 1, backgroundColor: colors.border, borderRadius: 1 },
-    legBody: { flex: 1, gap: space.xs, paddingVertical: space.sm },
+    legBody: { flex: 1, gap: space.xs, paddingVertical: space.md },
     legRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
     unlocated: { gap: space.xs, paddingTop: space.lg },
     unlocatedRow: {
@@ -300,9 +300,11 @@ export function DayMapPanel({
                   ) : null}
                   {stop.title}
                 </Text>
-                {stop.subtitle ? (
+                {stop.kind !== 'item' || stop.subtitle ? (
                   <Text variant="footnote" tone="secondary" numberOfLines={1}>
-                    {stop.subtitle}
+                    {[stop.kind === 'item' ? '' : t(`dayMap.kind.${stop.kind}`), stop.subtitle]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </Text>
                 ) : null}
               </View>

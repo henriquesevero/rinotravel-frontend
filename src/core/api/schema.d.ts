@@ -495,6 +495,132 @@ export interface paths {
         patch: operations["updateHotel"];
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os ingressos */
+        get: operations["listTickets"];
+        put?: never;
+        /** Cria o ingresso (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createTicket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/tickets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getTicket"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteTicket"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateTicket"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/expenses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os gastos */
+        get: operations["listExpenses"];
+        put?: never;
+        /** Cria o gasto (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createExpense"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/expenses/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getExpense"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteExpense"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateExpense"];
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/budget-limits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os limites de orçamento */
+        get: operations["listBudgetLimits"];
+        put?: never;
+        /** Cria o limite de orçamento (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createBudgetLimit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/budget-limits/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getBudgetLimit"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteBudgetLimit"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updateBudgetLimit"];
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/transfers": {
         parameters: {
             query?: never;
@@ -1084,7 +1210,7 @@ export interface components {
              * @description Origem da entrada.
              * @enum {string}
              */
-            kind: "itinerary_item" | "flight_departure" | "flight_arrival" | "hotel_check_in" | "hotel_check_out" | "transfer" | "restaurant_reservation";
+            kind: "itinerary_item" | "flight_departure" | "flight_arrival" | "hotel_check_in" | "hotel_check_out" | "transfer" | "restaurant_reservation" | "ticket";
             /** @description Id do registro de origem. */
             id: string;
             title: string;
@@ -1276,6 +1402,139 @@ export interface components {
             confirmationCode?: string;
             contactPhone?: string;
             bookingUrl?: string;
+            notes?: string;
+        };
+        /** @enum {string} */
+        ExpenseCategory: "FOOD" | "LODGING" | "TRANSPORT" | "ACTIVITIES" | "SOUVENIRS" | "CLOTHES" | "ELECTRONICS" | "OTHER";
+        /**
+         * @description `PLANNED` é algo que se pretende comprar ou pagar (conta pelo `estimate`); `PAID` já foi gasto
+         *     (conta pelo `actual`).
+         * @enum {string}
+         */
+        ExpenseStatus: "PLANNED" | "PAID";
+        ExpenseLink: {
+            /** @enum {string} */
+            type: "place" | "restaurant" | "itinerary_item" | "ticket" | "hotel" | "flight" | "transfer";
+            /** Format: uuid */
+            id: string;
+        };
+        Expense: components["schemas"]["ResourceMeta"] & {
+            name: string;
+            category: components["schemas"]["ExpenseCategory"];
+            status: components["schemas"]["ExpenseStatus"];
+            estimate?: components["schemas"]["Money"];
+            actual?: components["schemas"]["Money"];
+            /**
+             * Format: date
+             * @description Dia em que foi ou será pago.
+             */
+            date?: string;
+            link?: components["schemas"]["ExpenseLink"];
+            notes?: string;
+        };
+        ExpenseCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            name: string;
+            category?: components["schemas"]["ExpenseCategory"];
+            status?: components["schemas"]["ExpenseStatus"];
+            estimate?: components["schemas"]["Money"] | null;
+            actual?: components["schemas"]["Money"] | null;
+            /** Format: date */
+            date?: string | null;
+            link?: components["schemas"]["ExpenseLink"] | null;
+            notes?: string;
+        };
+        ExpensePatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            category?: components["schemas"]["ExpenseCategory"];
+            status?: components["schemas"]["ExpenseStatus"];
+            estimate?: components["schemas"]["Money"] | null;
+            actual?: components["schemas"]["Money"] | null;
+            /** Format: date */
+            date?: string | null;
+            link?: components["schemas"]["ExpenseLink"] | null;
+            notes?: string;
+        };
+        BudgetLimit: components["schemas"]["ResourceMeta"] & {
+            /** @enum {string} */
+            category: "TOTAL" | "FOOD" | "LODGING" | "TRANSPORT" | "ACTIVITIES" | "SOUVENIRS" | "CLOTHES" | "ELECTRONICS" | "OTHER";
+            amount: components["schemas"]["Money"];
+        };
+        BudgetLimitCreate: {
+            /** Format: uuid */
+            id?: string;
+            /** @enum {string} */
+            category: "TOTAL" | "FOOD" | "LODGING" | "TRANSPORT" | "ACTIVITIES" | "SOUVENIRS" | "CLOTHES" | "ELECTRONICS" | "OTHER";
+            amount: components["schemas"]["Money"];
+        };
+        BudgetLimitPatch: components["schemas"]["BaseVersion"] & {
+            amount?: components["schemas"]["Money"];
+        };
+        /** @enum {string} */
+        TicketKind: "ATTRACTION" | "SHOW" | "MUSEUM" | "SPORT" | "TOUR" | "TRANSPORT" | "OTHER";
+        Ticket: components["schemas"]["ResourceMeta"] & {
+            name: string;
+            kind: components["schemas"]["TicketKind"];
+            location?: components["schemas"]["Location"];
+            start?: components["schemas"]["ZonedTime"];
+            end?: components["schemas"]["ZonedTime"];
+            quantity: number;
+            /** @description Omitido para VIEWER. */
+            confirmationCode?: string;
+            /** @description Setor, fileira, portão ou horário marcado. */
+            seat?: string;
+            cost?: components["schemas"]["Money"];
+            status: components["schemas"]["PlanStatus"];
+            /**
+             * Format: uuid
+             * @description Documento da viagem com o arquivo do ingresso. Pode apontar para um arquivo que o usuário não vê (privado de outra pessoa) ou já removido.
+             */
+            documentId?: string;
+            notes?: string;
+        };
+        TicketCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            name: string;
+            kind?: components["schemas"]["TicketKind"];
+            status?: components["schemas"]["PlanStatus"];
+            location?: components["schemas"]["Location"] | null;
+            start?: components["schemas"]["ZonedTime"] | null;
+            end?: components["schemas"]["ZonedTime"] | null;
+            quantity?: number;
+            confirmationCode?: string;
+            seat?: string;
+            cost?: components["schemas"]["Money"] | null;
+            /**
+             * Format: uuid
+             * @description Um documento pronto (READY) da viagem que o usuário possa ver.
+             */
+            documentId?: string | null;
+            notes?: string;
+        };
+        TicketPatch: components["schemas"]["BaseVersion"] & {
+            name?: string;
+            kind?: components["schemas"]["TicketKind"];
+            status?: components["schemas"]["PlanStatus"];
+            location?: components["schemas"]["Location"] | null;
+            start?: components["schemas"]["ZonedTime"] | null;
+            end?: components["schemas"]["ZonedTime"] | null;
+            quantity?: number;
+            confirmationCode?: string;
+            seat?: string;
+            cost?: components["schemas"]["Money"] | null;
+            /**
+             * Format: uuid
+             * @description `null` tira o arquivo do ingresso (o documento continua nos documentos).
+             */
+            documentId?: string | null;
             notes?: string;
         };
         TransferLegInput: {
@@ -2946,6 +3205,441 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Hotel"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listTickets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de ingressos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Ticket"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateTicket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listExpenses: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os gastos. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Expense"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpenseCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Expense"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Expense"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExpensePatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Expense"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listBudgetLimits: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de os limites de orçamento. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["BudgetLimit"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createBudgetLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetLimitCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetLimit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getBudgetLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetLimit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteBudgetLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateBudgetLimit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetLimitPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BudgetLimit"];
                 };
             };
             400: components["responses"]["BadRequest"];

@@ -1,4 +1,12 @@
-import type { DayMapLeg, Hotel, ItineraryDay, ItineraryItem, Restaurant } from '@/core/api';
+import type {
+  DayMapLeg,
+  Hotel,
+  ItineraryDay,
+  ItineraryItem,
+  Restaurant,
+  Ticket,
+  Transfer,
+} from '@/core/api';
 
 import { decodePolyline } from './polyline';
 import {
@@ -351,5 +359,77 @@ describe('items a map cannot place', () => {
       'Sem local tarde',
       'Local vazio',
     ]);
+  });
+});
+
+describe('transfers on the map', () => {
+  const zoned = (dateTime: string) => ({ dateTime, timezone: 'America/New_York' });
+  const transfer = {
+    ...base,
+    id: 't',
+    status: 'PLANNED',
+    legs: [],
+    origin: { name: 'John F. Kennedy International Airport' },
+    destination: { name: 'Grand Central' },
+    departure: zoned('2026-11-19T08:00:00'),
+    arrival: zoned('2026-11-19T09:00:00'),
+  } as Transfer;
+
+  it('puts where a transfer starts and ends on the day it happens, at the time it happens', () => {
+    const stops = buildStops({
+      date: '2026-11-19',
+      days: [],
+      items: [],
+      restaurants: [],
+      hotels: [],
+      transfers: [transfer],
+    });
+    expect(stops.map((s) => [s.time, s.kind, s.title])).toEqual([
+      ['08:00', 'transfer-from', 'John F. Kennedy International Airport'],
+      ['09:00', 'transfer-to', 'Grand Central'],
+    ]);
+  });
+
+  it('splits a transfer that crosses midnight between the two days and skips one with no place', () => {
+    const overnight = { ...transfer, arrival: zoned('2026-11-20T06:00:00') } as Transfer;
+    const only = (date: string, transfers: Transfer[]) =>
+      buildStops({ date, days: [], items: [], restaurants: [], hotels: [], transfers }).map(
+        (s) => s.kind,
+      );
+    expect(only('2026-11-19', [overnight])).toEqual(['transfer-from']);
+    expect(only('2026-11-20', [overnight])).toEqual(['transfer-to']);
+    expect(only('2026-11-19', [{ ...transfer, origin: undefined, legs: [] } as Transfer])).toEqual(
+      [],
+    );
+  });
+});
+
+describe('tickets on the map', () => {
+  const zoned = (dateTime: string) => ({ dateTime, timezone: 'America/New_York' });
+  const ticket = {
+    ...base,
+    id: 'k',
+    name: 'Hamilton',
+    kind: 'SHOW',
+    quantity: 2,
+    status: 'PLANNED',
+    location: { name: 'Richard Rodgers Theatre', address: '226 W 46th St' },
+    start: zoned('2026-11-19T19:00:00'),
+    end: zoned('2026-11-19T21:45:00'),
+  } as Ticket;
+  const stopsOn = (date: string, tickets: Ticket[]) =>
+    buildStops({ date, days: [], items: [], restaurants: [], hotels: [], tickets });
+
+  it('is a stop where it is used, from when it starts to when it ends', () => {
+    expect(
+      stopsOn('2026-11-19', [ticket]).map((s) => [s.time, s.endTime, s.kind, s.title]),
+    ).toEqual([['19:00', '21:45', 'ticket', 'Hamilton']]);
+    expect(stopsOn('2026-11-19', [ticket])[0]?.subtitle).toBe('Richard Rodgers Theatre');
+  });
+
+  it('is left off a day that is not its own, or when it has no place or no time', () => {
+    expect(stopsOn('2026-11-20', [ticket])).toEqual([]);
+    expect(stopsOn('2026-11-19', [{ ...ticket, location: undefined } as Ticket])).toEqual([]);
+    expect(stopsOn('2026-11-19', [{ ...ticket, start: undefined } as Ticket])).toEqual([]);
   });
 });

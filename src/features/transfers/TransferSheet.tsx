@@ -1,5 +1,5 @@
-import { useWatch } from 'react-hook-form';
-import { useMemo, useState } from 'react';
+import { useFormState, useWatch } from 'react-hook-form';
+import { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { useDebouncedValue } from '@/core/hooks/use-debounced-value';
@@ -12,17 +12,23 @@ import {
   type Transfer,
   type TransferLegInput,
 } from '@/core/api';
-import { formatDuration, joinOptionalZoned, splitZoned } from '@/core/datetime/zoned';
+import {
+  formatDuration,
+  isTime,
+  joinOptionalZoned,
+  splitZoned,
+  zonedInstant,
+} from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { newId } from '@/core/ids';
 import { EntitySheet } from '@/features/content/EntitySheet';
+import { formatDistance } from '@/features/daymap/timing';
 import { PlaceInput } from '@/features/content/PlaceInput';
 import {
   fromMoney,
   fromOptionalInt,
   locationFromField,
-  mergeLocation,
   toMoneyInput,
   toOptionalInt,
 } from '@/features/content/mappers';
@@ -44,7 +50,8 @@ import {
   FieldRow,
 } from '@/shared/ui';
 
-import { transferHooks, usePlanTransfer } from './hooks';
+import { arrivalFrom, canEstimate, legsForSaving } from './estimate';
+import { transferHooks, usePlanTransfer, useRouteEstimate } from './hooks';
 import { DIALOG_BREAKPOINT } from '@/shared/ui/Sheet';
 
 import { RouteMap } from './RouteMap';
@@ -158,6 +165,49 @@ export function TransferSheet({
   // text may still be half-written, so it waits for a tap and does not spend a lookup per keystroke.
   const showPreview = canPreview && ((originPick && destinationPick) || showMap);
 
+  // How long the map says the trip takes. A new transfer takes it as its duration and works out the
+  // arrival from the departure; a value the person typed is never overwritten.
+  const watched_date = useWatch({ control: form.control, name: 'date' }) as string;
+  const watched_depart = useWatch({ control: form.control, name: 'departTime' }) as string;
+  const departSettled = useDebouncedValue(watched_depart, 700);
+  const { dirtyFields } = useFormState({ control: form.control });
+  const departureAt = joinOptionalZoned(watched_date, departSettled, timezone);
+  const estimateRequest =
+    showPreview && previewOrigin && previewDestination && canEstimate(modeValue)
+      ? {
+          origin: previewOrigin,
+          destination: previewDestination,
+          mode: modeValue,
+          ...(departureAt ? { departureAt } : {}),
+          language: currentLocale(),
+        }
+      : null;
+  const estimate = useRouteEstimate(tripId, estimateRequest);
+  // A route picked from the suggestions is the one being saved, so its time wins over the estimate.
+  const estimatedMinutes = chosen ? chosen.durationMinutes : estimate.data?.minutes;
+  const durationEdited = dirtyFields.duration === true;
+  const arrivalEdited = dirtyFields.arriveTime === true;
+
+  useEffect(() => {
+    if (transfer || estimatedMinutes === undefined) return;
+    if (!durationEdited) form.setValue('duration', String(estimatedMinutes));
+    if (!arrivalEdited) {
+      form.setValue('arriveTime', arrivalFrom(watched_depart, estimatedMinutes) ?? '');
+    }
+  }, [transfer, estimatedMinutes, watched_depart, durationEdited, arrivalEdited, form]);
+
+  const applyEstimate = () => {
+    if (estimatedMinutes === undefined) return;
+    form.setValue('duration', String(estimatedMinutes));
+    form.setValue('arriveTime', arrivalFrom(watched_depart, estimatedMinutes) ?? '');
+  };
+
+  // The route service refuses a departure that is already in the past, so it is only sent when ahead.
+  const departureFor = (date: string, time: string) => {
+    const at = joinOptionalZoned(date, time, timezone);
+    return at && zonedInstant(at) > Date.now() ? at : null;
+  };
+
   const searchRoutes = () => {
     const { origin, destination, mode, date, departTime } = form.getValues();
     if (origin.trim() === '' || destination.trim() === '') return;
@@ -169,9 +219,7 @@ export function TransferSheet({
           name: destination.trim(),
         },
         mode,
-        ...(joinOptionalZoned(date, departTime, timezone)
-          ? { departureAt: joinOptionalZoned(date, departTime, timezone)! }
-          : {}),
+        ...(departureFor(date, departTime) ? { departureAt: departureFor(date, departTime)! } : {}),
         language: currentLocale(),
       },
       { onSuccess: setRoutes },
@@ -181,6 +229,12 @@ export function TransferSheet({
   const chooseRoute = (route: RouteOption) => {
     setChosen(route);
     form.setValue('duration', String(route.durationMinutes));
+    if (!arrivalEdited) {
+      form.setValue(
+        'arriveTime',
+        arrivalFrom(form.getValues('departTime'), route.durationMinutes) ?? '',
+      );
+    }
   };
 
   const legFromForm = (values: TransferFormValues): TransferLegInput => ({
@@ -225,7 +279,15 @@ export function TransferSheet({
           }
         : {}),
     };
-    const legs = chosen ? chosen.transfer.legs : editsLegs ? [legFromForm(values)] : undefined;
+    const legs = chosen
+      ? legsForSaving(
+          chosen.transfer.legs,
+          joinOptionalZoned(values.date, values.departTime, timezone),
+          joinOptionalZoned(values.date, values.arriveTime, timezone),
+        )
+      : editsLegs
+        ? [legFromForm(values)]
+        : undefined;
     try {
       const saved = transfer
         ? await update.mutateAsync({
@@ -262,7 +324,6 @@ export function TransferSheet({
 
   const { control } = form;
   const planUnavailable = plan.isError && hasCode(plan.error, 'route_not_found');
-  const km = (meters: number) => (meters / 1000).toFixed(1);
 
   const mapBlock =
     showPreview && previewOrigin && previewDestination ? (
@@ -291,6 +352,56 @@ export function TransferSheet({
         </Text>
       </View>
     ) : null;
+
+  const estimateNote = (() => {
+    if (!estimateRequest) return null;
+    if (estimate.isPending) {
+      return (
+        <Text variant="footnote" tone="secondary" testID="route-estimate-busy">
+          {t('transfers.estimateBusy')}
+        </Text>
+      );
+    }
+    if (estimate.isError) {
+      return (
+        <Text variant="footnote" tone="secondary" testID="route-estimate-none">
+          {t('transfers.estimateNone')}
+        </Text>
+      );
+    }
+    const { minutes, meters } = estimate.data;
+    const arrival = arrivalFrom(watched_depart, minutes);
+    const hint = !isTime(watched_depart)
+      ? t('transfers.estimateNeedsTime')
+      : arrival === null
+        ? t('transfers.estimateOvernight')
+        : '';
+    return (
+      <View style={{ gap: space.sm }} testID="route-estimate">
+        <Banner
+          tone="info"
+          message={[
+            t('transfers.estimateResult', {
+              duration: formatDuration(minutes),
+              distance: formatDistance(meters),
+            }),
+            hint,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+        {transfer ? (
+          <Button
+            testID="route-estimate-apply"
+            title={t('transfers.estimateApply')}
+            variant="secondary"
+            size="sm"
+            onPress={applyEstimate}
+          />
+        ) : null}
+      </View>
+    );
+  })();
 
   return (
     <EntitySheet
@@ -365,7 +476,7 @@ export function TransferSheet({
                           testID={`route-${index}`}
                           divider={index > 0}
                           icon={chosen === route ? 'checkmark-circle' : 'navigate-outline'}
-                          title={`${formatDuration(route.durationMinutes)} · ${t('transfers.km', { value: km(route.distanceMeters) })}`}
+                          title={`${formatDuration(route.durationMinutes)} · ${formatDistance(route.distanceMeters)}`}
                           subtitle={t(
                             route.transfer.legs.length === 1
                               ? 'transfers.steps.one'
@@ -399,6 +510,7 @@ export function TransferSheet({
                 label={t('transfers.arriveTime')}
               />
             </FieldRow>
+            {estimateNote}
           </FormSection>
           <FormSection title={t('content.sec.money')}>
             <FieldRow>

@@ -9,7 +9,7 @@ import {
 import { useTranslation } from '@/core/i18n';
 import { useMe } from '@/features/auth';
 import { useTrip } from '@/features/trips';
-import { radius, space, useStyles, type Theme } from '@/shared/theme';
+import { radius, space, useStyles, useTheme, type Theme } from '@/shared/theme';
 import { Avatar, BrandMark, Icon, Text } from '@/shared/ui';
 
 import { useNavState, type NavItem } from './nav';
@@ -60,6 +60,7 @@ const createStyles = ({ colors }: Theme) =>
       borderRadius: radius.md,
     },
     userCollapsed: { justifyContent: 'center' },
+    themeRow: { marginTop: space.sm, paddingVertical: space.sm, paddingHorizontal: space.md },
     userText: { flex: 1, minWidth: 0 },
   });
 
@@ -77,6 +78,7 @@ export function Sidebar({ collapsed, onOpenAccount }: SidebarProps) {
   const { t } = useTranslation();
   const nav = useNavState();
   const me = useMe();
+  const { scheme, setPreference } = useTheme();
   const trip = useTrip(nav.tripId ?? '');
 
   return (
@@ -128,6 +130,29 @@ export function Sidebar({ collapsed, onOpenAccount }: SidebarProps) {
       </ScrollView>
 
       <View style={styles.divider} />
+      <Pressable
+        testID="toggle-theme"
+        accessibilityRole="button"
+        accessibilityLabel={t(scheme === 'dark' ? 'nav.themeToLight' : 'nav.themeToDark')}
+        onPress={() => setPreference(scheme === 'dark' ? 'light' : 'dark')}
+        style={(state) => [
+          styles.user,
+          styles.themeRow,
+          collapsed && styles.userCollapsed,
+          hovered(state) && styles.itemHover,
+        ]}
+      >
+        <Icon
+          name={scheme === 'dark' ? 'sunny-outline' : 'moon-outline'}
+          size={20}
+          tone="secondary"
+        />
+        {collapsed ? null : (
+          <Text variant="subhead" tone="secondary">
+            {t(scheme === 'dark' ? 'nav.themeToLight' : 'nav.themeToDark')}
+          </Text>
+        )}
+      </Pressable>
       <Pressable
         testID="open-account"
         accessibilityRole="button"

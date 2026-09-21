@@ -6,7 +6,7 @@ import type { ItineraryItem, TimelineEntry, Trip } from '@/core/api';
 import { todayIn } from '@/core/datetime/civil-date';
 import { dayParts, eachDay, formatDayHeading } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
-import { hotelHooks } from '@/features/bookings/hooks';
+import { hotelHooks, ticketHooks } from '@/features/bookings/hooks';
 import { TripPage } from '@/features/content/TripPage';
 import { DayMapPanel } from '@/features/daymap/DayMapPanel';
 import { DayNavigator } from '@/features/daymap/DayNavigator';
@@ -19,6 +19,7 @@ import {
   type UnlocatedItem,
 } from '@/features/daymap/stops';
 import { restaurantHooks } from '@/features/places/hooks';
+import { transferHooks } from '@/features/transfers/hooks';
 import { TimelineRow } from '@/features/content/TimelineRow';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import {
@@ -54,23 +55,24 @@ const createStyles = ({ colors }: Theme) =>
     tileToday: { backgroundColor: colors.accent, borderColor: colors.accent },
     tileSelected: { borderColor: colors.accent, borderWidth: 2 },
     // Two columns that fill the window; each scrolls on its own.
-    split: { flex: 1, minHeight: 0, flexDirection: 'row', gap: space.xl },
+    split: { flex: 1, minHeight: 0, flexDirection: 'row', gap: space.xxl },
     listSide: { flex: 1, minWidth: 0 },
     // A ScrollView grows and shrinks by default; the map column must keep its width.
     mapSide: { width: 460, flexGrow: 0, flexShrink: 0, minHeight: 0 },
-    columnContent: { paddingBottom: space.xxl },
+    // The right padding keeps text off the scrollbar when a system draws it permanently.
+    columnContent: { paddingBottom: space.xxxl, paddingRight: space.md },
     mapTitle: { gap: 2, paddingBottom: space.md },
     line: {
       flex: 1,
       width: 2,
       backgroundColor: colors.border,
-      marginVertical: space.xs,
+      marginVertical: space.sm,
       borderRadius: 1,
     },
-    dayBody: { flex: 1, minWidth: 0, paddingBottom: space.xl, gap: space.sm },
-    dayHeader: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 64 },
+    dayBody: { flex: 1, minWidth: 0, paddingBottom: space.xxl, gap: space.md },
+    dayHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 64 },
     dayTitle: { flex: 1 },
-    entries: { paddingHorizontal: space.lg },
+    entries: { paddingHorizontal: space.xl },
     divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
     todayCard: { borderColor: colors.accent, borderWidth: 1.5 },
   });
@@ -90,6 +92,8 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
   const [viewId, setViewId] = useState<string | null>(null);
   const restaurants = restaurantHooks.useList(tripId);
   const hotels = hotelHooks.useList(tripId);
+  const transfers = transferHooks.useList(tripId);
+  const tickets = ticketHooks.useList(tripId);
   const router = useRouter();
   const { width } = useWindowDimensions();
   // Beside the list there is room for the map from about a 13-inch laptop up; below that it opens on top.
@@ -135,6 +139,8 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
           items: items.data,
           restaurants: restaurants.data ?? [],
           hotels: hotels.data ?? [],
+          transfers: transfers.data ?? [],
+          tickets: tickets.data ?? [],
         };
         const stopsFor = (date: string): Stop[] => buildStops({ date, ...sources });
         // Days outside the trip's dates still appear when something is scheduled on them.
@@ -156,6 +162,10 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
           if (stop.kind === 'item') setViewId(stop.refId);
           else if (stop.kind === 'restaurant') {
             router.push({ pathname: '/trips/[id]/places', params: { id: tripId } });
+          } else if (stop.kind === 'ticket') {
+            router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
+          } else if (stop.kind === 'transfer-from' || stop.kind === 'transfer-to') {
+            router.push({ pathname: '/trips/[id]/transfers', params: { id: tripId } });
           } else router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
         };
         const tripStopsAll = buildTripStops(allDates, sources);
@@ -469,6 +479,7 @@ function destinationOf(kind: TimelineEntry['kind'], tripId: string): Href {
     case 'flight_arrival':
     case 'hotel_check_in':
     case 'hotel_check_out':
+    case 'ticket':
       return { pathname: '/trips/[id]/bookings', params: { id: tripId } };
     case 'transfer':
       return { pathname: '/trips/[id]/transfers', params: { id: tripId } };

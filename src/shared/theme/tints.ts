@@ -17,20 +17,20 @@ export const lightTints: Record<Tint, TintColors> = {
   amber: { bg: '#FEF3C7', fg: '#92400E' },
   green: { bg: '#DCFCE7', fg: '#15803D' },
   teal: { bg: '#D5F5EE', fg: '#0F766E' },
-  slate: { bg: '#EBEEF2', fg: '#475569' },
+  slate: { bg: '#E8ECF2', fg: '#475569' },
 };
 
 export const darkTints: Record<Tint, TintColors> = {
-  blue: { bg: '#172554', fg: '#93B4FF' },
-  sky: { bg: '#0C2A3D', fg: '#7DD3FC' },
-  indigo: { bg: '#1E1B4B', fg: '#A5B4FC' },
-  violet: { bg: '#2A1F4D', fg: '#C4B5FD' },
-  pink: { bg: '#3A1027', fg: '#F9A8D4' },
-  orange: { bg: '#3A1F0B', fg: '#FDBA74' },
-  amber: { bg: '#33260A', fg: '#FCD34D' },
-  green: { bg: '#0F2A1A', fg: '#86EFAC' },
-  teal: { bg: '#0B2E2A', fg: '#5EEAD4' },
-  slate: { bg: '#2C2C2E', fg: '#CBD5E1' },
+  blue: { bg: '#223B78', fg: '#9DBBFF' },
+  sky: { bg: '#123349', fg: '#7DD3FC' },
+  indigo: { bg: '#27295F', fg: '#B4BEFD' },
+  violet: { bg: '#2F2657', fg: '#C9BBFD' },
+  pink: { bg: '#43213A', fg: '#F9A8D4' },
+  orange: { bg: '#43291A', fg: '#FDBA74' },
+  amber: { bg: '#3A2D12', fg: '#FCD34D' },
+  green: { bg: '#153426', fg: '#86EFAC' },
+  teal: { bg: '#12363A', fg: '#5EEAD4' },
+  slate: { bg: '#33415F', fg: '#CBD5E1' },
 };
 
 export function tintColors(scheme: 'light' | 'dark', tint: Tint): TintColors {

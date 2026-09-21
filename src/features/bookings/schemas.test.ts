@@ -1,4 +1,4 @@
-import { flightSchema, hotelSchema } from './schemas';
+import { flightSchema, hotelSchema, ticketSchema } from './schemas';
 
 const flight = {
   airline: '',
@@ -86,5 +86,49 @@ describe('hotelSchema', () => {
     expect(hotelSchema.safeParse({ ...hotel, bookingUrl: 'javascript:alert(1)' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('ticketSchema', () => {
+  const schema = ticketSchema('USD');
+  const ticket = {
+    name: 'Hamilton',
+    kind: 'SHOW',
+    quantity: '2',
+    venue: 'Richard Rodgers Theatre',
+    address: '',
+    date: '2027-04-03',
+    startTime: '19:00',
+    endTime: '21:45',
+    confirmationCode: '',
+    seat: '',
+    cost: '',
+    status: 'PLANNED',
+    notes: '',
+  };
+
+  it('accepts a ticket with where and when, or with neither', () => {
+    expect(schema.safeParse(ticket).success).toBe(true);
+    expect(
+      schema.safeParse({ ...ticket, venue: '', date: '', startTime: '', endTime: '' }).success,
+    ).toBe(true);
+  });
+
+  it('needs a quantity of at least one', () => {
+    expect(messages(schema.safeParse({ ...ticket, quantity: '0' }))).toContain(
+      'validation.quantityInvalid',
+    );
+    expect(schema.safeParse({ ...ticket, quantity: 'two' }).success).toBe(false);
+    expect(schema.safeParse({ ...ticket, quantity: '1000' }).success).toBe(false);
+  });
+
+  it('keeps a time and its day together, and an end after its start', () => {
+    expect(schema.safeParse({ ...ticket, date: '' }).success).toBe(false);
+    expect(schema.safeParse({ ...ticket, startTime: '', endTime: '' }).success).toBe(false);
+    expect(schema.safeParse({ ...ticket, endTime: '18:00' }).success).toBe(false);
+    expect(messages(schema.safeParse({ ...ticket, endTime: '18:00' }))).toContain(
+      'validation.ticketEndBeforeStart',
+    );
+    expect(schema.safeParse({ ...ticket, endTime: '' }).success).toBe(true);
   });
 });

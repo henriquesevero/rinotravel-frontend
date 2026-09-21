@@ -1,7 +1,21 @@
-import type { Flight, Hotel } from '@/core/api';
-import { daysBetween, formatDuration, formatZoned, zonedDate } from '@/core/datetime/zoned';
+import { useRouter } from 'expo-router';
+import { View } from 'react-native';
+
+import type { Flight, Hotel, Ticket } from '@/core/api';
+import { formatMoney } from '@/core/datetime/money';
+import {
+  daysBetween,
+  formatDuration,
+  formatZoned,
+  zonedDate,
+  zonedTime,
+} from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { DetailSheet } from '@/features/content/DetailSheet';
+import { TICKET_VISUAL } from '@/features/content/visuals';
+import { useDocuments, useOpenDocument } from '@/features/documents/hooks';
+import { space } from '@/shared/theme';
+import { Banner, Button } from '@/shared/ui';
 
 interface Common {
   tripId: string;
@@ -78,6 +92,84 @@ export function HotelDetailSheet({ hotel, ...common }: Common & { hotel: Hotel |
       notes={hotel?.notes}
       location={hotel?.location}
       testID="hotel-detail"
+    />
+  );
+}
+
+export function TicketDetailSheet({ ticket, ...common }: Common & { ticket: Ticket | undefined }) {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const locale = currentLocale();
+  const documents = useDocuments(common.tripId);
+  const open = useOpenDocument(common.tripId);
+  const visual = TICKET_VISUAL[ticket?.kind ?? 'OTHER'];
+  const file = ticket?.documentId
+    ? documents.data?.find((document) => document.id === ticket.documentId)
+    : undefined;
+  const when = ticket?.start
+    ? `${formatZoned(ticket.start, locale)}${ticket.end ? ` – ${zonedTime(ticket.end)}` : ''}`
+    : undefined;
+  // Still loading the documents is not the same as the file being gone.
+  const missing = ticket?.documentId !== undefined && documents.data !== undefined && !file;
+
+  return (
+    <DetailSheet
+      {...common}
+      visible={common.visible && ticket !== undefined}
+      title={ticket?.name ?? ''}
+      subtitle={ticket ? t(`enums.ticketKind.${ticket.kind}`) : undefined}
+      icon={visual.icon}
+      tint={visual.tint}
+      badges={[
+        ...(ticket?.confirmationCode
+          ? [{ label: ticket.confirmationCode, tone: 'accent' as const }]
+          : []),
+        ...(ticket && ticket.status !== 'PLANNED'
+          ? [{ label: t(`enums.status.${ticket.status}`), tone: 'success' as const }]
+          : []),
+      ]}
+      rows={[
+        { label: t('detail.when'), value: when },
+        {
+          label: t('detail.quantity'),
+          value: ticket && ticket.quantity > 1 ? String(ticket.quantity) : undefined,
+        },
+        { label: t('detail.seat'), value: ticket?.seat },
+        {
+          label: t('detail.cost'),
+          value: ticket?.cost
+            ? formatMoney(ticket.cost.amount, ticket.cost.currency, locale)
+            : undefined,
+        },
+      ]}
+      notes={ticket?.notes}
+      location={ticket?.location}
+      actions={
+        <View style={{ gap: space.sm }}>
+          {file?.status === 'READY' ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.sm }}>
+              <Button
+                testID="ticket-open-file"
+                title={t('tickets.openFile')}
+                icon="open-outline"
+                onPress={() => open.mutate(file.id)}
+              />
+              <Button
+                testID="ticket-in-documents"
+                title={t('tickets.inDocuments')}
+                variant="secondary"
+                icon="folder-open-outline"
+                onPress={() => {
+                  common.onClose();
+                  router.push({ pathname: '/trips/[id]/documents', params: { id: common.tripId } });
+                }}
+              />
+            </View>
+          ) : null}
+          {missing ? <Banner tone="info" message={t('tickets.unavailable')} /> : null}
+        </View>
+      }
+      testID="ticket-detail"
     />
   );
 }

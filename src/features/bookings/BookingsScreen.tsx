@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { View } from 'react-native';
 
-import type { Flight, Hotel } from '@/core/api';
+import type { Flight, Hotel, Ticket } from '@/core/api';
 import {
   daysBetween,
   formatDuration,
   formatZoned,
   zonedDate,
   zonedKey,
+  zonedTime,
 } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { defaultTimezone } from '@/features/trips/options';
 import { TripPage } from '@/features/content/TripPage';
+import { TICKET_VISUAL } from '@/features/content/visuals';
 import { space } from '@/shared/theme';
 import {
   Badge,
@@ -24,26 +26,41 @@ import {
   Skeleton,
 } from '@/shared/ui';
 
-import { FlightDetailSheet, HotelDetailSheet } from './BookingDetailSheets';
+import { FlightDetailSheet, HotelDetailSheet, TicketDetailSheet } from './BookingDetailSheets';
 import { FlightSheet } from './FlightSheet';
 import { HotelSheet } from './HotelSheet';
-import { flightHooks, hotelHooks } from './hooks';
+import { flightHooks, hotelHooks, ticketHooks } from './hooks';
+import { TicketSheet } from './TicketSheet';
 
-type Tab = 'flights' | 'hotels';
+type Tab = 'flights' | 'hotels' | 'tickets';
 
 export function BookingsScreen({ tripId }: { tripId: string }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('flights');
   const flights = flightHooks.useList(tripId);
   const hotels = hotelHooks.useList(tripId);
+  const tickets = ticketHooks.useList(tripId);
   const [flightSheet, setFlightSheet] = useState<{ flight?: Flight | undefined } | null>(null);
   const [hotelSheet, setHotelSheet] = useState<{ hotel?: Hotel | undefined } | null>(null);
+  const [ticketSheet, setTicketSheet] = useState<{ ticket?: Ticket | undefined } | null>(null);
+  const [viewTicketId, setViewTicketId] = useState<string | null>(null);
   const [viewFlightId, setViewFlightId] = useState<string | null>(null);
   const [viewHotelId, setViewHotelId] = useState<string | null>(null);
   const viewFlight = flights.data?.find((flight) => flight.id === viewFlightId);
   const viewHotel = hotels.data?.find((hotel) => hotel.id === viewHotelId);
+  const viewTicket = tickets.data?.find((ticket) => ticket.id === viewTicketId);
 
-  const add = () => (tab === 'flights' ? setFlightSheet({}) : setHotelSheet({}));
+  const add = () =>
+    tab === 'flights'
+      ? setFlightSheet({})
+      : tab === 'hotels'
+        ? setHotelSheet({})
+        : setTicketSheet({});
+  const addLabel = {
+    flights: t('bookings.addFlight'),
+    hotels: t('bookings.addHotel'),
+    tickets: t('bookings.addTicket'),
+  }[tab];
 
   return (
     <TripPage
@@ -52,16 +69,11 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
       onRefresh={() => {
         void flights.refetch();
         void hotels.refetch();
+        void tickets.refetch();
       }}
       right={({ canWrite }) =>
         canWrite ? (
-          <Button
-            testID="add-booking"
-            title={tab === 'flights' ? t('bookings.addFlight') : t('bookings.addHotel')}
-            icon="add"
-            size="sm"
-            onPress={add}
-          />
+          <Button testID="add-booking" title={addLabel} icon="add" size="sm" onPress={add} />
         ) : null
       }
     >
@@ -74,6 +86,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
             segments={[
               { value: 'flights', label: t('bookings.tabFlights') },
               { value: 'hotels', label: t('bookings.tabHotels') },
+              { value: 'tickets', label: t('bookings.tabTickets') },
             ]}
           />
           {tab === 'flights' ? (
@@ -83,14 +96,43 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
               onAdd={() => setFlightSheet({})}
               onOpen={(flight) => setViewFlightId(flight.id)}
             />
-          ) : (
+          ) : tab === 'hotels' ? (
             <HotelList
               query={hotels}
               canWrite={canWrite}
               onAdd={() => setHotelSheet({})}
               onOpen={(hotel) => setViewHotelId(hotel.id)}
             />
+          ) : (
+            <TicketList
+              query={tickets}
+              canWrite={canWrite}
+              onAdd={() => setTicketSheet({})}
+              onOpen={(ticket) => setViewTicketId(ticket.id)}
+            />
           )}
+          <TicketDetailSheet
+            tripId={tripId}
+            ticket={viewTicket}
+            visible={viewTicketId !== null}
+            onClose={() => setViewTicketId(null)}
+            onEdit={
+              canWrite
+                ? () => {
+                    setViewTicketId(null);
+                    setTicketSheet({ ticket: viewTicket });
+                  }
+                : undefined
+            }
+          />
+          <TicketSheet
+            tripId={tripId}
+            visible={ticketSheet !== null}
+            onClose={() => setTicketSheet(null)}
+            timezone={trip.timezone}
+            currency={trip.currency}
+            ticket={ticketSheet?.ticket}
+          />
           <FlightDetailSheet
             tripId={tripId}
             flight={viewFlight}
@@ -267,6 +309,78 @@ function HotelList({
               ) : undefined
             }
             onPress={() => onOpen(hotel)}
+          />
+        );
+      })}
+    </Card>
+  );
+}
+
+function TicketList({
+  query,
+  canWrite,
+  onAdd,
+  onOpen,
+}: {
+  query: ListQuery<Ticket>;
+  canWrite: boolean;
+  onAdd: () => void;
+  onOpen: (ticket: Ticket) => void;
+}) {
+  const { t } = useTranslation();
+  if (query.error) {
+    return (
+      <ErrorState
+        error={query.error}
+        title={t('bookings.loadError')}
+        onRetry={() => void query.refetch()}
+      />
+    );
+  }
+  if (!query.data) return <ListSkeleton />;
+  if (query.data.length === 0) {
+    return (
+      <EmptyState
+        icon="ticket-outline"
+        title={t('bookings.emptyTicketsTitle')}
+        message={t('bookings.emptyTicketsMessage')}
+        {...(canWrite ? { actionLabel: t('bookings.addTicket'), onAction: onAdd } : {})}
+      />
+    );
+  }
+  const locale = currentLocale();
+  // The ones with a day come first, in order; the rest follow.
+  const sorted = [...query.data].sort((a, b) =>
+    (a.start ? zonedKey(a.start) : '~').localeCompare(b.start ? zonedKey(b.start) : '~'),
+  );
+  return (
+    <Card padded={false}>
+      {sorted.map((ticket, index) => {
+        const visual = TICKET_VISUAL[ticket.kind];
+        const where = ticket.location?.name ?? ticket.location?.address;
+        const when = ticket.start
+          ? `${formatZoned(ticket.start, locale)}${ticket.end ? ` – ${zonedTime(ticket.end)}` : ''}`
+          : undefined;
+        return (
+          <ListRow
+            key={ticket.id}
+            testID={`ticket-${ticket.id}`}
+            divider={index > 0}
+            icon={visual.icon}
+            tint={visual.tint}
+            title={ticket.name}
+            subtitle={
+              [when, where].filter(Boolean).join(' · ') || t(`enums.ticketKind.${ticket.kind}`)
+            }
+            right={
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
+                {ticket.quantity > 1 ? (
+                  <Badge label={`×${ticket.quantity}`} tone="neutral" />
+                ) : null}
+                {ticket.documentId ? <Badge label={t('bookings.hasFile')} tone="accent" /> : null}
+              </View>
+            }
+            onPress={() => onOpen(ticket)}
           />
         );
       })}

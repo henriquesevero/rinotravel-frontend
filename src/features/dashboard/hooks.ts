@@ -1,4 +1,4 @@
-import { flightHooks, hotelHooks } from '@/features/bookings/hooks';
+import { flightHooks, hotelHooks, ticketHooks } from '@/features/bookings/hooks';
 import { useDocuments } from '@/features/documents/hooks';
 import { useTimeline } from '@/features/itinerary/hooks';
 import { placeHooks, restaurantHooks } from '@/features/places/hooks';
@@ -10,13 +10,15 @@ export function useTripSnapshot(tripId: string) {
   const restaurants = restaurantHooks.useList(tripId);
   const flights = flightHooks.useList(tripId);
   const hotels = hotelHooks.useList(tripId);
+  const tickets = ticketHooks.useList(tripId);
   const documents = useDocuments(tripId);
 
   return {
     timeline,
     counts: {
       places: (places.data?.length ?? 0) + (restaurants.data?.length ?? 0),
-      bookings: (flights.data?.length ?? 0) + (hotels.data?.length ?? 0),
+      bookings:
+        (flights.data?.length ?? 0) + (hotels.data?.length ?? 0) + (tickets.data?.length ?? 0),
       documents: documents.data?.filter((document) => document.status === 'READY').length ?? 0,
     },
     isPending: timeline.isPending,
@@ -26,6 +28,7 @@ export function useTripSnapshot(tripId: string) {
       void restaurants.refetch();
       void flights.refetch();
       void hotels.refetch();
+      void tickets.refetch();
       void documents.refetch();
     },
   };

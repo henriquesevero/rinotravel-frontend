@@ -43,8 +43,12 @@ const createStyles = ({ colors }: Theme) =>
     },
     boxFocused: { borderColor: colors.accent, borderWidth: 2, paddingLeft: space.lg - 1 },
     boxError: { borderColor: colors.danger },
+    // A text input has a width of its own (about 20 characters); without this it pushes past a narrow cell.
     input: {
       flex: 1,
+      minWidth: 0,
+      // The box already shows focus with its accent border; the browser's own ring would draw a second one.
+      ...({ outlineStyle: 'none' } as object),
       paddingRight: space.lg,
       color: colors.text,
       ...typography.body,

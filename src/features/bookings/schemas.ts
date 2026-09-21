@@ -3,7 +3,9 @@ import { z } from 'zod';
 import { isCivilDate } from '@/core/datetime/civil-date';
 import { joinZoned, minutesBetween } from '@/core/datetime/zoned';
 import {
+  optionalMoney,
   optionalText,
+  optionalTime,
   optionalUrl,
   required,
   requiredText,
@@ -108,4 +110,77 @@ export const HOTEL_ALIASES = {
   location: 'address',
   checkIn: 'checkInTime',
   checkOut: 'checkOutTime',
+} as const;
+
+export const TICKET_KINDS = [
+  'ATTRACTION',
+  'SHOW',
+  'MUSEUM',
+  'SPORT',
+  'TOUR',
+  'TRANSPORT',
+  'OTHER',
+] as const;
+export const TICKET_STATUSES = ['PLANNED', 'CONFIRMED', 'COMPLETED', 'SKIPPED'] as const;
+
+export function ticketSchema(currency: string) {
+  return (
+    z
+      .object({
+        name: requiredText(200),
+        kind: z.enum(TICKET_KINDS),
+        quantity: z
+          .string()
+          .trim()
+          .refine((value) => /^\d{1,3}$/.test(value) && Number(value) >= 1, {
+            error: 'validation.quantityInvalid',
+          }),
+        venue: optionalText(200),
+        address: optionalText(300),
+        date: z.string().refine((value) => value === '' || isCivilDate(value), {
+          error: 'validation.dateInvalid',
+        }),
+        startTime: optionalTime,
+        endTime: optionalTime,
+        confirmationCode: optionalText(100),
+        seat: optionalText(100),
+        cost: optionalMoney(currency),
+        status: z.enum(TICKET_STATUSES),
+        notes: optionalText(2000),
+      })
+      // A time needs a day, and the end needs a start; the server enforces the same.
+      .refine((t) => (t.date === '') === (t.startTime === ''), {
+        path: ['startTime'],
+        error: 'validation.required',
+      })
+      .refine((t) => t.endTime === '' || t.startTime !== '', {
+        path: ['endTime'],
+        error: 'validation.required',
+      })
+      .refine((t) => t.endTime === '' || t.startTime === '' || t.endTime >= t.startTime, {
+        path: ['endTime'],
+        error: 'validation.ticketEndBeforeStart',
+      })
+  );
+}
+export type TicketFormValues = z.infer<ReturnType<typeof ticketSchema>>;
+export const TICKET_FIELDS = [
+  'name',
+  'kind',
+  'quantity',
+  'venue',
+  'address',
+  'date',
+  'startTime',
+  'endTime',
+  'confirmationCode',
+  'seat',
+  'cost',
+  'status',
+  'notes',
+] as const;
+export const TICKET_ALIASES = {
+  location: 'address',
+  start: 'startTime',
+  end: 'endTime',
 } as const;

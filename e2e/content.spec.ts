@@ -607,6 +607,56 @@ test.describe('trip content', () => {
     await expect(page.getByTestId('item-place-search')).toBeVisible();
   });
 
+  test('itinerary: a transfer puts where it starts and where it ends on the day map', async ({
+    page,
+    request,
+  }) => {
+    const requests: Record<string, unknown>[] = [];
+    await page.route('https://maps.googleapis.com/**', (route) =>
+      route.fulfill({ status: 200, contentType: 'text/javascript', body: FAKE_GOOGLE_MAPS }),
+    );
+    await page.route('**/api/v1/trips/*/maps/day', answerDayMap(requests));
+    const { ana, trip } = await seedDay(request);
+    const at = (time: string) => ({ dateTime: `2027-04-03T${time}:00`, timezone: 'Asia/Tokyo' });
+    const made = await request.post(`${API}/api/v1/trips/${trip.id}/transfers`, {
+      headers: { Authorization: `Bearer ${ana.token}` },
+      data: {
+        origin: { name: 'Estação de Ueno' },
+        destination: { name: 'Estação de Tóquio' },
+        legs: [
+          {
+            mode: 'SUBWAY',
+            origin: { name: 'Estação de Ueno' },
+            destination: { name: 'Estação de Tóquio' },
+            departure: at('12:30'),
+            arrival: at('13:00'),
+          },
+        ],
+      },
+    });
+    expect(made.status(), await made.text()).toBe(201);
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/itinerary`);
+    await page.getByTestId('day-map-2027-04-03').click();
+
+    // The day's own places and the transfer's two ends, in the order they happen.
+    const stops = page.getByTestId('day-map-stops');
+    await expect(stops.getByTestId('day-stop-1')).toContainText('12:30');
+    await expect(stops.getByTestId('day-stop-1')).toContainText('Estação de Ueno');
+    await expect(stops.getByTestId('day-stop-1')).toContainText('Saída do deslocamento');
+    await expect(stops.getByTestId('day-stop-2')).toContainText('13:00');
+    await expect(stops.getByTestId('day-stop-2')).toContainText('Estação de Tóquio');
+    await expect(stops.getByTestId('day-stop-2')).toContainText('Chegada do deslocamento');
+    expect(
+      (requests.at(-1) as { stops: { label: string }[] }).stops.map((stop) => stop.label),
+    ).toEqual(['Parque Ueno', 'Estação de Ueno', 'Estação de Tóquio', 'Akihabara']);
+
+    // Tapping the arrow goes to the transfers, where it can be opened and edited.
+    await stops.getByTestId('day-stop-open-1').click();
+    await expect(page).toHaveURL(/\/transfers$/);
+  });
+
   test('itinerary: on a computer each column scrolls on its own and the map stays in view', async ({
     page,
     request,
@@ -928,6 +978,9 @@ test.describe('trip content', () => {
       maps.push(route.request().postDataJSON());
       await route.fulfill({ status: 200, contentType: 'image/png', body: PNG });
     });
+    await page.route('**/api/v1/trips/*/transfers/plan', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"routes":[]}' }),
+    );
     const errors = collectBrowserErrors(page);
 
     const ana = await registerViaApi(request, 'Ana');
@@ -957,6 +1010,154 @@ test.describe('trip content', () => {
     await expect(detail.getByText('Metrô').first()).toBeVisible();
     await expect(detail.getByTestId('route-map')).toBeVisible();
     expect(errors).toEqual([]);
+  });
+
+  test('transfers: the arrival comes from the time the map gives, and a typed one is kept', async ({
+    page,
+    request,
+  }) => {
+    const PNG =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+    const plans: Record<string, unknown>[] = [];
+    await page.route('**/api/v1/places/search*', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"items":[]}' }),
+    );
+    await page.route('**/api/v1/trips/*/transfers/map', (route) =>
+      route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from(PNG, 'base64') }),
+    );
+    await page.route('**/api/v1/trips/*/transfers/plan', async (route) => {
+      plans.push(route.request().postDataJSON());
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          routes: [
+            {
+              durationMinutes: 39,
+              distanceMeters: 25200,
+              transfer: { routeProvider: 'google', legs: [] },
+            },
+          ],
+        }),
+      });
+    });
+
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/transfers`);
+    await page.getByTestId('add-transfer').click();
+
+    await page.getByTestId('transfer-origin').fill('Estação de Narita');
+    await page.getByTestId('transfer-destination').fill('Hotel Sakura');
+    await page.getByTestId('show-map').click();
+    // The map is asked how long the trip takes as soon as both ends are known.
+    await expect(page.getByTestId('route-estimate')).toContainText('39 min');
+    await expect(page.getByTestId('route-estimate')).toContainText('25,2 km');
+    await expect(page.getByTestId('route-estimate')).toContainText('Informe a saída');
+    await expect(page.getByLabel('Duração (min)')).toHaveValue('39');
+
+    // With a departure the arrival follows, and the route is asked about that time.
+    await page.getByLabel('Saída').fill('0800');
+    await expect(page.getByLabel('Chegada')).toHaveValue('08:39');
+    await expect
+      .poll(() => plans.at(-1)?.departureAt)
+      .toMatchObject({
+        dateTime: '2027-04-01T08:00:00',
+      });
+
+    // A later departure moves the arrival with it.
+    await page.getByLabel('Saída').fill('0910');
+    await expect(page.getByLabel('Chegada')).toHaveValue('09:49');
+
+    // An arrival typed by hand is the person's word: it is not overwritten.
+    await page.getByLabel('Chegada').fill('1000');
+    await page.getByLabel('Saída').fill('0930');
+    await expect(page.getByLabel('Chegada')).toHaveValue('10:00');
+
+    await page.getByTestId('transfer-sheet-submit').click();
+    await expect(page.getByTestId('transfer-detail')).toBeVisible();
+    const saved = await request.get(`${API}/api/v1/trips/${trip.id}/transfers`, {
+      headers: { Authorization: `Bearer ${ana.token}` },
+    });
+    const [transfer] = (await saved.json()).items as {
+      legs: { departure: { dateTime: string }; arrival: { dateTime: string } }[];
+    }[];
+    expect(transfer?.legs[0]?.departure.dateTime).toBe('2027-04-01T09:30');
+    expect(transfer?.legs[0]?.arrival.dateTime).toBe('2027-04-01T10:00');
+  });
+
+  test('transfers: a suggested route is saved with the departure typed and the arrival from the map', async ({
+    page,
+    request,
+  }) => {
+    // The route service times its steps by a timetable, here of another day than the trip's.
+    const at = (time: string) => ({ dateTime: `2026-09-20T${time}:00`, timezone: 'Asia/Tokyo' });
+    const [A, B, C, D] = ['Narita', 'Plataforma', 'Estação Sakura', 'Hotel Sakura'].map((name) => ({
+      name,
+    }));
+    await page.route('**/api/v1/places/search*', (route) =>
+      route.fulfill({ status: 200, contentType: 'application/json', body: '{"items":[]}' }),
+    );
+    await page.route('**/api/v1/trips/*/transfers/plan', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          routes: [
+            {
+              durationMinutes: 39,
+              distanceMeters: 25200,
+              transfer: {
+                routeProvider: 'google',
+                legs: [
+                  { mode: 'WALKING', origin: A, destination: B, estimatedDurationMinutes: 5 },
+                  {
+                    mode: 'TRAIN',
+                    origin: B,
+                    destination: C,
+                    line: 'AirTrain',
+                    departure: at('19:05'),
+                    arrival: at('19:13'),
+                  },
+                  { mode: 'WALKING', origin: C, destination: D, estimatedDurationMinutes: 8 },
+                ],
+              },
+            },
+          ],
+        }),
+      }),
+    );
+
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/transfers`);
+    await page.getByTestId('add-transfer').click();
+
+    await page.getByTestId('transfer-origin').fill('Estação de Narita');
+    await page.getByTestId('transfer-destination').fill('Hotel Sakura');
+    await page.getByLabel('Saída').fill('0800');
+    await page.getByTestId('suggest-routes').click();
+    await page.getByTestId('route-0').click();
+    await expect(page.getByLabel('Chegada')).toHaveValue('08:39');
+
+    await page.getByTestId('transfer-sheet-submit').click();
+    await expect(page.getByTestId('transfer-detail')).toBeVisible();
+    const saved = await request.get(`${API}/api/v1/trips/${trip.id}/transfers`, {
+      headers: { Authorization: `Bearer ${ana.token}` },
+    });
+    const [transfer] = (await saved.json()).items as {
+      departure: { dateTime: string };
+      arrival: { dateTime: string };
+      legs: { mode: string; line?: string; durationMinutes?: number }[];
+    }[];
+    // The trip's day and the person's times, not the timetable's day.
+    expect(transfer?.departure.dateTime).toBe('2027-04-01T08:00');
+    expect(transfer?.arrival.dateTime).toBe('2027-04-01T08:39');
+    expect(transfer?.legs.map((leg) => leg.mode)).toEqual(['WALKING', 'TRAIN', 'WALKING']);
+    expect(transfer?.legs[1]?.line).toBe('AirTrain');
+    expect(transfer?.legs[1]?.durationMinutes).toBe(8);
   });
 
   test('transfers: origin and destination suggest Google places and keep their coordinates', async ({

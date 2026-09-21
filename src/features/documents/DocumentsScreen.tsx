@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View } from 'react-native';
 
 import type { Document } from '@/core/api';
+import { ticketHooks } from '@/features/bookings/hooks';
 import { useTranslation } from '@/core/i18n';
 import { useDescribeError } from '@/core/i18n/describe-error';
 import { TripPage } from '@/features/content/TripPage';
@@ -29,6 +30,10 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
   const describe = useDescribeError();
   const documents = useDocuments(tripId);
   const open = useOpenDocument(tripId);
+  const tickets = ticketHooks.useList(tripId);
+  // A document is a ticket's file when a ticket points at it.
+  const ticketOf = (document: Document) =>
+    tickets.data?.find((ticket) => ticket.documentId === document.id);
   const [sheet, setSheet] = useState<{ document?: Document | undefined } | null>(null);
   const [viewId, setViewId] = useState<string | null>(null);
   const viewDocument = documents.data?.find((document) => document.id === viewId);
@@ -86,7 +91,15 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
                     icon={DOCUMENT_VISUAL[document.type].icon}
                     tint={DOCUMENT_VISUAL[document.type].tint}
                     title={document.name}
-                    subtitle={`${t(`enums.docType.${document.type}`)} · ${t(size.key, { value: size.value })}`}
+                    subtitle={[
+                      t(`enums.docType.${document.type}`),
+                      t(size.key, { value: size.value }),
+                      ticketOf(document)
+                        ? t('tickets.forTicket', { name: ticketOf(document)?.name })
+                        : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                     right={
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.xs }}>
                         {document.visibility === 'PRIVATE' ? (
@@ -113,6 +126,7 @@ export function DocumentsScreen({ tripId }: { tripId: string }) {
           <DocumentDetailSheet
             tripId={tripId}
             document={viewDocument}
+            ticketName={viewDocument ? ticketOf(viewDocument)?.name : undefined}
             visible={viewId !== null}
             onClose={() => setViewId(null)}
             onOpen={(document) => open.mutate(document.id)}

@@ -1,4 +1,10 @@
-export { ThemeProvider, useStyles, useTheme, type Theme } from './theme-provider';
+export {
+  ThemeProvider,
+  useStyles,
+  useTheme,
+  type Theme,
+  type ThemePreference,
+} from './theme-provider';
 export {
   contentMaxWidth,
   contentMaxWidthExpanded,

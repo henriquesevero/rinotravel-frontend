@@ -9,6 +9,8 @@ import { formatSize } from './schemas';
 interface DocumentDetailSheetProps {
   tripId: string;
   document: Document | undefined;
+  /** The ticket that uses this file, if one does. */
+  ticketName?: string | undefined;
   visible: boolean;
   onClose: () => void;
   onEdit?: (() => void) | undefined;
@@ -18,6 +20,7 @@ interface DocumentDetailSheetProps {
 export function DocumentDetailSheet({
   tripId,
   document,
+  ticketName,
   visible,
   onClose,
   onEdit,
@@ -48,6 +51,7 @@ export function DocumentDetailSheet({
       }
       rows={[
         { label: t('detail.file'), value: document?.fileName },
+        { label: t('bookings.tabTickets'), value: ticketName },
         { label: t('detail.size'), value: size ? t(size.key, { value: size.value }) : undefined },
         {
           label: t('detail.visibility'),

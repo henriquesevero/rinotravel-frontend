@@ -1,5 +1,15 @@
 import { api, unwrap } from '@/core/api';
-import type { Flight, FlightCreate, FlightPatch, Hotel, HotelCreate, HotelPatch } from '@/core/api';
+import type {
+  Flight,
+  FlightCreate,
+  FlightPatch,
+  Hotel,
+  HotelCreate,
+  HotelPatch,
+  Ticket,
+  TicketCreate,
+  TicketPatch,
+} from '@/core/api';
 import type { ResourceApi } from '@/core/resource/hooks';
 
 const path = (tripId: string) => ({ params: { path: { tripId } } });
@@ -29,5 +39,18 @@ export const hotelsApi: ResourceApi<Hotel, HotelCreate, HotelPatch> = {
     unwrap(api.PATCH('/api/v1/trips/{tripId}/hotels/{id}', { ...pathWithId(tripId, id), body })),
   remove: async (tripId, id) => {
     await unwrap(api.DELETE('/api/v1/trips/{tripId}/hotels/{id}', pathWithId(tripId, id)));
+  },
+};
+
+export const ticketsApi: ResourceApi<Ticket, TicketCreate, TicketPatch> = {
+  list: async (tripId, signal) =>
+    (await unwrap(api.GET('/api/v1/trips/{tripId}/tickets', { ...path(tripId), ...abort(signal) })))
+      .items,
+  create: (tripId, body) =>
+    unwrap(api.POST('/api/v1/trips/{tripId}/tickets', { ...path(tripId), body })),
+  update: (tripId, id, body) =>
+    unwrap(api.PATCH('/api/v1/trips/{tripId}/tickets/{id}', { ...pathWithId(tripId, id), body })),
+  remove: async (tripId, id) => {
+    await unwrap(api.DELETE('/api/v1/trips/{tripId}/tickets/{id}', pathWithId(tripId, id)));
   },
 };

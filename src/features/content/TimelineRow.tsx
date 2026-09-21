@@ -1,6 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
-import type { TimelineEntry } from '@/core/api';
+import type { TicketKind, TimelineEntry } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
 import type { TFunction } from 'i18next';
 import { zonedTime } from '@/core/datetime/zoned';
@@ -11,9 +11,9 @@ import { entryVisual } from './visuals';
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    row: { flexDirection: 'row', alignItems: 'center', gap: space.md, paddingVertical: space.md },
-    time: { width: 52 },
-    text: { flex: 1, gap: 2 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingVertical: space.lg },
+    time: { width: 56, gap: 2 },
+    text: { flex: 1, gap: 4 },
     dim: { color: colors.textSecondary },
   });
 
@@ -84,6 +84,9 @@ function subtitleOf(entry: TimelineEntry, t: TFunction): string | undefined {
       : undefined;
   }
   const kind = t(`timeline.kind.${entry.kind}`);
+  if (entry.kind === 'ticket') {
+    return [kind, t(`enums.ticketKind.${entry.subtitle as TicketKind}`)].join(' · ');
+  }
   if (entry.kind === 'hotel_check_in' || entry.kind === 'hotel_check_out') return kind;
   return [kind, entry.subtitle].filter(Boolean).join(' · ');
 }

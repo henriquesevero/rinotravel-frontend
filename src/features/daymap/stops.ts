@@ -6,11 +6,14 @@ import type {
   ItineraryItem,
   Location,
   Restaurant,
+  Ticket,
+  Transfer,
 } from '@/core/api';
 import { zonedDate, zonedTime } from '@/core/datetime/zoned';
-import { pointOf } from '@/features/transfers/maps';
+import { endsOf, pointOf } from '@/features/transfers/maps';
 
-export type StopKind = 'item' | 'restaurant' | 'hotel-in' | 'hotel-out';
+export type StopKind =
+  'item' | 'restaurant' | 'hotel-in' | 'hotel-out' | 'ticket' | 'transfer-from' | 'transfer-to';
 
 /** One place to be at on a given day, in the order it happens. */
 export interface Stop {
@@ -37,15 +40,26 @@ interface Sources {
   items: ItineraryItem[];
   restaurants: Restaurant[];
   hotels: Hotel[];
+  transfers?: Transfer[];
+  tickets?: Ticket[];
 }
 
 const LAST = '99:99';
 
 /**
- * Everything on `date` that has a place a map can find: activities, restaurant reservations and hotel
- * check-in/out. Flights and transfers have no place of their own (they are the trips between places).
+ * Everything on `date` that has a place a map can find: activities, restaurant reservations, hotel
+ * check-in/out, tickets (where they are used) and where each transfer starts and ends. Flights have no place of their own here (the
+ * airport is not somewhere to visit); the trip between two stops is drawn by the map itself.
  */
-export function buildStops({ date, days, items, restaurants, hotels }: Sources): Stop[] {
+export function buildStops({
+  date,
+  days,
+  items,
+  restaurants,
+  hotels,
+  transfers = [],
+  tickets = [],
+}: Sources): Stop[] {
   const dayIds = new Set(days.filter((day) => day.date === date).map((day) => day.id));
   const stops: Stop[] = [];
 
@@ -101,6 +115,50 @@ export function buildStops({ date, days, items, restaurants, hotels }: Sources):
         time: zonedTime(moment),
         endTime: '',
         location: hotel.location,
+      });
+    }
+  }
+
+  for (const ticket of tickets) {
+    if (!ticket.start || zonedDate(ticket.start) !== date) continue;
+    if (!ticket.location || !pointOf(ticket.location)) continue;
+    const where = ticket.location.name ?? ticket.location.address;
+    stops.push({
+      key: `ticket-${ticket.id}`,
+      kind: 'ticket',
+      date,
+      dayIndex: 0,
+      refId: ticket.id,
+      title: ticket.name,
+      ...(where ? { subtitle: where } : {}),
+      time: zonedTime(ticket.start),
+      endTime: ticket.end ? zonedTime(ticket.end) : '',
+      location: ticket.location,
+    });
+  }
+
+  for (const transfer of transfers) {
+    const ends = endsOf(transfer);
+    if (!ends) continue;
+    const leaves = transfer.departure ?? transfer.arrival;
+    const arrives = transfer.arrival ?? transfer.departure;
+    for (const [kind, moment, location] of [
+      ['transfer-from', leaves, ends.origin],
+      ['transfer-to', arrives, ends.destination],
+    ] as const) {
+      if (!moment || zonedDate(moment) !== date) continue;
+      const timed = kind === 'transfer-from' ? transfer.departure : transfer.arrival;
+      stops.push({
+        key: `${kind}-${transfer.id}`,
+        kind,
+        date,
+        dayIndex: 0,
+        refId: transfer.id,
+        title: location.name || location.address || '',
+        ...(location.name && location.address ? { subtitle: location.address } : {}),
+        time: timed ? zonedTime(timed) : '',
+        endTime: '',
+        location,
       });
     }
   }

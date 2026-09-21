@@ -1,4 +1,11 @@
-import type { DocumentType, ItineraryCategory, TimelineEntry, TransferMode } from '@/core/api';
+import type {
+  DocumentType,
+  ExpenseCategory,
+  ItineraryCategory,
+  TicketKind,
+  TimelineEntry,
+  TransferMode,
+} from '@/core/api';
 import type { Tint } from '@/shared/theme';
 import type { IconName } from '@/shared/ui';
 
@@ -23,14 +30,28 @@ const KIND_VISUAL: Record<Exclude<TimelineEntry['kind'], 'itinerary_item'>, Visu
   hotel_check_out: { icon: 'bed-outline', tint: 'indigo' },
   transfer: { icon: 'swap-horizontal-outline', tint: 'green' },
   restaurant_reservation: { icon: 'restaurant-outline', tint: 'orange' },
+  ticket: { icon: 'ticket-outline', tint: 'amber' },
 };
 
 export function entryVisual(entry: TimelineEntry): Visual {
   if (entry.kind === 'itinerary_item') {
     return CATEGORY_VISUAL[entry.subtitle as ItineraryCategory] ?? CATEGORY_VISUAL.OTHER;
   }
+  if (entry.kind === 'ticket') {
+    return TICKET_VISUAL[entry.subtitle as TicketKind] ?? KIND_VISUAL.ticket;
+  }
   return KIND_VISUAL[entry.kind];
 }
+
+export const TICKET_VISUAL: Record<TicketKind, Visual> = {
+  ATTRACTION: { icon: 'ticket-outline', tint: 'amber' },
+  SHOW: { icon: 'musical-notes-outline', tint: 'pink' },
+  MUSEUM: { icon: 'business-outline', tint: 'violet' },
+  SPORT: { icon: 'football-outline', tint: 'green' },
+  TOUR: { icon: 'compass-outline', tint: 'teal' },
+  TRANSPORT: { icon: 'bus-outline', tint: 'orange' },
+  OTHER: { icon: 'ticket-outline', tint: 'slate' },
+};
 
 export const MODE_VISUAL: Record<TransferMode, Visual> = {
   WALKING: { icon: 'walk-outline', tint: 'teal' },
@@ -52,4 +73,15 @@ export const DOCUMENT_VISUAL: Record<DocumentType, Visual> = {
   RECEIPT: { icon: 'receipt-outline', tint: 'slate' },
   PASSPORT: { icon: 'id-card-outline', tint: 'violet' },
   OTHER: { icon: 'document-outline', tint: 'slate' },
+};
+
+export const EXPENSE_VISUAL: Record<ExpenseCategory, Visual> = {
+  FOOD: { icon: 'restaurant-outline', tint: 'orange' },
+  LODGING: { icon: 'bed-outline', tint: 'indigo' },
+  TRANSPORT: { icon: 'car-outline', tint: 'green' },
+  ACTIVITIES: { icon: 'sparkles-outline', tint: 'violet' },
+  SOUVENIRS: { icon: 'gift-outline', tint: 'pink' },
+  CLOTHES: { icon: 'shirt-outline', tint: 'sky' },
+  ELECTRONICS: { icon: 'game-controller-outline', tint: 'blue' },
+  OTHER: { icon: 'ellipsis-horizontal-circle-outline', tint: 'slate' },
 };
