@@ -113,6 +113,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
           )}
           <TicketDetailSheet
             tripId={tripId}
+            currency={trip.currency}
             ticket={viewTicket}
             visible={viewTicketId !== null}
             onClose={() => setViewTicketId(null)}
@@ -135,6 +136,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
           />
           <FlightDetailSheet
             tripId={tripId}
+            currency={trip.currency}
             flight={viewFlight}
             visible={viewFlightId !== null}
             onClose={() => setViewFlightId(null)}
@@ -149,6 +151,7 @@ export function BookingsScreen({ tripId }: { tripId: string }) {
           />
           <HotelDetailSheet
             tripId={tripId}
+            currency={trip.currency}
             hotel={viewHotel}
             visible={viewHotelId !== null}
             onClose={() => setViewHotelId(null)}

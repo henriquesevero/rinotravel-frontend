@@ -4,6 +4,7 @@ import { currentLocale, useTranslation } from '@/core/i18n';
 import { DetailSheet } from '@/features/content/DetailSheet';
 import { moneyText, statusTone } from '@/features/content/detail-helpers';
 import { CATEGORY_VISUAL } from '@/features/content/visuals';
+import { LinkedExpenses } from '@/features/expenses/LinkedExpenses';
 
 interface ItemDetailSheetProps {
   tripId: string;
@@ -61,6 +62,17 @@ export function ItemDetailSheet({
       ]}
       notes={item?.notes}
       location={item?.location}
+      actions={
+        item ? (
+          <LinkedExpenses
+            tripId={tripId}
+            currency={currency}
+            link={{ type: 'itinerary_item', id: item.id }}
+            canWrite={onEdit !== undefined}
+            onNavigate={onClose}
+          />
+        ) : undefined
+      }
       onEdit={onEdit}
       testID="item-detail"
     />

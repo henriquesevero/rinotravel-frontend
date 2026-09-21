@@ -553,6 +553,7 @@ export const en: Translation = {
     savedAlso: 'The file also appears in the documents list.',
   },
   expenses: {
+    of: 'of {{value}}',
     linkType: {
       place: 'Place',
       restaurant: 'Restaurant',

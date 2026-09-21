@@ -3,6 +3,7 @@ import { formatZoned } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { DetailSheet } from '@/features/content/DetailSheet';
 import { moneyText } from '@/features/content/detail-helpers';
+import { LinkedExpenses } from '@/features/expenses/LinkedExpenses';
 import { CATEGORY_VISUAL } from '@/features/content/visuals';
 import type { BadgeTone } from '@/shared/ui';
 
@@ -58,6 +59,17 @@ export function PlaceDetailSheet({ place, ...common }: Common & { place: Place |
       ]}
       notes={place?.notes}
       location={place?.location}
+      actions={
+        place ? (
+          <LinkedExpenses
+            tripId={common.tripId}
+            currency={common.currency}
+            link={{ type: 'place', id: place.id }}
+            canWrite={common.onEdit !== undefined}
+            onNavigate={common.onClose}
+          />
+        ) : undefined
+      }
       testID="place-detail"
     />
   );
@@ -114,6 +126,17 @@ export function RestaurantDetailSheet({
       ]}
       notes={restaurant?.notes}
       location={restaurant?.location}
+      actions={
+        restaurant ? (
+          <LinkedExpenses
+            tripId={common.tripId}
+            currency={common.currency}
+            link={{ type: 'restaurant', id: restaurant.id }}
+            canWrite={common.onEdit !== undefined}
+            onNavigate={common.onClose}
+          />
+        ) : undefined
+      }
       testID="restaurant-detail"
     />
   );

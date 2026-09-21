@@ -7,6 +7,8 @@ import { useTranslation } from '@/core/i18n';
 import { space } from '@/shared/theme';
 import { Card, SectionHeader, Skeleton, StatTile, Text } from '@/shared/ui';
 
+import { BudgetGlance } from '@/features/expenses/BudgetGlance';
+
 import { upcomingAgenda } from './agenda';
 import { AgendaList } from './AgendaList';
 import { useTripSnapshot } from './hooks';
@@ -63,6 +65,8 @@ export function TripOverview({ trip, showAgenda = true }: { trip: Trip; showAgen
           onPress={go('/trips/[id]/documents')}
         />
       </View>
+
+      <BudgetGlance trip={trip} />
 
       {showAgenda ? (
         <View style={{ gap: space.sm }}>

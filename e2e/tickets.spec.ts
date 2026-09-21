@@ -117,6 +117,8 @@ test.describe('tickets', () => {
     await page.locator('[data-testid^="ticket-link-"]').filter({ hasText: 'moma.pdf' }).click();
     await expect(page.getByTestId('ticket-file')).toContainText('moma');
     await page.getByTestId('ticket-sheet-submit').click();
+    // Saved once it shows in the list.
+    await expect(page.getByText('MoMA', { exact: true })).toBeVisible();
 
     const headers = { Authorization: `Bearer ${ana.token}` };
     const docs = (

@@ -560,6 +560,7 @@ export const ptBR = {
     savedAlso: 'O arquivo também fica na lista de documentos.',
   },
   expenses: {
+    of: 'de {{value}}',
     linkType: {
       place: 'Lugar',
       restaurant: 'Restaurante',

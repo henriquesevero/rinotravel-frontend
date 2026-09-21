@@ -14,11 +14,13 @@ import { currentLocale, useTranslation } from '@/core/i18n';
 import { DetailSheet } from '@/features/content/DetailSheet';
 import { TICKET_VISUAL } from '@/features/content/visuals';
 import { useDocuments, useOpenDocument } from '@/features/documents/hooks';
+import { LinkedExpenses } from '@/features/expenses/LinkedExpenses';
 import { space } from '@/shared/theme';
 import { Banner, Button } from '@/shared/ui';
 
 interface Common {
   tripId: string;
+  currency: string;
   visible: boolean;
   onClose: () => void;
   onEdit?: (() => void) | undefined;
@@ -91,6 +93,17 @@ export function HotelDetailSheet({ hotel, ...common }: Common & { hotel: Hotel |
       ]}
       notes={hotel?.notes}
       location={hotel?.location}
+      actions={
+        hotel ? (
+          <LinkedExpenses
+            tripId={common.tripId}
+            currency={common.currency}
+            link={{ type: 'hotel', id: hotel.id }}
+            canWrite={common.onEdit !== undefined}
+            onNavigate={common.onClose}
+          />
+        ) : undefined
+      }
       testID="hotel-detail"
     />
   );
@@ -167,6 +180,15 @@ export function TicketDetailSheet({ ticket, ...common }: Common & { ticket: Tick
             </View>
           ) : null}
           {missing ? <Banner tone="info" message={t('tickets.unavailable')} /> : null}
+          {ticket ? (
+            <LinkedExpenses
+              tripId={common.tripId}
+              currency={common.currency}
+              link={{ type: 'ticket', id: ticket.id }}
+              canWrite={common.onEdit !== undefined}
+              onNavigate={common.onClose}
+            />
+          ) : null}
         </View>
       }
       testID="ticket-detail"

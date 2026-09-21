@@ -12,6 +12,7 @@ type NavLabel =
   | 'nav.itinerary'
   | 'nav.places'
   | 'nav.bookings'
+  | 'nav.expenses'
   | 'nav.transfers'
   | 'nav.documents'
   | 'nav.members';
@@ -78,7 +79,15 @@ export function useNavState(): NavState {
     labelKey: NavLabel,
     icon: IconName,
     activeIcon: IconName,
-    path: '' | '/itinerary' | '/places' | '/bookings' | '/transfers' | '/documents' | '/members',
+    path:
+      | ''
+      | '/itinerary'
+      | '/places'
+      | '/bookings'
+      | '/expenses'
+      | '/transfers'
+      | '/documents'
+      | '/members',
     isActive: boolean,
   ): NavItem => ({
     key,
@@ -124,6 +133,14 @@ export function useNavState(): NavState {
           'ticket',
           '/bookings',
           subpath === '/bookings',
+        ),
+        section(
+          'expenses',
+          'nav.expenses',
+          'wallet-outline',
+          'wallet',
+          '/expenses',
+          subpath === '/expenses',
         ),
         section(
           'transfers',

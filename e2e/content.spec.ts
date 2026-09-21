@@ -1453,11 +1453,12 @@ test.describe('trip content', () => {
       ['itinerary', 'Roteiro'],
       ['places', 'Lugares'],
       ['bookings', 'Reservas'],
+      ['expenses', 'Gastos'],
       ['transfers', 'Deslocamentos'],
       ['documents', 'Documentos'],
       ['members', 'Membros'],
     ];
-    const overflow = new Set(['transfers', 'documents', 'members']);
+    const overflow = new Set(['expenses', 'transfers', 'documents', 'members']);
     for (const [key, heading] of sections) {
       if (isPhone(page) && overflow.has(key)) {
         await page.getByTestId('nav-more').click();
