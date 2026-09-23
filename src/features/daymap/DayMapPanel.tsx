@@ -28,7 +28,7 @@ import { useDayMap, type DayMode } from './hooks';
 import { InteractiveMap, type MapPath, type MapPin } from './InteractiveMap';
 import { MAX_POINTS_DESKTOP, MAX_POINTS_MOBILE, legUrl, routeLinks, type RouteLink } from './links';
 import { decodePolyline, type LatLng } from './polyline';
-import { dayLabel, stopsSignature, type Stop, type UnlocatedItem } from './stops';
+import { dayLabel, stopOrderLabel, stopsSignature, type Stop, type UnlocatedItem } from './stops';
 import { formatDistance, legViews, totals, type LegView } from './timing';
 
 const MODE_ICON: Record<DayMode, IconName> = {
@@ -115,11 +115,6 @@ const createStyles = ({ colors }: Theme) =>
     },
   });
 
-/** The label a pin carries within one day: 1 to 9, then A, B, C (what the picture can print). */
-function orderLabel(index: number): string {
-  return index < 9 ? String(index + 1) : String.fromCharCode(65 + index - 9);
-}
-
 function coordsOf(stop: Stop): LatLng | null {
   const { latitude, longitude } = stop.location;
   return typeof latitude === 'number' && typeof longitude === 'number'
@@ -187,7 +182,8 @@ export function DayMapPanel({
     if (links.length === 1 && links[0]) openUrl(links[0].url);
     else if (links.length > 1) setChooser(true);
   };
-  const label = (stop: Stop, index: number) => (trip ? dayLabel(stop.dayIndex) : orderLabel(index));
+  const label = (stop: Stop, index: number) =>
+    trip ? dayLabel(stop.dayIndex) : stopOrderLabel(index);
   const colorOf = (stop: Stop) => (trip ? dayColor(stop.dayIndex) : dayColor(0));
 
   // Stops given only as an address have no coordinates of their own; the routes know where they start
@@ -196,7 +192,7 @@ export function DayMapPanel({
     const decoded = (data?.legs ?? []).map((leg) => decodePolyline(leg.polyline ?? ''));
     const pinsOut: MapPin[] = stops.map((stop, index) => ({
       key: stop.key,
-      label: trip ? dayLabel(stop.dayIndex) : orderLabel(index),
+      label: trip ? dayLabel(stop.dayIndex) : stopOrderLabel(index),
       title: trip ? `${stop.title} · ${stop.date}` : stop.title,
       time: stop.time,
       color: trip ? dayColor(stop.dayIndex) : dayColor(0),

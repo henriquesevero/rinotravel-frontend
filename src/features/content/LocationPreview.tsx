@@ -31,7 +31,7 @@ export function LocationPreview({ tripId, location, exact, wide }: LocationPrevi
     return (
       <Button
         testID="show-map"
-        title={t('transfers.showMap')}
+        title={t('content.showMap')}
         variant="secondary"
         icon="map-outline"
         onPress={() => setRequested(true)}

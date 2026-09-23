@@ -1,12 +1,4 @@
-import type {
-  Flight,
-  Hotel,
-  ItineraryDay,
-  ItineraryItem,
-  Restaurant,
-  Ticket,
-  Transfer,
-} from '@/core/api';
+import type { Flight, Hotel, ItineraryDay, ItineraryItem, Restaurant, Ticket } from '@/core/api';
 
 import { deriveLines, isAuto, type MoneySources } from './derived';
 import { totalsOf } from './summary';
@@ -29,7 +21,6 @@ const sources = (over: Partial<MoneySources>): MoneySources => ({
   items: [],
   restaurants: [],
   tickets: [],
-  transfers: [],
   flights: [],
   hotels: [],
   payments: [],
@@ -66,28 +57,15 @@ describe('deriveLines', () => {
             start: at('2027-04-06T19:00:00'),
           } as Ticket,
         ],
-        transfers: [
-          {
-            ...base,
-            id: 'x1',
-            status: 'PLANNED',
-            legs: [],
-            origin: { name: 'JFK' },
-            destination: { name: 'Grand Central' },
-            totalCost: usd(290),
-            departure: at('2027-04-05T08:00:00'),
-          } as Transfer,
-        ],
       }),
     );
     expect(lines.map((l) => [l.name, l.category, l.status, l.estimate?.amount])).toEqual([
       ['Jantar no Katz', 'FOOD', 'PLANNED', 4500],
       ['Hamilton', 'ACTIVITIES', 'PLANNED', 30000],
-      ['JFK → Grand Central', 'TRANSPORT', 'PLANNED', 290],
     ]);
     expect(lines.every(isAuto)).toBe(true);
     expect(lines[0]?.link).toEqual({ type: 'itinerary_item', id: 'i1' });
-    expect(totalsOf(lines, 'USD').planned).toBe(34790);
+    expect(totalsOf(lines, 'USD').planned).toBe(34500);
   });
 
   it('counts something that has happened, or was ticked off, as spent', () => {

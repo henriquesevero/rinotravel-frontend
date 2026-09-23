@@ -198,20 +198,6 @@ test.describe('expenses', () => {
       cost: usd(30000),
       start: at('2027-04-06', '19:00'),
     });
-    await post('/transfers', {
-      origin: { name: 'JFK' },
-      destination: { name: 'Grand Central' },
-      legs: [
-        {
-          mode: 'SUBWAY',
-          origin: { name: 'JFK' },
-          destination: { name: 'Grand Central' },
-          departure: at('2027-04-05', '08:00'),
-          arrival: at('2027-04-05', '09:00'),
-          cost: usd(290),
-        },
-      ],
-    });
     await post('/flights', {
       flightNumber: 'LA8180',
       departureAirport: 'GRU',
@@ -233,17 +219,16 @@ test.describe('expenses', () => {
     // Nothing was typed into the expenses, yet the trip's prices are all here, still to spend. The
     // wishlist restaurant is only an idea, so it is left out.
     await expect(page.getByTestId('expense-auto-note')).toBeVisible();
-    await expect(page.getByTestId('figure-planned')).toContainText('3.077,90');
+    await expect(page.getByTestId('figure-planned')).toContainText('3.075,00');
     await expect(page.getByTestId('figure-spent')).toContainText('0,00');
     await expect(page.getByTestId('category-FOOD')).toContainText('Katz Deli');
     await expect(page.getByTestId('category-FOOD')).not.toContainText('Quero conhecer');
     await expect(page.getByTestId('category-ACTIVITIES')).toContainText('Hamilton');
     await expect(page.getByTestId('category-ACTIVITIES')).toContainText('Passeio de barco');
     await expect(page.getByTestId('category-TRANSPORT')).toContainText('LA8180');
-    await expect(page.getByTestId('category-TRANSPORT')).toContainText('JFK → Grand Central');
     await expect(page.getByTestId('category-LODGING')).toContainText('Park Hyatt');
     // Each of them can be ticked as paid too, and a click on the row leads to the record it comes from.
-    await expect(page.locator('[data-testid^="toggle-expense-auto:"]')).toHaveCount(6);
+    await expect(page.locator('[data-testid^="toggle-expense-auto:"]')).toHaveCount(5);
 
     // Changing the price of the ticket changes the expenses, and skipping it takes it out.
     const patch = async (version: number, data: unknown) => {
@@ -255,10 +240,10 @@ test.describe('expenses', () => {
     };
     await patch(1, { cost: usd(10000) });
     await page.reload();
-    await expect(page.getByTestId('figure-planned')).toContainText('2.877,90');
+    await expect(page.getByTestId('figure-planned')).toContainText('2.875,00');
     await patch(2, { status: 'SKIPPED' });
     await page.reload();
-    await expect(page.getByTestId('figure-planned')).toContainText('2.777,90');
+    await expect(page.getByTestId('figure-planned')).toContainText('2.775,00');
 
     // A line leads to the record it comes from.
     await page.getByTestId('category-LODGING').getByText('Park Hyatt').click();

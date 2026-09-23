@@ -62,15 +62,6 @@ export type TicketCreate = Schemas['TicketCreate'];
 export type TicketPatch = Schemas['TicketPatch'];
 export type TicketKind = Schemas['TicketKind'];
 
-export type Transfer = Schemas['Transfer'];
-export type TransferCreate = Schemas['TransferCreate'];
-export type TransferPatch = Schemas['TransferPatch'];
-export type TransferLeg = Schemas['TransferLeg'];
-export type TransferLegInput = Schemas['TransferLegInput'];
-export type TransferMode = Schemas['TransferMode'];
-export type PlanTransferRequest = Schemas['PlanTransferRequest'];
-export type RouteOption = Schemas['RouteOption'];
-
 export type Document = Schemas['Document'];
 export type DocumentType = Schemas['DocumentType'];
 export type DocumentVisibility = Schemas['DocumentVisibility'];
@@ -78,7 +69,6 @@ export type DocumentPatch = Schemas['DocumentPatch'];
 export type InitDocumentRequest = Schemas['InitDocumentRequest'];
 export type SignedRequest = Schemas['SignedRequest'];
 
-export type MapRequest = Schemas['MapRequest'];
 export type LocationMapRequest = Schemas['LocationMapRequest'];
 export type DayMap = Schemas['DayMap'];
 export type DayMapLeg = Schemas['DayMapLeg'];

@@ -3,13 +3,13 @@ import { Linking, StyleSheet, View } from 'react-native';
 
 import type { Location } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
-import { applePlaceUrl, placeUrl, shareMessage } from '@/features/transfers/maps';
 import { isApplePlatform } from '@/shared/platform';
 import { shareText } from '@/shared/share';
 import { space, type Tint } from '@/shared/theme';
 import { Badge, Banner, Button, Sheet, Text, type BadgeTone, type IconName } from '@/shared/ui';
 
 import { LocationMap } from './LocationMap';
+import { applePlaceUrl, placeUrl, shareMessage } from './maps';
 import { useWideForm } from './SplitForm';
 
 export interface DetailRow {

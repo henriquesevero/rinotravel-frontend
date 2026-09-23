@@ -9,7 +9,6 @@ import type {
   Payment,
   Restaurant,
   Ticket,
-  Transfer,
 } from '@/core/api';
 import { zonedDate, zonedInstant, type Zoned } from '@/core/datetime/zoned';
 
@@ -44,7 +43,6 @@ export interface MoneySources {
   items: ItineraryItem[];
   restaurants: Restaurant[];
   tickets: Ticket[];
-  transfers: Transfer[];
   flights: Flight[];
   hotels: Hotel[];
   payments: Payment[];
@@ -108,7 +106,7 @@ function toLine(
  * idea, so it does not count until it is planned; something skipped does not count at all.
  */
 export function deriveLines(sources: MoneySources): AutoLine[] {
-  const { today, days, items, restaurants, tickets, transfers, flights, hotels } = sources;
+  const { today, days, items, restaurants, tickets, flights, hotels } = sources;
   const marks = new Map(sources.payments.map((p) => [`${p.link.type}:${p.link.id}`, p]));
   const now = sources.now ?? Date.now();
   const dayDate = new Map(days.map((day) => [day.id, day.date]));
@@ -144,16 +142,6 @@ export function deriveLines(sources: MoneySources): AutoLine[] {
       at: ticket.start ?? undefined,
       done: ticket.status === 'COMPLETED',
       skipped: ticket.status === 'SKIPPED',
-    })),
-    ...transfers.map((transfer): Candidate => ({
-      type: 'transfer',
-      id: transfer.id,
-      name: `${transfer.origin?.name ?? ''} → ${transfer.destination?.name ?? ''}`,
-      category: 'TRANSPORT',
-      cost: transfer.totalCost,
-      at: transfer.departure ?? undefined,
-      done: transfer.status === 'COMPLETED',
-      skipped: transfer.status === 'SKIPPED',
     })),
     ...flights.map((flight): Candidate => ({
       type: 'flight',

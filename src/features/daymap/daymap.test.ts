@@ -1,12 +1,4 @@
-import type {
-  DayMapLeg,
-  Hotel,
-  ItineraryDay,
-  ItineraryItem,
-  Restaurant,
-  Ticket,
-  Transfer,
-} from '@/core/api';
+import type { DayMapLeg, Hotel, ItineraryDay, ItineraryItem, Restaurant, Ticket } from '@/core/api';
 
 import { decodePolyline } from './polyline';
 import {
@@ -359,48 +351,6 @@ describe('items a map cannot place', () => {
       'Sem local tarde',
       'Local vazio',
     ]);
-  });
-});
-
-describe('transfers on the map', () => {
-  const zoned = (dateTime: string) => ({ dateTime, timezone: 'America/New_York' });
-  const transfer = {
-    ...base,
-    id: 't',
-    status: 'PLANNED',
-    legs: [],
-    origin: { name: 'John F. Kennedy International Airport' },
-    destination: { name: 'Grand Central' },
-    departure: zoned('2026-11-19T08:00:00'),
-    arrival: zoned('2026-11-19T09:00:00'),
-  } as Transfer;
-
-  it('puts where a transfer starts and ends on the day it happens, at the time it happens', () => {
-    const stops = buildStops({
-      date: '2026-11-19',
-      days: [],
-      items: [],
-      restaurants: [],
-      hotels: [],
-      transfers: [transfer],
-    });
-    expect(stops.map((s) => [s.time, s.kind, s.title])).toEqual([
-      ['08:00', 'transfer-from', 'John F. Kennedy International Airport'],
-      ['09:00', 'transfer-to', 'Grand Central'],
-    ]);
-  });
-
-  it('splits a transfer that crosses midnight between the two days and skips one with no place', () => {
-    const overnight = { ...transfer, arrival: zoned('2026-11-20T06:00:00') } as Transfer;
-    const only = (date: string, transfers: Transfer[]) =>
-      buildStops({ date, days: [], items: [], restaurants: [], hotels: [], transfers }).map(
-        (s) => s.kind,
-      );
-    expect(only('2026-11-19', [overnight])).toEqual(['transfer-from']);
-    expect(only('2026-11-20', [overnight])).toEqual(['transfer-to']);
-    expect(only('2026-11-19', [{ ...transfer, origin: undefined, legs: [] } as Transfer])).toEqual(
-      [],
-    );
   });
 });
 

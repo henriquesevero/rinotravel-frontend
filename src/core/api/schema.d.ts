@@ -300,7 +300,7 @@ export interface paths {
             };
             cookie?: never;
         };
-        /** Linha do tempo unificada por dia (itens, voos, hotéis, transfers e reservas), com horários locais */
+        /** Linha do tempo unificada por dia (itens, voos, hotéis e reservas), com horários locais */
         get: operations["getItinerary"];
         put?: never;
         post?: never;
@@ -661,90 +661,6 @@ export interface paths {
         head?: never;
         /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
         patch: operations["updatePayment"];
-        trace?: never;
-    };
-    "/api/v1/trips/{tripId}/transfers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        /** Lista os deslocamentos */
-        get: operations["listTransfers"];
-        put?: never;
-        /** Cria os deslocamento (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
-        post: operations["createTransfer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trips/{tripId}/transfers/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-                id: components["parameters"]["ResourceId"];
-            };
-            cookie?: never;
-        };
-        /** Detalhes */
-        get: operations["getTransfer"];
-        put?: never;
-        post?: never;
-        /** Remove (soft delete; deixa um tombstone para o sync) */
-        delete: operations["deleteTransfer"];
-        options?: never;
-        head?: never;
-        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
-        patch: operations["updateTransfer"];
-        trace?: never;
-    };
-    "/api/v1/trips/{tripId}/transfers/plan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Pede rotas ao Google Routes. Cada opção tem o formato de um create, para o cliente escolher e enviar sem alterar */
-        post: operations["planTransfer"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trips/{tripId}/transfers/map": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Desenha o mapa da rota A→B, ainda sem o deslocamento salvo. Só existe quando o servidor tem GOOGLE_MAPS_API_KEY
-         * @description Devolve uma imagem PNG com os dois pontos e, quando o Google acha a rota, o traçado. A imagem é feita na hora e
-         *     nada dela é guardado no servidor. Qualquer membro da viagem (inclusive LEITOR) pode pedir.
-         */
-        post: operations["renderTransferMap"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/api/v1/trips/{tripId}/maps/location": {
@@ -1138,11 +1054,6 @@ export interface components {
          */
         RestaurantStatus: "WISHLIST" | "PLANNED" | "RESERVED" | "VISITED";
         /**
-         * @description Meio de transporte.
-         * @enum {string}
-         */
-        TransferMode: "WALKING" | "SUBWAY" | "TRAIN" | "BUS" | "TAXI" | "RIDESHARE" | "CAR" | "OTHER";
-        /**
          * @description Tipo de documento.
          * @enum {string}
          */
@@ -1252,7 +1163,7 @@ export interface components {
              * @description Origem da entrada.
              * @enum {string}
              */
-            kind: "itinerary_item" | "flight_departure" | "flight_arrival" | "hotel_check_in" | "hotel_check_out" | "transfer" | "restaurant_reservation" | "ticket";
+            kind: "itinerary_item" | "flight_departure" | "flight_arrival" | "hotel_check_in" | "hotel_check_out" | "restaurant_reservation" | "ticket";
             /** @description Id do registro de origem. */
             id: string;
             title: string;
@@ -1265,7 +1176,7 @@ export interface components {
             days: {
                 /** Format: date */
                 date: string;
-                /** @description Nulo quando a data só tem entradas de voos, hotéis ou transfers. */
+                /** @description Nulo quando a data só tem entradas de voos ou hotéis. */
                 day: components["schemas"]["ItineraryDay"] | null;
                 entries: components["schemas"]["TimelineEntry"][];
             }[];
@@ -1462,7 +1373,7 @@ export interface components {
         ExpenseStatus: "PLANNED" | "PAID";
         ExpenseLink: {
             /** @enum {string} */
-            type: "place" | "restaurant" | "itinerary_item" | "ticket" | "hotel" | "flight" | "transfer";
+            type: "place" | "restaurant" | "itinerary_item" | "ticket" | "hotel" | "flight";
             /** Format: uuid */
             id: string;
         };
@@ -1599,66 +1510,6 @@ export interface components {
             documentId?: string | null;
             notes?: string;
         };
-        TransferLegInput: {
-            mode: components["schemas"]["TransferMode"];
-            origin?: components["schemas"]["Location"];
-            destination?: components["schemas"]["Location"];
-            departure?: components["schemas"]["ZonedTime"];
-            arrival?: components["schemas"]["ZonedTime"];
-            estimatedDurationMinutes?: number;
-            line?: string;
-            direction?: string;
-            stops?: number;
-            instructions?: string;
-            cost?: components["schemas"]["Money"];
-        };
-        TransferLeg: components["schemas"]["TransferLegInput"] & {
-            /** @description Derivado dos horários quando ambos existem; senão, a estimativa. */
-            durationMinutes?: number;
-        };
-        Transfer: components["schemas"]["ResourceMeta"] & {
-            origin?: components["schemas"]["Location"];
-            destination?: components["schemas"]["Location"];
-            status: components["schemas"]["PlanStatus"];
-            routeProvider?: string;
-            externalRouteId?: string;
-            notes?: string;
-            legs: components["schemas"]["TransferLeg"][];
-            departure?: components["schemas"]["ZonedTime"];
-            arrival?: components["schemas"]["ZonedTime"];
-            durationMinutes?: number;
-            totalCost?: components["schemas"]["Money"];
-        };
-        TransferCreate: {
-            /**
-             * Format: uuid
-             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
-             */
-            id?: string;
-            origin: components["schemas"]["Location"] | null;
-            destination: components["schemas"]["Location"] | null;
-            status?: components["schemas"]["PlanStatus"];
-            routeProvider?: string;
-            externalRouteId?: string;
-            notes?: string;
-            legs: components["schemas"]["TransferLegInput"][];
-        };
-        TransferPatch: components["schemas"]["BaseVersion"] & {
-            origin?: components["schemas"]["Location"] | null;
-            destination?: components["schemas"]["Location"] | null;
-            status?: components["schemas"]["PlanStatus"];
-            routeProvider?: string;
-            externalRouteId?: string;
-            notes?: string;
-            legs?: components["schemas"]["TransferLegInput"][];
-        };
-        PlanTransferRequest: {
-            origin: components["schemas"]["Location"];
-            destination: components["schemas"]["Location"];
-            mode?: components["schemas"]["TransferMode"];
-            departureAt?: components["schemas"]["ZonedTime"];
-            language?: string;
-        };
         LocationMapRequest: {
             location: components["schemas"]["Location"];
             language?: string;
@@ -1697,24 +1548,6 @@ export interface components {
             legs: components["schemas"]["DayMapLeg"][];
             /** @description Data URI PNG, presente só se pedida e desenhada. */
             image?: string;
-        };
-        MapRequest: {
-            origin: components["schemas"]["Location"];
-            destination: components["schemas"]["Location"];
-            mode?: components["schemas"]["TransferMode"];
-            language?: string;
-        };
-        RouteOption: {
-            durationMinutes: number;
-            distanceMeters: number;
-            /** @description Corpo pronto para `POST /transfers` (sem `id`). */
-            transfer: {
-                origin?: components["schemas"]["Location"];
-                destination?: components["schemas"]["Location"];
-                routeProvider: string;
-                externalRouteId?: string;
-                legs: components["schemas"]["TransferLegInput"][];
-            };
         };
         DocumentLink: {
             /** @description Tipo do registro vinculado (por exemplo flight, hotel, restaurant, itinerary_item). */
@@ -1769,7 +1602,7 @@ export interface components {
             expiresAt: string;
         };
         /** @enum {string} */
-        SyncEntity: "trip" | "itinerary_day" | "itinerary_item" | "place" | "restaurant" | "flight" | "hotel" | "transfer" | "document";
+        SyncEntity: "trip" | "itinerary_day" | "itinerary_item" | "place" | "restaurant" | "flight" | "hotel" | "document";
         SyncChange: {
             entity: components["schemas"]["SyncEntity"];
             /** Format: uuid */
@@ -3855,217 +3688,6 @@ export interface operations {
             404: components["responses"]["NotFound"];
             409: components["responses"]["Conflict"];
             422: components["responses"]["Unprocessable"];
-        };
-    };
-    listTransfers: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Lista de os deslocamentos. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        items: components["schemas"]["Transfer"][];
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    createTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TransferCreate"];
-            };
-        };
-        responses: {
-            /** @description Criado. */
-            201: {
-                headers: {
-                    Location?: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Transfer"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            422: components["responses"]["Unprocessable"];
-        };
-    };
-    getTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-                id: components["parameters"]["ResourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description O registro. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Transfer"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-        };
-    };
-    deleteTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-                id: components["parameters"]["ResourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Removido. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-        };
-    };
-    updateTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-                id: components["parameters"]["ResourceId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["TransferPatch"];
-            };
-        };
-        responses: {
-            /** @description Atualizado. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Transfer"];
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            409: components["responses"]["Conflict"];
-            422: components["responses"]["Unprocessable"];
-        };
-    };
-    planTransfer: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PlanTransferRequest"];
-            };
-        };
-        responses: {
-            /** @description Opções de rota. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        routes: components["schemas"]["RouteOption"][];
-                    };
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            403: components["responses"]["Forbidden"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["Unprocessable"];
-            503: components["responses"]["Unavailable"];
-        };
-    };
-    renderTransferMap: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                tripId: components["parameters"]["TripId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MapRequest"];
-            };
-        };
-        responses: {
-            /** @description A imagem do mapa (cache privado de 5 minutos). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "image/png": string;
-                };
-            };
-            400: components["responses"]["BadRequest"];
-            401: components["responses"]["Unauthorized"];
-            404: components["responses"]["NotFound"];
-            422: components["responses"]["Unprocessable"];
-            429: components["responses"]["TooManyRequests"];
-            503: components["responses"]["Unavailable"];
         };
     };
     renderLocationMap: {

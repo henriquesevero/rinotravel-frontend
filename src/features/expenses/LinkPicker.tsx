@@ -12,7 +12,6 @@ const ICON: Record<LinkType, IconName> = {
   ticket: 'ticket-outline',
   hotel: 'bed-outline',
   flight: 'airplane-outline',
-  transfer: 'swap-horizontal-outline',
 };
 
 interface LinkPickerProps {

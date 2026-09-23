@@ -144,7 +144,6 @@ const SOURCE_SCREEN: Record<ExpenseLink['type'], string> = {
   ticket: '/trips/[id]/bookings',
   hotel: '/trips/[id]/bookings',
   flight: '/trips/[id]/bookings',
-  transfer: '/trips/[id]/transfers',
 };
 
 function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentProps) {

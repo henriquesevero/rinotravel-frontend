@@ -1,23 +1,60 @@
-import { StyleSheet, View } from 'react-native';
+import type { TFunction } from 'i18next';
+import { Pressable, StyleSheet, View, type PressableStateCallbackType } from 'react-native';
 
 import type { TicketKind, TimelineEntry } from '@/core/api';
-import { useTranslation } from '@/core/i18n';
-import type { TFunction } from 'i18next';
 import { zonedTime } from '@/core/datetime/zoned';
-import { space, useStyles, type Theme } from '@/shared/theme';
+import { useTranslation } from '@/core/i18n';
+import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import { Badge, IconBadge, Text } from '@/shared/ui';
 
 import { entryVisual } from './visuals';
 
 const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
-    row: { flexDirection: 'row', alignItems: 'center', gap: space.lg, paddingVertical: space.lg },
-    time: { width: 56, gap: 2 },
-    text: { flex: 1, gap: 4 },
-    dim: { color: colors.textSecondary },
+    card: {
+      backgroundColor: colors.surfaceMuted,
+      borderRadius: radius.lg,
+      paddingHorizontal: space.lg,
+      paddingVertical: space.md,
+    },
+    pressed: { backgroundColor: colors.border },
+    row: { flexDirection: 'row', alignItems: 'center', gap: space.md },
+    time: { width: 52, gap: 2 },
+    // Plain and neutral on purpose: the colour is spent on the pin instead, so a day of many rows
+    // does not turn into a wash of blue.
+    timePill: {
+      alignSelf: 'flex-start',
+      paddingHorizontal: space.xs + 2,
+      paddingVertical: 2,
+      borderRadius: radius.sm,
+      backgroundColor: colors.surface,
+    },
+    pin: {
+      width: 30,
+      height: 30,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    text: { flex: 1, gap: 2 },
   });
 
-export function TimelineRow({ entry }: { entry: TimelineEntry }) {
+function hovered(state: PressableStateCallbackType): boolean {
+  return Boolean((state as PressableStateCallbackType & { hovered?: boolean }).hovered);
+}
+
+interface TimelineRowProps {
+  entry: TimelineEntry;
+  /**
+   * A numbered pin in the day's colour, replacing the category icon: ties this row to the same
+   * number the day's map draws for it. Omitted for entries that are not one of the day's stops
+   * (a flight, say), which keep their plain category icon.
+   */
+  pin?: { number: string; color: string } | undefined;
+  onPress?: () => void;
+}
+
+export function TimelineRow({ entry, pin, onPress }: TimelineRowProps) {
   const styles = useStyles(createStyles);
   const { t } = useTranslation();
   const time = entry.start ? zonedTime(entry.start) : '';
@@ -26,19 +63,31 @@ export function TimelineRow({ entry }: { entry: TimelineEntry }) {
   const status = statusOf(entry.status);
   const visual = entryVisual(entry);
 
-  return (
-    <View style={styles.row} testID={`timeline-${entry.kind}-${entry.id}`}>
+  const content = (
+    <View style={styles.row}>
       <View style={styles.time}>
-        <Text variant="subhead" numeric style={{ fontWeight: '700' }}>
-          {time}
-        </Text>
+        {time ? (
+          <View style={styles.timePill}>
+            <Text variant="caption" numeric style={{ fontWeight: '700' }}>
+              {time}
+            </Text>
+          </View>
+        ) : null}
         {end && end !== time ? (
           <Text variant="caption" tone="secondary" numeric>
             {end}
           </Text>
         ) : null}
       </View>
-      <IconBadge icon={visual.icon} tint={visual.tint} />
+      {pin ? (
+        <View style={[styles.pin, { backgroundColor: pin.color }]}>
+          <Text variant="footnote" tone="onAccent" style={{ fontWeight: '700' }}>
+            {pin.number}
+          </Text>
+        </View>
+      ) : (
+        <IconBadge icon={visual.icon} tint={visual.tint} size={32} />
+      )}
       <View style={styles.text}>
         <Text numberOfLines={2} style={{ fontWeight: '600' }}>
           {entry.title}
@@ -51,6 +100,26 @@ export function TimelineRow({ entry }: { entry: TimelineEntry }) {
       </View>
       {status ? <Badge label={t(status.key)} tone={status.tone} /> : null}
     </View>
+  );
+
+  const testID = `timeline-${entry.kind}-${entry.id}`;
+  if (!onPress) {
+    return (
+      <View testID={testID} style={styles.card}>
+        {content}
+      </View>
+    );
+  }
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={entry.title}
+      onPress={onPress}
+      style={(state) => [styles.card, (state.pressed || hovered(state)) && styles.pressed]}
+    >
+      {content}
+    </Pressable>
   );
 }
 
@@ -75,7 +144,7 @@ type Category = (typeof CATEGORIES)[number];
 
 /**
  * The API's subtitles are raw (`ATTRACTION`, `check-in`), so the client words them: an activity shows
- * its category, a stay only says which moment it is, and flights and transfers add the extra detail.
+ * its category, a stay only says which moment it is, and flights add the extra detail.
  */
 function subtitleOf(entry: TimelineEntry, t: TFunction): string | undefined {
   if (entry.kind === 'itinerary_item') {

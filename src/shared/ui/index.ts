@@ -3,6 +3,7 @@ export { Badge, type BadgeTone } from './Badge';
 export { Banner } from './Banner';
 export { BrandMark } from './BrandMark';
 export { Button } from './Button';
+export { LinkButton } from './LinkButton';
 export { Card } from './Card';
 export { ConfirmProvider, useConfirm } from './confirm';
 export { EmptyState } from './EmptyState';

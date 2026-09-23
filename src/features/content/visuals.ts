@@ -4,7 +4,6 @@ import type {
   ItineraryCategory,
   TicketKind,
   TimelineEntry,
-  TransferMode,
 } from '@/core/api';
 import type { Tint } from '@/shared/theme';
 import type { IconName } from '@/shared/ui';
@@ -28,7 +27,6 @@ const KIND_VISUAL: Record<Exclude<TimelineEntry['kind'], 'itinerary_item'>, Visu
   flight_arrival: { icon: 'airplane-outline', tint: 'sky' },
   hotel_check_in: { icon: 'bed-outline', tint: 'indigo' },
   hotel_check_out: { icon: 'bed-outline', tint: 'indigo' },
-  transfer: { icon: 'swap-horizontal-outline', tint: 'green' },
   restaurant_reservation: { icon: 'restaurant-outline', tint: 'orange' },
   ticket: { icon: 'ticket-outline', tint: 'amber' },
 };
@@ -51,17 +49,6 @@ export const TICKET_VISUAL: Record<TicketKind, Visual> = {
   TOUR: { icon: 'compass-outline', tint: 'teal' },
   TRANSPORT: { icon: 'bus-outline', tint: 'orange' },
   OTHER: { icon: 'ticket-outline', tint: 'slate' },
-};
-
-export const MODE_VISUAL: Record<TransferMode, Visual> = {
-  WALKING: { icon: 'walk-outline', tint: 'teal' },
-  SUBWAY: { icon: 'subway-outline', tint: 'blue' },
-  TRAIN: { icon: 'train-outline', tint: 'indigo' },
-  BUS: { icon: 'bus-outline', tint: 'orange' },
-  TAXI: { icon: 'car-outline', tint: 'amber' },
-  RIDESHARE: { icon: 'car-outline', tint: 'violet' },
-  CAR: { icon: 'car-sport-outline', tint: 'slate' },
-  OTHER: { icon: 'swap-horizontal-outline', tint: 'slate' },
 };
 
 export const DOCUMENT_VISUAL: Record<DocumentType, Visual> = {

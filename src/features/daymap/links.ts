@@ -1,4 +1,4 @@
-import { pointOf, placeUrl } from '@/features/transfers/maps';
+import { pointOf, placeUrl } from '@/features/content/maps';
 
 import type { DayMode } from './hooks';
 import type { Stop } from './stops';

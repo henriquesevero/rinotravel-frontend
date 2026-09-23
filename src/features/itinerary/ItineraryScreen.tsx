@@ -8,6 +8,7 @@ import { dayParts, eachDay, formatDayHeading } from '@/core/datetime/zoned';
 import { currentLocale, useTranslation } from '@/core/i18n';
 import { hotelHooks, ticketHooks } from '@/features/bookings/hooks';
 import { TripPage } from '@/features/content/TripPage';
+import { dayColor } from '@/features/daymap/colors';
 import { DayMapPanel } from '@/features/daymap/DayMapPanel';
 import { DayNavigator } from '@/features/daymap/DayNavigator';
 import {
@@ -15,20 +16,20 @@ import {
   buildStops,
   buildTripStops,
   buildUnlocated,
+  stopOrderLabel,
   type Stop,
   type UnlocatedItem,
 } from '@/features/daymap/stops';
 import { restaurantHooks } from '@/features/places/hooks';
-import { transferHooks } from '@/features/transfers/hooks';
 import { TimelineRow } from '@/features/content/TimelineRow';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import {
   Badge,
   Banner,
   Button,
-  Card,
   EmptyState,
   ErrorState,
+  IconButton,
   Sheet,
   Skeleton,
   Text,
@@ -54,11 +55,14 @@ const createStyles = ({ colors }: Theme) =>
     },
     tileToday: { backgroundColor: colors.accent, borderColor: colors.accent },
     tileSelected: { borderColor: colors.accent, borderWidth: 2 },
-    // Two columns that fill the window; each scrolls on its own.
+    // The only hint that a day opens on the map: quieter than a repeated "Ver no mapa" on every day.
+    tileDot: { width: 5, height: 5, borderRadius: 3, marginTop: 2 },
+    // Two columns that fill the window; each scrolls on its own. The list stays narrow enough to
+    // read comfortably and gives the rest of the width to the map.
     split: { flex: 1, minHeight: 0, flexDirection: 'row', gap: space.xxl },
-    listSide: { flex: 1, minWidth: 0 },
+    listSide: { flex: 1, minWidth: 0, maxWidth: 460 },
     // A ScrollView grows and shrinks by default; the map column must keep its width.
-    mapSide: { width: 460, flexGrow: 0, flexShrink: 0, minHeight: 0 },
+    mapSide: { width: 600, flexGrow: 0, flexShrink: 0, minHeight: 0 },
     // The right padding keeps text off the scrollbar when a system draws it permanently.
     columnContent: { paddingBottom: space.xxxl, paddingRight: space.md },
     mapTitle: { gap: 2, paddingBottom: space.md },
@@ -69,12 +73,17 @@ const createStyles = ({ colors }: Theme) =>
       marginVertical: space.sm,
       borderRadius: 1,
     },
-    dayBody: { flex: 1, minWidth: 0, paddingBottom: space.xxl, gap: space.md },
-    dayHeader: { flexDirection: 'row', alignItems: 'center', gap: space.md, minHeight: 64 },
-    dayTitle: { flex: 1 },
-    entries: { paddingHorizontal: space.xl },
-    divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-    todayCard: { borderColor: colors.accent, borderWidth: 1.5 },
+    dayBody: { flex: 1, minWidth: 0, paddingBottom: space.xl, gap: space.sm },
+    // Wraps onto a second line in the narrower list column: the title never gets squeezed to the
+    // point of wrapping one letter per line, it just gives its actions a row of their own.
+    dayHeader: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: space.xs,
+    },
+    dayTitle: { flexGrow: 1, flexShrink: 0, minWidth: 160 },
+    entriesWrap: { gap: space.xs },
   });
 
 interface SheetState {
@@ -92,12 +101,12 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
   const [viewId, setViewId] = useState<string | null>(null);
   const restaurants = restaurantHooks.useList(tripId);
   const hotels = hotelHooks.useList(tripId);
-  const transfers = transferHooks.useList(tripId);
   const tickets = ticketHooks.useList(tripId);
   const router = useRouter();
   const { width } = useWindowDimensions();
-  // Beside the list there is room for the map from about a 13-inch laptop up; below that it opens on top.
-  const wide = width >= 1200;
+  // Beside the list there is room for the map from about a 14-inch laptop up; below that it opens on
+  // top. Raised along with the map's width below, so the list still gets a comfortable minimum.
+  const wide = width >= 1280;
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [mapSheetDate, setMapSheetDate] = useState<string | null>(null);
   const [scope, setScope] = useState<'day' | 'trip'>('day');
@@ -139,7 +148,6 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
           items: items.data,
           restaurants: restaurants.data ?? [],
           hotels: hotels.data ?? [],
-          transfers: transfers.data ?? [],
           tickets: tickets.data ?? [],
         };
         const stopsFor = (date: string): Stop[] => buildStops({ date, ...sources });
@@ -147,7 +155,9 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
         const allDates = [
           ...new Set([...dates, ...timeline.data.days.map((day) => day.date)]),
         ].sort();
-        const stopCounts = new Map(allDates.map((date) => [date, stopsFor(date).length]));
+        // Kept per day so the list can number an entry the same way the day's own map does.
+        const stopsByDate = new Map(allDates.map((date) => [date, stopsFor(date)]));
+        const stopCounts = new Map([...stopsByDate].map(([date, stops]) => [date, stops.length]));
         const today = todayIn(trip.timezone);
         // Open on today if the trip is under way, else on the first day that has somewhere to go.
         const effectiveDate =
@@ -164,8 +174,6 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             router.push({ pathname: '/trips/[id]/places', params: { id: tripId } });
           } else if (stop.kind === 'ticket') {
             router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
-          } else if (stop.kind === 'transfer-from' || stop.kind === 'transfer-to') {
-            router.push({ pathname: '/trips/[id]/transfers', params: { id: tripId } });
           } else router.push({ pathname: '/trips/[id]/bookings', params: { id: tripId } });
         };
         const tripStopsAll = buildTripStops(allDates, sources);
@@ -189,15 +197,15 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             {scope === 'trip' && tripStopsAll.length > MAX_TRIP_STOPS ? (
               <Banner tone="info" message={t('dayMap.tooMany', { count: MAX_TRIP_STOPS })} />
             ) : null}
-            {wide ? (
+            {/* The day itself is already the selected pill above; a heading here would only repeat
+            it. The trip has no such pill, so it still gets one. */}
+            {wide && scope === 'trip' ? (
               <View style={styles.mapTitle}>
                 <Text variant="caption" tone="secondary" style={{ letterSpacing: 0.8 }}>
-                  {(scope === 'trip' ? t('dayMap.tripCaption') : t('dayMap.title')).toUpperCase()}
+                  {t('dayMap.tripCaption').toUpperCase()}
                 </Text>
                 <Text variant="headline" heading>
-                  {scope === 'trip'
-                    ? t('dayMap.tripHeading')
-                    : formatDayHeading(date, currentLocale())}
+                  {t('dayMap.tripHeading')}
                 </Text>
               </View>
             ) : null}
@@ -225,6 +233,7 @@ export function ItineraryScreen({ tripId }: { tripId: string }) {
             canWrite={canWrite}
             selectedDate={wide && scope === 'day' ? effectiveDate : null}
             stopCounts={stopCounts}
+            stopsByDate={stopsByDate}
             onSelectDate={(date) => {
               setScope('day');
               if (wide) setSelectedDate(date);
@@ -318,6 +327,8 @@ interface DayListProps {
   onView: (item: ItineraryItem) => void;
   selectedDate: string | null;
   stopCounts: Map<string, number>;
+  /** Each day's stops, in the order the day's own map numbers them. */
+  stopsByDate: Map<string, Stop[]>;
   onSelectDate: (date: string) => void;
 }
 
@@ -332,6 +343,7 @@ function DayList({
   onView,
   selectedDate,
   stopCounts,
+  stopsByDate,
   onSelectDate,
 }: DayListProps) {
   const styles = useStyles(createStyles);
@@ -361,6 +373,28 @@ function DayList({
     );
   }
 
+  // Only entries that are also stops on the day's own map get a number; a flight or a hotel keeps
+  // its plain category icon, same as the map leaves those off.
+  const stopKindOf = (kind: TimelineEntry['kind']): Stop['kind'] | null => {
+    switch (kind) {
+      case 'itinerary_item':
+        return 'item';
+      case 'restaurant_reservation':
+        return 'restaurant';
+      case 'ticket':
+        return 'ticket';
+      default:
+        return null;
+    }
+  };
+  const pinFor = (date: string, entry: TimelineEntry) => {
+    const kind = stopKindOf(entry.kind);
+    if (!kind) return undefined;
+    const stops = stopsByDate.get(date);
+    const index = stops?.findIndex((stop) => stop.key === `${kind}-${entry.id}`) ?? -1;
+    return index === -1 ? undefined : { number: stopOrderLabel(index), color: dayColor(0) };
+  };
+
   const open = (entry: TimelineEntry) => {
     if (entry.kind === 'itinerary_item') {
       const item = itemsById.get(entry.id);
@@ -382,6 +416,7 @@ function DayList({
           <View key={date} style={styles.day} testID={`day-${date}`}>
             <View style={styles.rail}>
               <Pressable
+                testID={`day-map-${date}`}
                 accessibilityRole="button"
                 accessibilityLabel={t('dayMap.viewOnMap')}
                 onPress={() => onSelectDate(date)}
@@ -405,6 +440,11 @@ function DayList({
                 >
                   {parts.day}
                 </Text>
+                {(stopCounts.get(date) ?? 0) > 0 ? (
+                  <View
+                    style={[styles.tileDot, { backgroundColor: isToday ? '#FFFFFF' : '#2563EB' }]}
+                  />
+                ) : null}
               </Pressable>
               {isLast ? null : <View style={styles.line} />}
             </View>
@@ -428,42 +468,28 @@ function DayList({
                   </Text>
                 </View>
                 {isToday ? <Badge label={t('common.today')} tone="accent" /> : null}
-                {(stopCounts.get(date) ?? 0) > 0 ? (
-                  <Button
-                    testID={`day-map-${date}`}
-                    title={t('dayMap.viewOnMap')}
-                    icon="map-outline"
-                    variant={selectedDate === date ? 'secondary' : 'ghost'}
-                    size="sm"
-                    onPress={() => onSelectDate(date)}
-                  />
-                ) : null}
                 {canWrite ? (
-                  <Button
+                  <IconButton
                     testID={`add-item-${date}`}
-                    title={t('common.add')}
                     icon="add"
-                    variant="ghost"
-                    size="sm"
+                    tone="secondary"
+                    label={t('common.add')}
                     onPress={() => onAdd(date)}
                   />
                 ) : null}
               </View>
 
               {entries.length === 0 ? null : (
-                <Card padded={false} style={isToday ? styles.todayCard : undefined}>
-                  {entries.map((entry, index) => (
-                    <Pressable
+                <View style={styles.entriesWrap}>
+                  {entries.map((entry) => (
+                    <TimelineRow
                       key={`${entry.kind}-${entry.id}`}
-                      accessibilityRole="button"
-                      accessibilityLabel={entry.title}
+                      entry={entry}
+                      pin={pinFor(date, entry)}
                       onPress={() => open(entry)}
-                      style={[styles.entries, index > 0 && styles.divider]}
-                    >
-                      <TimelineRow entry={entry} />
-                    </Pressable>
+                    />
                   ))}
-                </Card>
+                </View>
               )}
             </View>
           </View>
@@ -481,8 +507,6 @@ function destinationOf(kind: TimelineEntry['kind'], tripId: string): Href {
     case 'hotel_check_out':
     case 'ticket':
       return { pathname: '/trips/[id]/bookings', params: { id: tripId } };
-    case 'transfer':
-      return { pathname: '/trips/[id]/transfers', params: { id: tripId } };
     case 'restaurant_reservation':
       return { pathname: '/trips/[id]/places', params: { id: tripId } };
     default:

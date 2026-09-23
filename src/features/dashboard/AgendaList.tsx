@@ -12,7 +12,7 @@ const createStyles = ({ colors }: Theme) =>
   StyleSheet.create({
     day: { paddingHorizontal: space.lg, paddingTop: space.md },
     divider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-    entries: { paddingBottom: space.xs },
+    entries: { paddingBottom: space.md, gap: space.xs },
   });
 
 /** Entries grouped by day inside one card, with "Today" and "Tomorrow" spelled out. */

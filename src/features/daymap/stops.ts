@@ -7,13 +7,11 @@ import type {
   Location,
   Restaurant,
   Ticket,
-  Transfer,
 } from '@/core/api';
 import { zonedDate, zonedTime } from '@/core/datetime/zoned';
-import { endsOf, pointOf } from '@/features/transfers/maps';
+import { pointOf } from '@/features/content/maps';
 
-export type StopKind =
-  'item' | 'restaurant' | 'hotel-in' | 'hotel-out' | 'ticket' | 'transfer-from' | 'transfer-to';
+export type StopKind = 'item' | 'restaurant' | 'hotel-in' | 'hotel-out' | 'ticket';
 
 /** One place to be at on a given day, in the order it happens. */
 export interface Stop {
@@ -40,7 +38,6 @@ interface Sources {
   items: ItineraryItem[];
   restaurants: Restaurant[];
   hotels: Hotel[];
-  transfers?: Transfer[];
   tickets?: Ticket[];
 }
 
@@ -48,7 +45,7 @@ const LAST = '99:99';
 
 /**
  * Everything on `date` that has a place a map can find: activities, restaurant reservations, hotel
- * check-in/out, tickets (where they are used) and where each transfer starts and ends. Flights have no place of their own here (the
+ * check-in/out and tickets (where they are used). Flights have no place of their own here (the
  * airport is not somewhere to visit); the trip between two stops is drawn by the map itself.
  */
 export function buildStops({
@@ -57,7 +54,6 @@ export function buildStops({
   items,
   restaurants,
   hotels,
-  transfers = [],
   tickets = [],
 }: Sources): Stop[] {
   const dayIds = new Set(days.filter((day) => day.date === date).map((day) => day.id));
@@ -137,32 +133,6 @@ export function buildStops({
     });
   }
 
-  for (const transfer of transfers) {
-    const ends = endsOf(transfer);
-    if (!ends) continue;
-    const leaves = transfer.departure ?? transfer.arrival;
-    const arrives = transfer.arrival ?? transfer.departure;
-    for (const [kind, moment, location] of [
-      ['transfer-from', leaves, ends.origin],
-      ['transfer-to', arrives, ends.destination],
-    ] as const) {
-      if (!moment || zonedDate(moment) !== date) continue;
-      const timed = kind === 'transfer-from' ? transfer.departure : transfer.arrival;
-      stops.push({
-        key: `${kind}-${transfer.id}`,
-        kind,
-        date,
-        dayIndex: 0,
-        refId: transfer.id,
-        title: location.name || location.address || '',
-        ...(location.name && location.address ? { subtitle: location.address } : {}),
-        time: timed ? zonedTime(timed) : '',
-        endTime: '',
-        location,
-      });
-    }
-  }
-
   // Array.prototype.sort is stable, so records with the same time keep the order they came in.
   stops.sort((a, b) => (a.time || LAST).localeCompare(b.time || LAST));
 
@@ -176,6 +146,12 @@ export function buildStops({
 export function dayLabel(dayIndex: number): string {
   if (dayIndex < 9) return String(dayIndex + 1);
   return dayIndex < 35 ? String.fromCharCode(65 + dayIndex - 9) : '';
+}
+
+/** The label a pin carries within one day: 1 to 9, then A, B, C. Same scheme as `dayLabel`, for the
+ * order of a stop within its day rather than the day itself. */
+export function stopOrderLabel(index: number): string {
+  return index < 9 ? String(index + 1) : String.fromCharCode(65 + index - 9);
 }
 
 /** The most stops the server draws at once; a trip longer than this is cut, and the screen says so. */

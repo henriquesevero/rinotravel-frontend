@@ -1,8 +1,8 @@
+import { useQuery } from '@tanstack/react-query';
 import { Image, StyleSheet, View } from 'react-native';
 
-import type { Location } from '@/core/api';
+import { fetchImage, type Location, type LocationMapRequest } from '@/core/api';
 import { currentLocale, useTranslation } from '@/core/i18n';
-import { useLocationMap } from '@/features/transfers/hooks';
 import { radius, space, useTheme } from '@/shared/theme';
 import { IconBadge, Skeleton, Text } from '@/shared/ui';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -10,6 +10,19 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface LocationMapProps {
   tripId: string;
   location: Location;
+}
+
+/** The picture of one place, drawn by the server on request; kept in memory so reopening a record or
+ * editing a field does not pay for the same picture twice. */
+function useLocationMap(tripId: string, request: LocationMapRequest | null) {
+  return useQuery({
+    enabled: request !== null,
+    queryKey: ['location-map', tripId, request],
+    queryFn: ({ signal }) => fetchImage(`/api/v1/trips/${tripId}/maps/location`, request, signal),
+    staleTime: 10 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: false,
+  });
 }
 
 /** One place on a map, drawn by the server. If it cannot be drawn, a card names the place instead. */
