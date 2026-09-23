@@ -1,5 +1,8 @@
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useState, type ReactNode } from 'react';
+
+import { newId } from '@/core/ids';
+import { useDescribeError } from '@/core/i18n/describe-error';
 import { StyleSheet, View } from 'react-native';
 
 import type { BudgetLimit, Expense, ExpenseLink, Trip } from '@/core/api';
@@ -11,6 +14,7 @@ import { EXPENSE_VISUAL } from '@/features/content/visuals';
 import { radius, space, useStyles, type Theme } from '@/shared/theme';
 import {
   Badge,
+  Banner,
   Button,
   Card,
   EmptyState,
@@ -21,13 +25,14 @@ import {
   SegmentedControl,
   Skeleton,
   Text,
+  useConfirm,
 } from '@/shared/ui';
 
 import { BudgetBar } from './BudgetBar';
 import { BudgetSheet } from './BudgetSheet';
 import { ExpenseSheet } from './ExpenseSheet';
 import { isAuto } from './derived';
-import { expenseHooks, limitHooks } from './hooks';
+import { expenseHooks, limitHooks, paymentHooks } from './hooks';
 import { targetKey, useLinkTargets, type LinkTarget } from './link-targets';
 import { useTripMoney } from './money';
 import {
@@ -150,6 +155,12 @@ function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentPr
   const limits = limitHooks.useList(tripId);
   const { byKey } = useLinkTargets(tripId);
   const update = expenseHooks.useUpdate(tripId);
+  const createPayment = paymentHooks.useCreate(tripId);
+  const updatePayment = paymentHooks.useUpdate(tripId);
+  const removePayment = paymentHooks.useRemove(tripId);
+  const confirm = useConfirm();
+  const describe = useDescribeError();
+  const [bulkError, setBulkError] = useState<unknown>(undefined);
 
   const [view, setView] = useState<ViewMode>('category');
   const [filter, setFilter] = useState<Filter>('all');
@@ -157,15 +168,52 @@ function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentPr
   const [budgetOpen, setBudgetOpen] = useState(false);
   const viewing = money_.manual?.find((expense) => expense.id === viewId);
 
-  const toggle = (expense: Expense) => {
-    const paid = expense.status === 'PAID';
-    update.mutate({
-      id: expense.id,
-      baseVersion: expense.version,
-      patch: paid
-        ? { status: 'PLANNED', actual: null }
-        : { status: 'PAID', actual: expense.estimate ?? null },
+  /**
+   * Marks one line paid or not. A line typed here changes its own status. One that comes from another
+   * record cannot, so the answer is kept as a payment mark, and dropped again when it only repeats
+   * what the date would say anyway.
+   */
+  const setPaid = async (line: Expense, paid: boolean) => {
+    if (!isAuto(line)) {
+      await update.mutateAsync({
+        id: line.id,
+        baseVersion: line.version,
+        patch: paid
+          ? { status: 'PAID', actual: line.estimate ?? null }
+          : { status: 'PLANNED', actual: null },
+      });
+      return;
+    }
+    const { type, id, mark, paidByDefault } = line.auto;
+    if (paid === paidByDefault) {
+      if (mark) await removePayment.mutateAsync(mark.id);
+    } else if (mark) {
+      await updatePayment.mutateAsync({ id: mark.id, baseVersion: mark.version, patch: { paid } });
+    } else {
+      await createPayment.mutateAsync({ id: newId(), link: { type, id }, paid });
+    }
+  };
+  const toggle = (line: Expense) => {
+    setBulkError(undefined);
+    setPaid(line, line.status !== 'PAID').catch(setBulkError);
+  };
+  /** Everything of a group that is still to be bought, marked as bought in one go. */
+  const markAll = async (lines: Expense[], scope: string) => {
+    const pending = lines.filter((line) => line.status === 'PLANNED');
+    if (pending.length === 0) return;
+    const confirmed = await confirm({
+      title: t('expenses.markAllTitle'),
+      message: t('expenses.markAllMessage', { count: pending.length, scope }),
+      confirmLabel: t('expenses.markAllConfirm'),
     });
+    if (!confirmed) return;
+    setBulkError(undefined);
+    try {
+      // One at a time: each change moves the version of what it touches.
+      for (const line of pending) await setPaid(line, true);
+    } catch (cause) {
+      setBulkError(cause);
+    }
   };
 
   const failed = money_.error ?? limits.error;
@@ -214,8 +262,11 @@ function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentPr
         limit={limitMap.get('TOTAL')}
         canWrite={canWrite}
         hasAuto={all.some(isAuto)}
+        pending={all.filter((line) => line.status === 'PLANNED').length}
+        onMarkAll={() => void markAll(all, t('expenses.allScope'))}
         onBudget={() => setBudgetOpen(true)}
       />
+      {bulkError ? <Banner tone="danger" message={describe(bulkError)} /> : null}
       {all.length === 0 ? (
         <EmptyState
           icon="wallet-outline"
@@ -236,7 +287,12 @@ function Content({ trip, canWrite, openSheet, onSheet, onCloseSheet }: ContentPr
             ]}
           />
           {view === 'category' ? (
-            <CategoryView all={all} limits={limitMap} {...row} />
+            <CategoryView
+              all={all}
+              limits={limitMap}
+              onMarkAll={(lines, scope) => void markAll(lines, scope)}
+              {...row}
+            />
           ) : view === 'place' ? (
             <PlaceView all={all} {...row} />
           ) : (
@@ -288,6 +344,8 @@ function Summary({
   limit,
   canWrite,
   hasAuto,
+  pending,
+  onMarkAll,
   onBudget,
 }: {
   trip: Trip;
@@ -295,6 +353,9 @@ function Summary({
   limit: BudgetLimit | undefined;
   canWrite: boolean;
   hasAuto: boolean;
+  /** How many lines are still to be bought. */
+  pending: number;
+  onMarkAll: () => void;
   onBudget: () => void;
 }) {
   const { t } = useTranslation();
@@ -351,6 +412,18 @@ function Summary({
             />
           ) : null}
         </View>
+        {canWrite && pending > 0 ? (
+          <View style={{ flexDirection: 'row' }}>
+            <Button
+              testID="mark-all"
+              title={t('expenses.markAll')}
+              variant="ghost"
+              size="sm"
+              icon="checkmark-done-outline"
+              onPress={onMarkAll}
+            />
+          </View>
+        ) : null}
         {!limit ? (
           <Text variant="footnote" tone="secondary">
             {t('expenses.noBudgetMessage')}
@@ -450,7 +523,7 @@ function ExpenseRow({
               tone={paid ? 'success' : 'neutral'}
             />
           </View>
-          {canWrite && !isAuto(expense) ? (
+          {canWrite ? (
             <IconButton
               testID={`toggle-expense-${expense.id}`}
               icon={paid ? 'checkmark-circle' : 'ellipse-outline'}
@@ -493,8 +566,13 @@ function RowList({
 function CategoryView({
   all,
   limits,
+  onMarkAll,
   ...row
-}: RowProps & { all: Expense[]; limits: Map<string, BudgetLimit> }) {
+}: RowProps & {
+  all: Expense[];
+  limits: Map<string, BudgetLimit>;
+  onMarkAll: (lines: Expense[], scope: string) => void;
+}) {
   const { t } = useTranslation();
   const styles = useStyles(createStyles);
   const totals = byCategory(all, row.trip.currency);
@@ -520,6 +598,15 @@ function CategoryView({
                     : ''}
                 </Text>
               </View>
+              {row.canWrite && list.some((expense) => expense.status === 'PLANNED') ? (
+                <Button
+                  testID={`mark-all-${category}`}
+                  title={t('expenses.markAll')}
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => onMarkAll(list, t(`enums.expenseCategory.${category}`))}
+                />
+              ) : null}
               {line && line.state !== 'ok' && line.state !== 'none' ? (
                 <Badge
                   label={line.state === 'over' ? t('expenses.stateOver') : t('expenses.stateClose')}

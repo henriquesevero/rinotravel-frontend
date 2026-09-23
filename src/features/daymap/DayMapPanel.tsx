@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { useMemo, useState } from 'react';
 import { Image, Linking, Platform, Pressable, StyleSheet, View } from 'react-native';
 
@@ -526,12 +527,7 @@ function LegRow({
   );
 }
 
-function partTitle(
-  link: RouteLink,
-  index: number,
-  trip: boolean,
-  t: ReturnType<typeof useTranslation>['t'],
-): string {
+function partTitle(link: RouteLink, index: number, trip: boolean, t: TFunction): string {
   return trip && link.dayIndex !== undefined
     ? t('dayMap.openDay', { n: link.dayIndex + 1 })
     : t('dayMap.openPart', { n: index + 1 });

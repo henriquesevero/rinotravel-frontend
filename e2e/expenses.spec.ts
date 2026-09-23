@@ -147,9 +147,11 @@ test.describe('expenses', () => {
     await expect(page.getByText('Cartas', { exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/expenses$/);
 
-    // The overview shows the trip's money at a glance.
-    await page.goto(`/trips/${trip.id}`);
+    // The dashboard shows the trip's money at a glance; the trip's own overview no longer does.
+    await page.goto('/');
     await expect(page.getByTestId('budget-glance')).toContainText('36,99');
+    await page.goto(`/trips/${trip.id}`);
+    await expect(page.getByTestId('budget-glance')).toHaveCount(0);
   });
 
   test('everything with a price in the trip adds up in the expenses on its own', async ({
@@ -240,8 +242,8 @@ test.describe('expenses', () => {
     await expect(page.getByTestId('category-TRANSPORT')).toContainText('LA8180');
     await expect(page.getByTestId('category-TRANSPORT')).toContainText('JFK → Grand Central');
     await expect(page.getByTestId('category-LODGING')).toContainText('Park Hyatt');
-    // A line from another record has no tick of its own: its price is edited where it lives.
-    await expect(page.locator('[data-testid^="toggle-expense-"]')).toHaveCount(0);
+    // Each of them can be ticked as paid too, and a click on the row leads to the record it comes from.
+    await expect(page.locator('[data-testid^="toggle-expense-auto:"]')).toHaveCount(6);
 
     // Changing the price of the ticket changes the expenses, and skipping it takes it out.
     const patch = async (version: number, data: unknown) => {
@@ -261,6 +263,98 @@ test.describe('expenses', () => {
     // A line leads to the record it comes from.
     await page.getByTestId('category-LODGING').getByText('Park Hyatt').click();
     await expect(page).toHaveURL(/\/bookings$/);
+    expect(errors).toEqual([]);
+  });
+
+  test('a price already paid is marked with one tap, or a whole category and the whole trip at once', async ({
+    page,
+    request,
+  }) => {
+    const errors = collectBrowserErrors(page);
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana, usdTrip);
+    const headers = { Authorization: `Bearer ${ana.token}` };
+    const base = `${API}/api/v1/trips/${trip.id}`;
+    const post = async (path: string, data: unknown) => {
+      const response = await request.post(`${base}${path}`, { headers, data });
+      expect(response.status(), await response.text()).toBe(201);
+      return (await response.json()) as { id: string };
+    };
+    const usd = (amount: number) => ({ amount, currency: 'USD' });
+    const at = (date: string, time: string) => ({
+      dateTime: `${date}T${time}:00`,
+      timezone: 'America/New_York',
+    });
+    const day = await post('/itinerary-days', { date: '2027-04-05' });
+    await post('/itinerary-items', {
+      dayId: day.id,
+      title: 'Passeio de barco',
+      category: 'ATTRACTION',
+      estimatedCost: usd(4500),
+    });
+    const ticket = await post('/tickets', {
+      name: 'Hamilton',
+      cost: usd(30000),
+      start: at('2027-04-06', '19:00'),
+    });
+    const hotel = await post('/hotels', {
+      name: 'Park Hyatt',
+      checkIn: at('2027-04-08', '15:00'),
+      checkOut: at('2027-04-10', '11:00'),
+      cost: usd(180000),
+    });
+    const switchOled = await post('/expenses', {
+      name: 'Switch OLED',
+      category: 'ELECTRONICS',
+      estimate: usd(10000),
+    });
+    const confirm = () =>
+      page.getByRole('button', { name: 'Marcar como pago', exact: true }).last().click();
+    const payments = async () =>
+      (
+        (await (await request.get(`${base}/payments`, { headers })).json()) as {
+          items: { link: { type: string; id: string }; paid: boolean }[];
+        }
+      ).items;
+
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/expenses`);
+    // Everything is still to buy: nothing has happened yet.
+    await expect(page.getByTestId('figure-planned')).toContainText('2.245,00');
+    await expect(page.getByTestId('figure-spent')).toContainText('0,00');
+
+    // One tap on a ticket that was already bought.
+    await page.getByTestId(`toggle-expense-auto:ticket:${ticket.id}`).click();
+    await expect(page.getByTestId('figure-spent')).toContainText('300,00');
+    await expect(page.getByTestId('figure-planned')).toContainText('1.945,00');
+    expect(await payments()).toEqual([
+      expect.objectContaining({ link: { type: 'ticket', id: ticket.id }, paid: true }),
+    ]);
+
+    // A whole category: the other tour is bought too.
+    await page.getByTestId('mark-all-ACTIVITIES').click();
+    await confirm();
+    await expect(page.getByTestId('figure-spent')).toContainText('345,00');
+    await expect(page.getByTestId('mark-all-ACTIVITIES')).toHaveCount(0);
+
+    // The whole trip: the stay and the shopping are paid as well.
+    await page.getByTestId('mark-all').click();
+    await confirm();
+    await expect(page.getByTestId('figure-planned')).toContainText('0,00');
+    await expect(page.getByTestId('figure-spent')).toContainText('2.245,00');
+    await expect(page.getByTestId('mark-all')).toHaveCount(0);
+    const list = (
+      (await (await request.get(`${base}/expenses`, { headers })).json()) as {
+        items: { id: string; status: string }[];
+      }
+    ).items;
+    expect(list.find((e) => e.id === switchOled.id)?.status).toBe('PAID');
+
+    // Unticking the stay goes back to what its date says (not yet), so its mark is dropped.
+    const marks = (await payments()).length;
+    await page.getByTestId(`toggle-expense-auto:hotel:${hotel.id}`).click();
+    await expect(page.getByTestId('figure-planned')).toContainText('1.800,00');
+    await expect.poll(async () => (await payments()).length).toBe(marks - 1);
     expect(errors).toEqual([]);
   });
 

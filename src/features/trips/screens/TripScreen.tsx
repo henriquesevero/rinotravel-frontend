@@ -115,7 +115,7 @@ export function TripScreen({ tripId }: { tripId: string }) {
       <View style={styles.stack}>
         {error ? <Banner tone="danger" message={describe(error)} /> : null}
         <TripBanner trip={data} size="large" />
-        <TripOverview trip={data} />
+        <TripOverview trip={data} showBudget={false} />
 
         <Card padded={false}>
           <ListRow

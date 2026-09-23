@@ -32,6 +32,7 @@ const sources = (over: Partial<MoneySources>): MoneySources => ({
   transfers: [],
   flights: [],
   hotels: [],
+  payments: [],
   ...over,
 });
 
@@ -224,5 +225,39 @@ describe('deriveLines', () => {
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatchObject({ category: 'LODGING', status: 'PLANNED', date: '2027-04-10' });
     expect(totalsOf(lines, 'USD')).toMatchObject({ forecast: 0, foreign: 1 });
+  });
+
+  it('lets the person say a price is paid before its date, or not paid after it', () => {
+    const hotel = {
+      ...base,
+      id: 'h',
+      name: 'Park Hyatt',
+      checkIn: at('2027-04-10T15:00:00'),
+      checkOut: at('2027-04-13T11:00:00'),
+      cost: usd(180000),
+    } as Hotel;
+    const past = {
+      ...hotel,
+      id: 'g',
+      name: 'Já hospedado',
+      checkIn: at('2027-04-01T15:00:00'),
+    } as Hotel;
+    const mark = (id: string, paid: boolean) => ({
+      ...base,
+      id: `m-${id}`,
+      link: { type: 'hotel' as const, id },
+      paid,
+    });
+    const lines = deriveLines(
+      sources({ hotels: [hotel, past], payments: [mark('h', true), mark('g', false)] }),
+    );
+    const by = Object.fromEntries(lines.map((l) => [l.name, l]));
+    // Paid in advance, though the stay is still ahead.
+    expect(by['Park Hyatt']?.status).toBe('PAID');
+    expect(by['Park Hyatt']?.actual?.amount).toBe(180000);
+    expect(by['Park Hyatt']?.auto).toMatchObject({ paidByDefault: false, mark: { paid: true } });
+    // Not paid yet, though the date has gone by.
+    expect(by['Já hospedado']?.status).toBe('PLANNED');
+    expect(by['Já hospedado']?.auto.paidByDefault).toBe(true);
   });
 });

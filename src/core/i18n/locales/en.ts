@@ -553,8 +553,13 @@ export const en: Translation = {
     savedAlso: 'The file also appears in the documents list.',
   },
   expenses: {
+    markAll: 'Mark all as paid',
+    markAllTitle: 'Mark as paid?',
+    markAllMessage: '{{count}} items in "{{scope}}" are still to buy and will count as paid.',
+    markAllConfirm: 'Mark as paid',
+    allScope: 'all categories',
     autoNote:
-      'Prices already in the trip (itinerary, meals, tickets, transfers, flights and stays) show up here on their own. What has already happened counts as spent.',
+      'Prices already in the trip (itinerary, meals, tickets, transfers, flights and stays) show up here on their own. What has already happened counts as spent; the rest stays to buy until you mark it paid with the circle.',
     of: 'of {{value}}',
     linkType: {
       place: 'Place',

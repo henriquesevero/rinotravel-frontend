@@ -6,7 +6,7 @@ import { restaurantHooks } from '@/features/places/hooks';
 import { transferHooks } from '@/features/transfers/hooks';
 
 import { deriveLines } from './derived';
-import { expenseHooks } from './hooks';
+import { expenseHooks, paymentHooks } from './hooks';
 
 /**
  * Every line of the trip's money: what was typed into the expenses plus what the trip's own records
@@ -23,8 +23,19 @@ export function useTripMoney(trip: Trip) {
   const transfers = transferHooks.useList(id);
   const flights = flightHooks.useList(id);
   const hotels = hotelHooks.useList(id);
+  const payments = paymentHooks.useList(id);
 
-  const queries = [expenses, days, items, restaurants, tickets, transfers, flights, hotels];
+  const queries = [
+    expenses,
+    days,
+    items,
+    restaurants,
+    tickets,
+    transfers,
+    flights,
+    hotels,
+    payments,
+  ];
   const error = queries.find((query) => query.error)?.error;
   const ready =
     expenses.data &&
@@ -34,7 +45,8 @@ export function useTripMoney(trip: Trip) {
     tickets.data &&
     transfers.data &&
     flights.data &&
-    hotels.data;
+    hotels.data &&
+    payments.data;
 
   const lines: Expense[] | undefined = ready
     ? [
@@ -48,6 +60,7 @@ export function useTripMoney(trip: Trip) {
           transfers: transfers.data,
           flights: flights.data,
           hotels: hotels.data,
+          payments: payments.data,
         }),
       ]
     : undefined;

@@ -621,6 +621,48 @@ export interface paths {
         patch: operations["updateBudgetLimit"];
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/payments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista as marcas de pagamento */
+        get: operations["listPayments"];
+        put?: never;
+        /** Cria a marca de pagamento (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createPayment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/payments/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getPayment"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deletePayment"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER). Exige `baseVersion` */
+        patch: operations["updatePayment"];
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/transfers": {
         parameters: {
             query?: never;
@@ -1479,6 +1521,20 @@ export interface components {
         };
         BudgetLimitPatch: components["schemas"]["BaseVersion"] & {
             amount?: components["schemas"]["Money"];
+        };
+        Payment: components["schemas"]["ResourceMeta"] & {
+            link: components["schemas"]["ExpenseLink"];
+            paid: boolean;
+        };
+        PaymentCreate: {
+            /** Format: uuid */
+            id?: string;
+            link: components["schemas"]["ExpenseLink"];
+            /** @description Padrão `true`. */
+            paid?: boolean;
+        };
+        PaymentPatch: components["schemas"]["BaseVersion"] & {
+            paid?: boolean;
         };
         /** @enum {string} */
         TicketKind: "ATTRACTION" | "SHOW" | "MUSEUM" | "SPORT" | "TOUR" | "TRANSPORT" | "OTHER";
@@ -3646,6 +3702,151 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BudgetLimit"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    listPayments: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de as marcas de pagamento. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["Payment"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getPayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deletePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updatePayment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PaymentPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Payment"];
                 };
             };
             400: components["responses"]["BadRequest"];

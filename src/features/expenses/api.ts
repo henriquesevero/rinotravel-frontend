@@ -6,6 +6,9 @@ import type {
   Expense,
   ExpenseCreate,
   ExpensePatch,
+  Payment,
+  PaymentCreate,
+  PaymentPatch,
 } from '@/core/api';
 import type { ResourceApi } from '@/core/resource/hooks';
 
@@ -44,5 +47,21 @@ export const limitsApi: ResourceApi<BudgetLimit, BudgetLimitCreate, BudgetLimitP
     ),
   remove: async (tripId, id) => {
     await unwrap(api.DELETE('/api/v1/trips/{tripId}/budget-limits/{id}', pathWithId(tripId, id)));
+  },
+};
+
+export const paymentsApi: ResourceApi<Payment, PaymentCreate, PaymentPatch> = {
+  list: async (tripId, signal) =>
+    (
+      await unwrap(
+        api.GET('/api/v1/trips/{tripId}/payments', { ...path(tripId), ...abort(signal) }),
+      )
+    ).items,
+  create: (tripId, body) =>
+    unwrap(api.POST('/api/v1/trips/{tripId}/payments', { ...path(tripId), body })),
+  update: (tripId, id, body) =>
+    unwrap(api.PATCH('/api/v1/trips/{tripId}/payments/{id}', { ...pathWithId(tripId, id), body })),
+  remove: async (tripId, id) => {
+    await unwrap(api.DELETE('/api/v1/trips/{tripId}/payments/{id}', pathWithId(tripId, id)));
   },
 };

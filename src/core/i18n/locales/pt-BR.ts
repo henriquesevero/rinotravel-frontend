@@ -560,8 +560,14 @@ export const ptBR = {
     savedAlso: 'O arquivo também fica na lista de documentos.',
   },
   expenses: {
+    markAll: 'Marcar tudo como pago',
+    markAllTitle: 'Marcar como pago?',
+    markAllMessage:
+      '{{count}} itens de "{{scope}}" ainda estão a comprar e passam a contar como pagos.',
+    markAllConfirm: 'Marcar como pago',
+    allScope: 'todas as categorias',
     autoNote:
-      'Custos que já estão na viagem (roteiro, refeições, ingressos, deslocamentos, voos e hospedagens) entram aqui sozinhos. O que já passou conta como gasto.',
+      'Custos que já estão na viagem (roteiro, refeições, ingressos, deslocamentos, voos e hospedagens) entram aqui sozinhos. O que já passou conta como gasto; o resto fica a comprar até você marcar como pago no círculo.',
     of: 'de {{value}}',
     linkType: {
       place: 'Lugar',

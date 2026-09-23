@@ -19,7 +19,15 @@ const styles = StyleSheet.create({
 });
 
 /** Numbers and what is coming next for one trip; the trip screen and the dashboard both use it. */
-export function TripOverview({ trip, showAgenda = true }: { trip: Trip; showAgenda?: boolean }) {
+export function TripOverview({
+  trip,
+  showAgenda = true,
+  showBudget = true,
+}: {
+  trip: Trip;
+  showAgenda?: boolean;
+  showBudget?: boolean;
+}) {
   const { t } = useTranslation();
   const router = useRouter();
   const snapshot = useTripSnapshot(trip.id);
@@ -66,7 +74,7 @@ export function TripOverview({ trip, showAgenda = true }: { trip: Trip; showAgen
         />
       </View>
 
-      <BudgetGlance trip={trip} />
+      {showBudget ? <BudgetGlance trip={trip} /> : null}
 
       {showAgenda ? (
         <View style={{ gap: space.sm }}>
