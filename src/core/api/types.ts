@@ -62,6 +62,11 @@ export type TicketCreate = Schemas['TicketCreate'];
 export type TicketPatch = Schemas['TicketPatch'];
 export type TicketKind = Schemas['TicketKind'];
 
+export type ChecklistItem = Schemas['ChecklistItem'];
+export type ChecklistItemCreate = Schemas['ChecklistItemCreate'];
+export type ChecklistItemPatch = Schemas['ChecklistItemPatch'];
+export type ChecklistCategory = Schemas['ChecklistCategory'];
+
 export type Document = Schemas['Document'];
 export type DocumentType = Schemas['DocumentType'];
 export type DocumentVisibility = Schemas['DocumentVisibility'];

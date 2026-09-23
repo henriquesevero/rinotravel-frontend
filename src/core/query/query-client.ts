@@ -15,8 +15,11 @@ export function createQueryClient(): QueryClient {
       queries: {
         retry: shouldRetry,
         staleTime: 30_000,
-        // Fail fast while offline instead of pausing forever; screens show an
-        // error state with a retry action.
+        // A query still tries and fails fast while offline (as before) rather than pausing: a
+        // failed background refetch never clears data already in the cache, and that cache is
+        // now also restored from disk (see `createPersister`), so a screen already seen keeps
+        // reading from it regardless — with no change to when a fetch is triggered, which is
+        // what actually matters for staying correct once the connection is back.
         networkMode: 'always',
       },
       mutations: { networkMode: 'always', retry: false },

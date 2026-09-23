@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { hasCode, type Trip } from '@/core/api';
 import { useTranslation } from '@/core/i18n';
+import { useNetworkStatus } from '@/core/network/use-network-status';
 import { space, useContentMaxWidth } from '@/shared/theme';
 import { Banner, EmptyState, ErrorState, Screen, ScreenHeader, Skeleton } from '@/shared/ui';
 
@@ -41,6 +42,7 @@ export function TripPage({
   const { t } = useTranslation();
   const router = useRouter();
   const maxWidth = useContentMaxWidth();
+  const { isOnline } = useNetworkStatus();
   const { query, trip, canWrite } = useTripAccess(tripId);
 
   const refresh = () => {
@@ -67,6 +69,22 @@ export function TripPage({
               onRetry={() => void query.refetch()}
             />
           )}
+        </Screen>
+      );
+    }
+    // Offline with nothing cached yet: there is nothing to show until the trip has been opened at
+    // least once with a connection, so this says so instead of a skeleton that would never resolve.
+    if (!isOnline) {
+      return (
+        <Screen>
+          <ScreenHeader title={title} />
+          <EmptyState
+            icon="cloud-offline-outline"
+            title={t('content.offlineTitle')}
+            message={t('content.offlineMessage')}
+            actionLabel={t('common.retry')}
+            onAction={() => void query.refetch()}
+          />
         </Screen>
       );
     }

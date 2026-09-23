@@ -13,6 +13,7 @@ type NavLabel =
   | 'nav.places'
   | 'nav.bookings'
   | 'nav.expenses'
+  | 'nav.checklist'
   | 'nav.documents'
   | 'nav.members';
 
@@ -84,6 +85,7 @@ export function useNavState(): NavState {
       | '/places'
       | '/bookings'
       | '/expenses'
+      | '/checklist'
       | '/documents'
       | '/members',
     isActive: boolean,
@@ -139,6 +141,14 @@ export function useNavState(): NavState {
           'wallet',
           '/expenses',
           subpath === '/expenses',
+        ),
+        section(
+          'checklist',
+          'nav.checklist',
+          'checkbox-outline',
+          'checkbox',
+          '/checklist',
+          subpath === '/checklist',
         ),
         section(
           'documents',

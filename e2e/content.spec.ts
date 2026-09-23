@@ -976,6 +976,54 @@ test.describe('trip content', () => {
     await expect(page.getByText('Escolha um arquivo')).toBeVisible();
   });
 
+  test('checklist: an item is added, ticked off, edited and removed', async ({ page, request }) => {
+    const errors = collectBrowserErrors(page);
+    const ana = await registerViaApi(request, 'Ana');
+    const trip = await createTripViaApi(request, ana);
+    await signInToDashboard(page, ana);
+    await page.goto(`/trips/${trip.id}/checklist`);
+
+    // A plain item: no category or quantity typed in defaults to "Outros" and one.
+    await page.getByTestId('add-checklist-item').click();
+    await page.getByTestId('checklist-title').fill('Passaporte');
+    await page.getByTestId('checklist-sheet-submit').click();
+    await expect(page.getByTestId('checklist-category-OTHER')).toContainText('Passaporte');
+    await expect(page.getByTestId('checklist-summary')).toContainText('0 de 1');
+
+    // A second item with its category and quantity chosen.
+    await page.getByTestId('add-checklist-item').click();
+    await page.getByTestId('checklist-title').fill('Meias');
+    await page.getByTestId('checklist-category').click();
+    await page.getByTestId('checklist-category-option-CLOTHES').click();
+    await page.getByTestId('checklist-quantity').fill('5');
+    await page.getByTestId('checklist-sheet-submit').click();
+    await expect(page.getByTestId('checklist-category-CLOTHES')).toContainText('Meias');
+    await expect(page.getByTestId('checklist-category-CLOTHES')).toContainText('×5');
+    await expect(page.getByTestId('checklist-summary')).toContainText('0 de 2');
+
+    // Ticking an item off updates the progress without opening it.
+    const passportRow = page.getByTestId('checklist-category-OTHER');
+    await passportRow.getByRole('button', { name: 'Marcar como na mala' }).click();
+    await expect(page.getByTestId('checklist-summary')).toContainText('1 de 2');
+
+    // Opening it shows the view first; editing goes through the pencil.
+    await page.getByText('Passaporte', { exact: true }).click();
+    await expect(page.getByTestId('checklist-detail')).toContainText('Na mala');
+    await page.getByTestId('checklist-detail-edit').click();
+    await page.getByTestId('checklist-title').fill('Passaporte e visto');
+    await page.getByTestId('checklist-sheet-submit').click();
+    await expect(page.getByTestId('checklist-category-OTHER')).toContainText('Passaporte e visto');
+
+    // Removing an item takes it off the list and the progress total.
+    await page.getByText('Meias', { exact: true }).click();
+    await page.getByTestId('checklist-detail-edit').click();
+    await page.getByTestId('checklist-sheet-delete').click();
+    await confirmDelete(page);
+    await expect(page.getByTestId('checklist-category-CLOTHES')).toHaveCount(0);
+    await expect(page.getByTestId('checklist-summary')).toContainText('1 de 1');
+    expect(errors).toEqual([]);
+  });
+
   test('dashboard: the trip under way leads, with today’s agenda', async ({ page, request }) => {
     const ana = await registerViaApi(request, 'Ana');
     const trip = await createTripViaApi(request, ana, {
@@ -1045,10 +1093,11 @@ test.describe('trip content', () => {
       ['places', 'Lugares'],
       ['bookings', 'Reservas'],
       ['expenses', 'Gastos'],
+      ['checklist', 'Checklist'],
       ['documents', 'Documentos'],
       ['members', 'Membros'],
     ];
-    const overflow = new Set(['expenses', 'documents', 'members']);
+    const overflow = new Set(['expenses', 'checklist', 'documents', 'members']);
     for (const [key, heading] of sections) {
       if (isPhone(page) && overflow.has(key)) {
         await page.getByTestId('nav-more').click();

@@ -710,6 +710,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/trips/{tripId}/checklist-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        /** Lista os itens da checklist */
+        get: operations["listChecklistItems"];
+        put?: never;
+        /** Cria um item da checklist (OWNER, ADMIN, MEMBER). O id pode ser gerado pelo cliente (UUID v7), o que torna a criação idempotente */
+        post: operations["createChecklistItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/trips/{tripId}/checklist-items/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        /** Detalhes */
+        get: operations["getChecklistItem"];
+        put?: never;
+        post?: never;
+        /** Remove (soft delete; deixa um tombstone para o sync) */
+        delete: operations["deleteChecklistItem"];
+        options?: never;
+        head?: never;
+        /** Atualização parcial (OWNER, ADMIN, MEMBER), inclusive marcar/desmarcar. Exige `baseVersion` */
+        patch: operations["updateChecklistItem"];
+        trace?: never;
+    };
     "/api/v1/trips/{tripId}/documents": {
         parameters: {
             query?: never;
@@ -1087,6 +1129,35 @@ export interface components {
         };
         ItineraryDayPatch: components["schemas"]["BaseVersion"] & {
             title?: string;
+            notes?: string;
+        };
+        /** @enum {string} */
+        ChecklistCategory: "DOCUMENTS" | "CLOTHES" | "ELECTRONICS" | "TOILETRIES" | "OTHER";
+        ChecklistItem: components["schemas"]["ResourceMeta"] & {
+            title: string;
+            category: components["schemas"]["ChecklistCategory"];
+            checked: boolean;
+            quantity: number;
+            notes?: string;
+        };
+        ChecklistItemCreate: {
+            /**
+             * Format: uuid
+             * @description Opcional. Gerado pelo cliente (UUID v7) para criação idempotente.
+             */
+            id?: string;
+            title: string;
+            /** @description Padrão OTHER quando omitido. */
+            category?: components["schemas"]["ChecklistCategory"];
+            /** @description Padrão 1 quando omitido. */
+            quantity?: number;
+            notes?: string;
+        };
+        ChecklistItemPatch: components["schemas"]["BaseVersion"] & {
+            title?: string;
+            category?: components["schemas"]["ChecklistCategory"];
+            checked?: boolean;
+            quantity?: number;
             notes?: string;
         };
         ItineraryItem: components["schemas"]["ResourceMeta"] & {
@@ -1602,7 +1673,7 @@ export interface components {
             expiresAt: string;
         };
         /** @enum {string} */
-        SyncEntity: "trip" | "itinerary_day" | "itinerary_item" | "place" | "restaurant" | "flight" | "hotel" | "document";
+        SyncEntity: "trip" | "itinerary_day" | "itinerary_item" | "place" | "restaurant" | "flight" | "hotel" | "document" | "checklist_item";
         SyncChange: {
             entity: components["schemas"]["SyncEntity"];
             /** Format: uuid */
@@ -3751,6 +3822,151 @@ export interface operations {
             404: components["responses"]["NotFound"];
             422: components["responses"]["Unprocessable"];
             429: components["responses"]["TooManyRequests"];
+        };
+    };
+    listChecklistItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista de itens da checklist. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        items: components["schemas"]["ChecklistItem"][];
+                    };
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    createChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemCreate"];
+            };
+        };
+        responses: {
+            /** @description Criado. */
+            201: {
+                headers: {
+                    Location?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
+        };
+    };
+    getChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description O registro. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    deleteChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+        };
+    };
+    updateChecklistItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tripId: components["parameters"]["TripId"];
+                id: components["parameters"]["ResourceId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChecklistItemPatch"];
+            };
+        };
+        responses: {
+            /** @description Atualizado. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistItem"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            409: components["responses"]["Conflict"];
+            422: components["responses"]["Unprocessable"];
         };
     };
     listDocuments: {
